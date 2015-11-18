@@ -213,7 +213,7 @@ To forward a request, edit it, save the file, then quit.
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| `ic <requests,responses,request,response,req,rsp>+` | intercept, ic | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
+| `ic <requests, responses, request, response, req, rsp>+` | intercept, ic | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
 
 ```
 Intercept both requests and responses:
