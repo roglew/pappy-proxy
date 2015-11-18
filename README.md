@@ -18,7 +18,7 @@ Installation
 ------------
 Installation requires `pip` or some other command that can handle a `setup.py` with requirements. Once the requirements are installed, you can run the `pappy.py` script to run the proxy. You're on your own to link it somewhere in your PATH.
 ```
-$ git clone <git url>
+$ git clone https://github.com/roglew/pappy-proxy.git
 $ cd pappy-proxy
 $ pip install -e .
 ```
