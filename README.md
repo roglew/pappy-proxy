@@ -81,7 +81,7 @@ In order to intercept and modify requests to sites that use HTTPS, you have to g
 
 | Command | Description |
 |:--------|:------------|
-| gencerts [/path/to/put/certs/in] | Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory. |
+| `gencerts [/path/to/put/certs/in]` | Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory. |
 
 Browsing Recorded Requests/Responses
 ------------------------------------
@@ -89,11 +89,11 @@ The following commands can be used to view requests and responses
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| ls [a|<num>]| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 50 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
-| vfq <id> [u] | view_full_request, vfq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. If 'u' is given as an additional argument, it will print the unmangled version of the request. |
-| vhq <id> [u] | view_request_headers, vhq | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request. If 'u' is given as an additional argument, it will print the unmangled version of the request. |
-| vfs <id> [u] | view_full_response, vfs |[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data. If 'u' is given as an additional argument, it will print the unmangled version of the response. |
-| vhs <id> [u] | view_response_headers, vhs | [V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request. If 'u' is given as an additional argument, it will print the unmangled version of the response. |
+| `ls [a|<num>]`| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 50 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
+| `vfq <id> [u]` | view_full_request, vfq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. If 'u' is given as an additional argument, it will print the unmangled version of the request. |
+| `vhq <id> [u]` | view_request_headers, vhq | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request. If 'u' is given as an additional argument, it will print the unmangled version of the request. |
+| `vfs <id> [u]` | view_full_response, vfs |[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data. If 'u' is given as an additional argument, it will print the unmangled version of the response. |
+| `vhs <id> [u]` | view_response_headers, vhs | [V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request. If 'u' is given as an additional argument, it will print the unmangled version of the response. |
 
 The table shown will have the following columns:
 
@@ -115,9 +115,9 @@ The context is a set of filters that define which requests are considered "activ
 
 | Command | Aliases | Description |
 |:--------|:------------|:---|
-| fl <filter string> | filter, fl |Add a filter that limits which requests are included in the current context. See the Filter String section for how to create a filter string |
-| fc | filter_clear, fc | Clears the filters and resets the context to contain all requests and responses. Ignores scope |
-| fls | filter_list, fls | Print the filters that make up the current context |
+| `fl <filter string>` | filter, fl |Add a filter that limits which requests are included in the current context. See the Filter String section for how to create a filter string |
+| `fc` | filter_clear, fc | Clears the filters and resets the context to contain all requests and responses. Ignores scope |
+| `fls` | filter_list, fls | Print the filters that make up the current context |
 
 Filter Strings
 --------------
@@ -199,10 +199,10 @@ Any requests which don't match all the filters in the scope will be passed strai
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| scope_save |scope_save| Set the current context to be the scope |
-| sr |scope_reset, sr| Set the current context to the scope |
-| scope_delete |scope_delete| Clear the scope (everything's in scope!) |
-| scope_list |scope_list, sls| List all the filters that are applied to the scope |
+| `scope_save` |scope_save| Set the current context to be the scope |
+| `sr` |scope_reset, sr| Set the current context to the scope |
+| `scope_delete` |scope_delete| Clear the scope (everything's in scope!) |
+| `scope_list` |scope_list, sls| List all the filters that are applied to the scope |
 
 
 Interceptor
@@ -213,7 +213,7 @@ To forward a request, edit it, save the file, then quit.
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| ic <requests,responses,request,response,req,rsp>+ | intercept, ic | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
+| `ic <requests,responses,request,response,req,rsp>+` | intercept, ic | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
 
 ```
 Intercept both requests and responses:
@@ -240,11 +240,11 @@ When you're done with repeater, run ":qa!" to avoid having to save changes to no
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| rp <id> | repeater, rp | Open the specified request in the repeater |
+| `rp <id>` | repeater, rp | Open the specified request in the repeater |
 
 | Vim Command | Keybinding | Action |
 |:--------|:-----------|:-------|
-| RepeaterSubmitBuffer | <leader>f | Submit the current buffer, split the windows vertically, and show the result in the right window |
+| RepeaterSubmitBuffer | `<leader>f` | Submit the current buffer, split the windows vertically, and show the result in the right window |
 
 Logging
 -------
@@ -252,4 +252,4 @@ You can watch in real-time what requests are going through the proxy. Verbosisty
 
 | Command | Description |
 |:--------|:------------|
-| log [verbosity] | View the log at the given verbosity. Default verbosity is 1 which just shows connections being made/lost and some other info, verbosity 3 shows full requests/responses as they pass through and are processed by the proxy |
+| `log [verbosity]` | View the log at the given verbosity. Default verbosity is 1 which just shows connections being made/lost and some other info, verbosity 3 shows full requests/responses as they pass through and are processed by the proxy |
