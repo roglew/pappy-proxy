@@ -1,0 +1,3 @@
+
+class PappyException(Exception):
+    pass

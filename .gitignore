@@ -1,0 +1,11 @@
+*.pyc
+certs/*
+debug_out/*
+data.db
+.coverage
+.cache
+tests/.cache
+.DS_Store
+TAGS
+config.json
+build/*
