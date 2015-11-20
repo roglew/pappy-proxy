@@ -64,7 +64,7 @@ class ProxyCmd(cmd2.Cmd):
                "of the request will be displayed.")
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_view_request_headers(self, line):
         args = shlex.split(line)
@@ -99,7 +99,7 @@ class ProxyCmd(cmd2.Cmd):
                "of the request will be displayed.")
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_view_full_request(self, line):
         args = shlex.split(line)
@@ -132,7 +132,7 @@ class ProxyCmd(cmd2.Cmd):
                "Usage: view_response_headers <reqid>")
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_view_response_headers(self, line):
         args = shlex.split(line)
@@ -165,7 +165,7 @@ class ProxyCmd(cmd2.Cmd):
                "Usage: view_full_response <reqid>")
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_view_full_response(self, line):
         args = shlex.split(line)
@@ -210,7 +210,7 @@ class ProxyCmd(cmd2.Cmd):
                     print "Please enter a valid argument for list"
                     return
         else:
-            print_count = 50
+            print_count = 25
         
         context.sort()
         if print_count > 0:
@@ -239,7 +239,7 @@ class ProxyCmd(cmd2.Cmd):
                "Usage: filter_clear")
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_filter_clear(self, line):
         context.active_filters = []
@@ -260,7 +260,7 @@ class ProxyCmd(cmd2.Cmd):
                "Usage: scope_save")
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_scope_save(self, line):
         context.save_scope()
@@ -271,7 +271,7 @@ class ProxyCmd(cmd2.Cmd):
                "Usage: scope_reset")
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_scope_reset(self, line):
         yield context.reset_to_scope()
@@ -281,7 +281,7 @@ class ProxyCmd(cmd2.Cmd):
                "Usage: scope_delete")        
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_scope_delete(self, line):
         context.set_scope([])
@@ -301,13 +301,24 @@ class ProxyCmd(cmd2.Cmd):
 
     @print_pappy_errors
     def do_repeater(self, line):
-        repeater.start_editor(int(line))
+        args = shlex.split(line)
+        try:
+            reqid = int(args[0])
+        except:
+            raise PappyException("Enter a valid number for the request id")
+
+        repid = reqid
+        if len(args) > 1 and args[1][0].lower() == 'u':
+            umid = get_unmangled(reqid)
+            if umid is not None:
+                repid = umid
+        repeater.start_editor(repid)
 
     def help_submit(self):
         print "Submit a request again (NOT IMPLEMENTED)"
 
     @print_pappy_errors
-    @crochet.wait_for(timeout=5.0)
+    @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_submit(self, line):
         pass
@@ -461,6 +472,13 @@ class ProxyCmd(cmd2.Cmd):
     def do_fl(self, line):
         self.onecmd('filter %s' % line)
 
+    def help_f(self):
+        self.help_filter()
+
+    @print_pappy_errors
+    def do_f(self, line):
+        self.onecmd('filter %s' % line)
+
     def help_fls(self):
         self.help_filter_list()
 
@@ -564,6 +582,15 @@ def printable_data(data):
             chars += '.'
     return ''.join(chars)
 
+@crochet.wait_for(timeout=30.0)
+@defer.inlineCallbacks
+def get_unmangled(reqid):
+    req = yield http.Request.load_request(reqid)
+    if req.unmangled:
+        defer.returnValue(req.unmangled.reqid)
+    else:
+        defer.returnValue(None)
+
     
 def view_full_request(request, headers_only=False):
     if headers_only:
@@ -588,6 +615,8 @@ def print_requests(requests):
         {'name':'Req Len'},
         {'name':'Rsp Len'},
         {'name':'Time'},
+        {'name': 'Prt'},
+        {'name': 'SSL'},
         {'name':'Mngl'},
     ]
     rows = []
@@ -619,8 +648,14 @@ def print_requests(requests):
         if request.time_start and request.time_end:
             time_delt = request.time_end - request.time_start
             time_str = "%.2f" % time_delt.total_seconds()
+
+        port = request.port
+        if request.is_ssl:
+            is_ssl = 'YES'
+        else:
+            is_ssl = 'NO'
             
         rows.append([rid, method, host, path, response_code,
-                     reqlen, rsplen, time_str, mangle_str])
+                     reqlen, rsplen, time_str, port, is_ssl, mangle_str])
     print_table(cols, rows)
     

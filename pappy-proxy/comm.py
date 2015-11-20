@@ -86,14 +86,19 @@ class CommServer(LineReceiver):
             raise PappyException("Request with given ID does not exist, cannot fetch associated response.")
 
         req = yield http.Request.load_request(reqid)
-        rsp = yield http.Response.load_response(req.response.rspid)
-        dat = json.loads(rsp.to_json())
+        if req.response:
+            rsp = yield http.Response.load_response(req.response.rspid)
+            dat = json.loads(rsp.to_json())
+        else:
+            dat = {}
         defer.returnValue(dat)
 
     @defer.inlineCallbacks
     def action_submit_request(self, data):
         try:
             req = http.Request(base64.b64decode(data['full_request']))
+            req.port = data['port']
+            req.is_ssl = data['is_ssl']
         except:
             raise PappyException("Error parsing request")
         req_sub = yield req.submit_self()

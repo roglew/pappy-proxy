@@ -38,10 +38,11 @@ def decode_encoded(data, encoding):
         return data
 
     if encoding == ENCODE_DEFLATE:
-        dec_data = StringIO.StringIO(zlib.decompress(data))
+        dec_data = zlib.decompress(data, -15)
     else:
         dec_data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data))
-    return dec_data.read()
+        dec_data = dec_data.read()
+    return dec_data
 
 def repeatable_parse_qs(s):
     pairs = s.split('&')
@@ -53,6 +54,15 @@ def repeatable_parse_qs(s):
         else:
             ret_dict.append(pair, None)
     return ret_dict
+
+def strip_leading_newlines(string):
+    while (len(string) > 1 and string[0:2] == '\r\n') or \
+            (len(string) > 0 and string[0] == '\n'):
+        if len(string) > 1 and string[0:2] == '\r\n':
+            string = string[2:]
+        elif len(string) > 0 and string[0] == '\n':
+            string = string[1:]
+    return string
 
 class RepeatableDict:
     """
@@ -341,7 +351,14 @@ class ResponseCookie(object):
     def from_cookie(self, set_cookie_string):
         if ';' in set_cookie_string:
             cookie_pair, rest = set_cookie_string.split(';', 1)
-            self.key, self.val = cookie_pair.split('=',1)
+            if '=' in cookie_pair:
+                self.key, self.val = cookie_pair.split('=',1)
+            elif cookie_pair == '' or re.match('\s+', cookie_pair):
+                self.key = ''
+                self.val = ''
+            else:
+                self.key = cookie_pair
+                self.val = ''
             cookie_avs = rest.split(';')
             for cookie_av in cookie_avs:
                 cookie_av.lstrip()
@@ -396,6 +413,8 @@ class Request(object):
 
     @property
     def status_line(self):
+        if not self.verb and not self.path and not self.version:
+            return ''
         path = self.path
         if self.get_params:
             path += '?'
@@ -425,6 +444,8 @@ class Request(object):
 
     @property
     def full_request(self):
+        if not self.status_line:
+            return ''
         ret = self.raw_headers
         ret = ret + self.raw_data
         return ret
@@ -448,8 +469,9 @@ class Request(object):
     def from_full_request(self, full_request, update_content_length=False):
         # Get rid of leading CRLF. Not in spec, should remove eventually
         # technically doesn't treat \r\n same as \n, but whatever.
-        while full_request[0:2] == '\r\n':
-            full_request = full_request[2:]
+        full_request = strip_leading_newlines(full_request)
+        if full_request == '':
+            return
 
         # We do redundant splits, but whatever
         lines = full_request.splitlines()
@@ -599,9 +621,13 @@ class Request(object):
             # semicolon. If actual implementations mess this up, we could
             # probably strip whitespace around the key/value
             for cookie_str in cookie_strs:
-                splitted = cookie_str.split('=',1)
-                assert(len(splitted) == 2)
-                (cookie_key, cookie_val) = splitted
+                if '=' in cookie_str:
+                    splitted = cookie_str.split('=',1)
+                    assert(len(splitted) == 2)
+                    (cookie_key, cookie_val) = splitted
+                else:
+                    cookie_key = cookie_str
+                    cookie_val = ''
                 # we want to parse duplicate cookies
                 self.cookies.append(cookie_key, cookie_val, do_callback=False)
         elif key.lower() == 'host':
@@ -642,8 +668,8 @@ class Request(object):
             
     def _update(self, txn):
         # If we don't have an reqid, we're creating a new reuqest row
-        setnames = ["full_request=?"]
-        queryargs = [self.full_request]
+        setnames = ["full_request=?", "port=?"]
+        queryargs = [self.full_request, self.port]
         if self.response:
             setnames.append('response_id=?')
             assert(self.response.rspid is not None) # should be saved first
@@ -658,6 +684,12 @@ class Request(object):
         if self.time_end:
             setnames.append('end_datetime=?')
             queryargs.append(self.time_end.isoformat())
+
+        setnames.append('is_ssl=?')
+        if self.is_ssl:
+            queryargs.append('1')
+        else:
+            queryargs.append('0')
 
         setnames.append('submitted=?')
         if self.submitted:
@@ -675,8 +707,8 @@ class Request(object):
 
     def _insert(self, txn):
         # If we don't have an reqid, we're creating a new reuqest row
-        colnames = ["full_request"]
-        colvals = [self.full_request]
+        colnames = ["full_request", "port"]
+        colvals = [self.full_request, self.port]
         if self.response:
             colnames.append('response_id')
             assert(self.response.rspid is not None) # should be saved first
@@ -693,6 +725,12 @@ class Request(object):
             colvals.append(self.time_end.isoformat())
         colnames.append('submitted')
         if self.submitted:
+            colvals.append('1')
+        else:
+            colvals.append('0')
+
+        colnames.append('is_ssl')
+        if self.is_ssl:
             colvals.append('1')
         else:
             colvals.append('0')
@@ -726,12 +764,16 @@ class Request(object):
             data['start'] = self.time_start.isoformat()
         if self.time_end:
             data['end'] = self.time_end.isoformat()
+        data['port'] = self.port
+        data['is_ssl'] = self.is_ssl
 
         return json.dumps(data)
 
     def from_json(self, json_string):
         data = json.loads(json_string)
         self.from_full_request(base64.b64decode(data['full_request']))
+        self.port = data['port']
+        self.is_ssl = data['is_ssl']
         self.update_from_text()
         self.update_from_data()
         if data['reqid']:
@@ -773,7 +815,7 @@ class Request(object):
         assert(dbpool)
         rows = yield dbpool.runQuery(
             """
-            SELECT full_request, response_id, id, unmangled_id, start_datetime, end_datetime
+            SELECT full_request, response_id, id, unmangled_id, start_datetime, end_datetime, port, is_ssl
             FROM requests
             WHERE id=?;
             """,
@@ -793,6 +835,10 @@ class Request(object):
             req.time_start = datetime.datetime.strptime(rows[0][4], "%Y-%m-%dT%H:%M:%S.%f")
         if rows[0][5]:
             req.time_end = datetime.datetime.strptime(rows[0][5], "%Y-%m-%dT%H:%M:%S.%f")
+        if rows[0][6] is not None:
+            req.port = int(rows[0][6])
+        if rows[0][7] == 1:
+            req.is_ssl = True
         req.reqid = int(rows[0][2])
         defer.returnValue(req)
 
@@ -833,7 +879,6 @@ class Response(object):
         self.response_code = 0
         self.response_text = ''
         self.rspid = None
-        self._status_line = ''
         self.unmangled = None
         self.version = ''
         
@@ -857,11 +902,12 @@ class Response(object):
 
     @property
     def status_line(self):
-        return self._status_line
+        if not self.version and self.response_code == 0 and not self.version:
+            return ''
+        return '%s %d %s' % (self.version, self.response_code, self.response_text)
 
     @status_line.setter
     def status_line(self, val):
-        self._status_line = val
         self.handle_statusline(val)
 
     @property
@@ -879,6 +925,8 @@ class Response(object):
 
     @property
     def full_response(self):
+        if not self.status_line:
+            return ''
         ret = self.raw_headers
         ret = ret + self.raw_data
         return ret
@@ -890,8 +938,9 @@ class Response(object):
 
     def from_full_response(self, full_response, update_content_length=False):
         # Get rid of leading CRLF. Not in spec, should remove eventually
-        while full_response[0:2] == '\r\n':
-            full_response = full_response[2:]
+        full_response = strip_leading_newlines(full_response)
+        if full_response == '':
+            return
 
         # We do redundant splits, but whatever
         lines = full_response.splitlines()
@@ -937,7 +986,6 @@ class Response(object):
 
     def handle_statusline(self, status_line):
         self._first_line = False
-        self._status_line = status_line
         self.version, self.response_code, self.response_text = \
                                             status_line.split(' ', 2)
         self.response_code = int(self.response_code)

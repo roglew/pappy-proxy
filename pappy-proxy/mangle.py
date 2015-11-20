@@ -27,6 +27,8 @@ def mangle_request(request, connection_id):
     global intercept_requests
     
     orig_req = http.Request(request.full_request)
+    orig_req.port = request.port
+    orig_req.is_ssl = request.is_ssl
     retreq = orig_req
 
     if context.in_scope(orig_req):
@@ -42,7 +44,14 @@ def mangle_request(request, connection_id):
             # Create new mangled request from edited file
             with open(tfName, 'r') as f:
                 mangled_req = http.Request(f.read(), update_content_length=True)
+                mangled_req.is_ssl = orig_req.is_ssl
+                mangled_req.port = orig_req.port
 
+            # Check if dropped
+            if mangled_req.full_request == '':
+                proxy.log('Request dropped!')
+                defer.returnValue(None)
+            
             # Check if it changed
             if mangled_req.full_request != orig_req.full_request:
                 # Set the object's metadata
@@ -83,6 +92,11 @@ def mangle_response(response, connection_id):
             # Create new mangled request from edited file
             with open(tfName, 'r') as f:
                 mangled_rsp = http.Response(f.read(), update_content_length=True)
+
+            # Check if dropped
+            if mangled_rsp.full_response == '':
+                proxy.log('Response dropped!')
+                defer.returnValue(None)
 
             if mangled_rsp.full_response != orig_rsp.full_response:
                 mangled_rsp.unmangled = orig_rsp

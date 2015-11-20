@@ -1,5 +1,6 @@
 import config
 import console
+import context
 import datetime
 import gzip
 import mangle
@@ -112,7 +113,11 @@ class ProxyClient(LineReceiver):
             self.log(l, symbol='>r', verbosity_level=3)
         mangled_request = yield mangle.mangle_request(self.request,
             self.factory.connection_id)
-        yield mangled_request.deep_save()
+        if mangled_request is None:
+            self.transport.loseConnection()
+            return
+        if context.in_scope(mangled_request):
+            yield mangled_request.deep_save()
         if not self._sent:
             self.transport.write(mangled_request.full_request)
             self._sent = True
@@ -153,11 +158,13 @@ class ProxyClientFactory(ClientFactory):
         self.end_time = datetime.datetime.now()
         log_request(console.printable_data(response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
         mangled_reqrsp_pair = yield mangle.mangle_response(response, self.connection_id)
-        log_request(console.printable_data(mangled_reqrsp_pair.response.full_response),
-                    id=self.connection_id, symbol='<', verbosity_level=3)
-        mangled_reqrsp_pair.time_start = self.start_time
-        mangled_reqrsp_pair.time_end = self.end_time
-        yield mangled_reqrsp_pair.deep_save()
+        if mangled_reqrsp_pair:
+            log_request(console.printable_data(mangled_reqrsp_pair.response.full_response),
+                        id=self.connection_id, symbol='<', verbosity_level=3)
+            mangled_reqrsp_pair.time_start = self.start_time
+            mangled_reqrsp_pair.time_end = self.end_time
+            if context.in_scope(mangled_reqrsp_pair):
+                yield mangled_reqrsp_pair.deep_save()
         self.data_defer.callback(mangled_reqrsp_pair)
 
 
@@ -255,8 +262,9 @@ class ProxyServer(LineReceiver):
             self._request_obj.host = self._host
         self.setLineMode()
 
-    def send_response_back(self, request):
-        self.transport.write(request.response.full_response)
+    def send_response_back(self, response):
+        if response is not None:
+            self.transport.write(response.response.full_response)
         self.transport.loseConnection()
                 
     def connectionLost(self, reason):

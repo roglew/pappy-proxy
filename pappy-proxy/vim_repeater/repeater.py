@@ -91,7 +91,16 @@ def set_up_windows():
 
     # Set up the buffers
     set_buffer_content(b1, base64.b64decode(reqdata['full_request']))
-    set_buffer_content(b2, base64.b64decode(rspdata['full_response']))
+    if 'full_response' in rspdata:
+        set_buffer_content(b2, base64.b64decode(rspdata['full_response']))
+
+    # Save the port/ssl setting
+    vim.command("let s:repport=%d" % int(reqdata['port']))
+
+    if reqdata['is_ssl']:
+        vim.command("let s:repisssl=1")
+    else:
+        vim.command("let s:repisssl=0")
 
 def submit_current_buffer():
     curbuf = vim.current.buffer
@@ -105,7 +114,12 @@ def submit_current_buffer():
     
     full_request = '\n'.join(curbuf)
     commdata = {'action': 'submit',
-                'full_request': base64.b64encode(full_request)}
+                'full_request': base64.b64encode(full_request),
+                'port':int(vim.eval("s:repport"))}
+    if vim.eval("s:repisssl") == '1':
+        commdata["is_ssl"] = True
+    else:
+        commdata["is_ssl"] = False
     result = communicate(commdata)
     set_buffer_content(b2, base64.b64decode(result['response']['full_response']))
     

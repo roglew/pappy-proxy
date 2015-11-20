@@ -62,7 +62,7 @@ def gzip_string(string):
     return out.getvalue()
 
 def deflate_string(string):
-    return StringIO.StringIO(zlib.compress(string)).read()
+    return zlib.compress(string)[2:-4]
 
 def check_response_cookies(exp_pairs, rsp):
     pairs = rsp.cookies.all_pairs()
@@ -345,8 +345,28 @@ def test_response_cookie_parsing():
     assert c.path == '/'
     assert c.secure
     
-def test_response_cookie_generate():
-    pass
+def test_response_cookie_blank():
+    # Don't ask why this exists, I've run into it
+    s = ' ; path=/; secure'
+    c = http.ResponseCookie(s)
+    assert c.key == ''
+    assert c.val == ''
+    assert c.path == '/'
+    assert c.secure
+
+    s = '; path=/; secure'
+    c = http.ResponseCookie(s)
+    assert c.key == ''
+    assert c.val == ''
+    assert c.path == '/'
+    assert c.secure
+
+    s = 'asdf; path=/; secure'
+    c = http.ResponseCookie(s)
+    assert c.key == 'asdf'
+    assert c.val == ''
+    assert c.path == '/'
+    assert c.secure
 
 
 ####################
@@ -619,6 +639,8 @@ def test_request_to_json():
 
     expected_reqdata = {'full_request': base64.b64encode(r.full_request),
                         'response_id': rsp.rspid,
+                        'port': 80,
+                        'is_ssl': False,
                         #'tag': r.tag,
                         'reqid': r.reqid,
                        }
@@ -646,6 +668,30 @@ def test_request_blank_get_params():
     assert r.get_params['c'] == None
     assert r.get_params['d'] == 'ef'
 
+def test_request_blank():
+    r = http.Request('\r\n\n\n')
+    assert r.full_request == ''
+    
+def test_request_blank_headers():
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Header: \r\n'
+                      'Header2:\r\n'))
+
+    assert r.headers['header'] == ''
+    assert r.headers['header2'] == ''
+    
+def test_request_blank_cookies():
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Cookie: \r\n'))
+    assert r.cookies[''] == ''
+
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Cookie: a=b; ; c=d\r\n'))
+    assert r.cookies[''] == ''
+
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Cookie: a=b; foo; c=d\r\n'))
+    assert r.cookies['foo'] == ''
 
 ####################
 ## Response tests
@@ -992,3 +1038,15 @@ def test_response_update_from_objects_cookies_replace():
                                'Set-Cookie: baz=buzz\r\n'
                                'Header: out of fucking nowhere\r\n'
                                '\r\n')
+
+def test_response_blank():
+    r = http.Response('\r\n\n\n')
+    assert r.full_response == ''
+
+def test_response_blank_headers():
+    r = http.Response(('HTTP/1.1 200 OK\r\n'
+                      'Header: \r\n'
+                      'Header2:\r\n'))
+
+    assert r.headers['header'] == ''
+    assert r.headers['header2'] == ''

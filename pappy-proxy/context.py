@@ -42,52 +42,67 @@ class Filter(object):
         # Raises exception if invalid
         comparer = get_relation(relation)
 
+        if len(args) > 2:
+            val1 = args[2]
+        elif relation not in ('ex',):
+            raise PappyException('%s requires a value' % relation)
+        else:
+            val1 = None
+        if len(args) > 3:
+            comp2 = args[3]
+        else:
+            comp2 = None
+        if len(args) > 4:
+            val2 = args[4]
+        else:
+            comp2 = None
+
         if field in ("all",):
-            new_filter = gen_filter_by_all(comparer, args[2], negate)
+            new_filter = gen_filter_by_all(comparer, val1, negate)
         elif field in ("host", "domain", "hs", "dm"):
-            new_filter = gen_filter_by_host(comparer, args[2], negate)
+            new_filter = gen_filter_by_host(comparer, val1, negate)
         elif field in ("path", "pt"):
-            new_filter = gen_filter_by_path(comparer, args[2], negate)
+            new_filter = gen_filter_by_path(comparer, val1, negate)
         elif field in ("body", "bd", "data", "dt"):
-            new_filter = gen_filter_by_body(comparer, args[2], negate)
+            new_filter = gen_filter_by_body(comparer, val1, negate)
         elif field in ("verb", "vb"):
-            new_filter = gen_filter_by_verb(comparer, args[2], negate)
+            new_filter = gen_filter_by_verb(comparer, val1, negate)
         elif field in ("param", "pm"):
             if len(args) > 4:
-                comparer2 = get_relation(args[3])
-                new_filter = gen_filter_by_params(comparer, args[2],
-                                                  comparer2, args[4], negate)
+                comparer2 = get_relation(comp2)
+                new_filter = gen_filter_by_params(comparer, val1,
+                                                  comparer2, val2, negate)
             else:
-                new_filter = gen_filter_by_params(comparer, args[2],
+                new_filter = gen_filter_by_params(comparer, val1,
                                                   negate=negate)
         elif field in ("header", "hd"):
             if len(args) > 4:
-                comparer2 = get_relation(args[3])
-                new_filter = gen_filter_by_headers(comparer, args[2],
-                                                   comparer2, args[4], negate)
+                comparer2 = get_relation(comp2)
+                new_filter = gen_filter_by_headers(comparer, val1,
+                                                   comparer2, val2, negate)
             else:
-                new_filter = gen_filter_by_headers(comparer, args[2],
+                new_filter = gen_filter_by_headers(comparer, val1,
                                                    negate=negate)
         elif field in ("rawheaders", "rh"):
-            new_filter = gen_filter_by_raw_headers(comparer, args[2], negate)
+            new_filter = gen_filter_by_raw_headers(comparer, val1, negate)
         elif field in ("sentcookie", "sck"):
             if len(args) > 4:
-                comparer2 = get_relation(args[3])
-                new_filter = gen_filter_by_submitted_cookies(comparer, args[2],
-                                                             comparer2, args[4], negate)
+                comparer2 = get_relation(comp2)
+                new_filter = gen_filter_by_submitted_cookies(comparer, val1,
+                                                             comparer2, val2, negate)
             else:
-                new_filter = gen_filter_by_submitted_cookies(comparer, args[2],
+                new_filter = gen_filter_by_submitted_cookies(comparer, val1,
                                                              negate=negate)
         elif field in ("setcookie", "stck"):
             if len(args) > 4:
-                comparer2 = get_relation(args[3])
-                new_filter = gen_filter_by_set_cookies(comparer, args[2],
-                                                       comparer2, args[4], negate)
+                comparer2 = get_relation(comp2)
+                new_filter = gen_filter_by_set_cookies(comparer, val1,
+                                                       comparer2, val2, negate)
             else:
-                new_filter = gen_filter_by_set_cookies(comparer, args[2],
+                new_filter = gen_filter_by_set_cookies(comparer, val1,
                                                        negate=negate)
         elif field in ("statuscode", "sc", "responsecode"):
-            new_filter = gen_filter_by_response_code(comparer, args[2], negate)
+            new_filter = gen_filter_by_response_code(comparer, val1, negate)
         elif field in ("responsetime", "rt"):
             pass
         else:
