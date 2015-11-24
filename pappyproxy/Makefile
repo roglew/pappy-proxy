@@ -1,6 +1,6 @@
 
 install-third-party:
-	pip install -r requirements.txt
+	pip install -e ..
 
 test:
 	py.test -rw --twisted --cov-config .coveragerc --cov=. tests/

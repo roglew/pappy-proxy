@@ -1,7 +1,7 @@
 import pytest
 
-import context
-from http import Request, Response, ResponseCookie
+from pappyproxy import context
+from pappyproxy.http import Request, Response, ResponseCookie
 
 @pytest.fixture
 def http_request():

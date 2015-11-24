@@ -1,10 +1,9 @@
-import console
-import context
-import proxy
+import os
 import string
 import subprocess
 import tempfile
 import http
+import pappyproxy
 
 from twisted.internet import defer
 
@@ -31,7 +30,7 @@ def mangle_request(request, connection_id):
     orig_req.is_ssl = request.is_ssl
     retreq = orig_req
 
-    if context.in_scope(orig_req):
+    if pappyproxy.context.in_scope(orig_req):
         if intercept_requests: # if we want to mangle...
             # Write original request to the temp file
             with tempfile.NamedTemporaryFile(delete=False) as tf:
@@ -39,7 +38,7 @@ def mangle_request(request, connection_id):
                 tf.write(orig_req.full_request)
 
             # Have the console edit the file
-            yield console.edit_file(tfName)
+            yield pappyproxy.console.edit_file(tfName)
 
             # Create new mangled request from edited file
             with open(tfName, 'r') as f:
@@ -47,9 +46,11 @@ def mangle_request(request, connection_id):
                 mangled_req.is_ssl = orig_req.is_ssl
                 mangled_req.port = orig_req.port
 
+            os.remove(tfName)
+
             # Check if dropped
             if mangled_req.full_request == '':
-                proxy.log('Request dropped!')
+                pappyproxy.proxy.log('Request dropped!')
                 defer.returnValue(None)
             
             # Check if it changed
@@ -59,9 +60,9 @@ def mangle_request(request, connection_id):
                 retreq = mangled_req
 
             # Add our request to the context
-        context.add_request(retreq)
+        pappyproxy.context.add_request(retreq)
     else:
-        proxy.log('Out of scope! Request passed along unharmed', id=connection_id)
+        pappyproxy.proxy.log('Out of scope! Request passed along unharmed', id=connection_id)
 
     active_requests[connection_id] = retreq
     retreq.submitted = True
@@ -79,7 +80,7 @@ def mangle_response(response, connection_id):
     orig_rsp = http.Response(response.full_response)
     retrsp = orig_rsp
 
-    if context.in_scope(myreq):
+    if pappyproxy.context.in_scope(myreq):
         if intercept_responses: # If we want to mangle...
             # Write original request to the temp file
             with tempfile.NamedTemporaryFile(delete=False) as tf:
@@ -87,15 +88,17 @@ def mangle_response(response, connection_id):
                 tf.write(orig_rsp.full_response)
 
             # Have the console edit the file
-            yield console.edit_file(tfName)
+            yield pappyproxy.console.edit_file(tfName, front=True)
                 
             # Create new mangled request from edited file
             with open(tfName, 'r') as f:
                 mangled_rsp = http.Response(f.read(), update_content_length=True)
 
+            os.remove(tfName)
+
             # Check if dropped
             if mangled_rsp.full_response == '':
-                proxy.log('Response dropped!')
+                pappyproxy.proxy.log('Response dropped!')
                 defer.returnValue(None)
 
             if mangled_rsp.full_response != orig_rsp.full_response:
@@ -108,10 +111,10 @@ def mangle_response(response, connection_id):
                 myreq.unmangled.save()
         myreq.response = retrsp
     else:
-        proxy.log('Out of scope! Response passed along unharmed', id=connection_id)
+        pappyproxy.proxy.log('Out of scope! Response passed along unharmed', id=connection_id)
     del active_requests[connection_id]
     myreq.response = retrsp
-    context.filter_recheck()
+    pappyproxy.context.filter_recheck()
     defer.returnValue(myreq)
     
 def connection_lost(connection_id):

@@ -5,7 +5,7 @@ import pytest
 import StringIO
 import zlib
 
-from pappy import http
+from pappyproxy.pappy import http
 
 ####################
 # Helper Functions
@@ -528,11 +528,15 @@ def test_request_parse_host():
 
 def test_request_newline_delim():
     r = http.Request(('GET / HTTP/1.1\n'
+                      'Content-Length: 4\n'
                       'Test-Header: foo\r\n'
-                      'Other-header: bar\n\r\n'))
+                      'Other-header: bar\n\r\n'
+                      'AAAA'))
     assert r.full_request == ('GET / HTTP/1.1\r\n'
+                              'Content-Length: 4\r\n'
                               'Test-Header: foo\r\n'
-                              'Other-header: bar\r\n\r\n')
+                              'Other-header: bar\r\n\r\n'
+                              'AAAA')
     
 def test_repeated_request_headers():
     header_lines = [
@@ -637,12 +641,11 @@ def test_request_to_json():
 
     r.response = rsp
 
-    expected_reqdata = {'full_request': base64.b64encode(r.full_request),
-                        'response_id': rsp.rspid,
-                        'port': 80,
-                        'is_ssl': False,
-                        #'tag': r.tag,
-                        'reqid': r.reqid,
+    expected_reqdata = {u'full_request': unicode(base64.b64encode(r.full_request)),
+                        u'response_id': rsp.rspid,
+                        u'port': 80,
+                        u'is_ssl': False,
+                        u'reqid': r.reqid,
                        }
 
     assert json.loads(r.to_json()) == expected_reqdata
@@ -692,6 +695,45 @@ def test_request_blank_cookies():
     r = http.Request(('GET / HTTP/1.1\r\n'
                       'Cookie: a=b; foo; c=d\r\n'))
     assert r.cookies['foo'] == ''
+
+def test_request_set_url():
+    r = http.Request('GET / HTTP/1.1\r\n')
+    r.url = 'www.AAAA.BBBB'
+    assert r.host == 'www.AAAA.BBBB'
+    assert r.port == 80
+    assert not r.is_ssl
+
+    r.url = 'https://www.AAAA.BBBB'
+    assert r.host == 'www.AAAA.BBBB'
+    assert r.port == 443
+    assert r.is_ssl
+
+    r.url = 'https://www.AAAA.BBBB:1234'
+    assert r.host == 'www.AAAA.BBBB'
+    assert r.port == 1234
+    assert r.is_ssl
+
+    r.url = 'http://www.AAAA.BBBB:443'
+    assert r.host == 'www.AAAA.BBBB'
+    assert r.port == 443
+    assert not r.is_ssl
+
+    r.url = 'www.AAAA.BBBB:443'
+    assert r.host == 'www.AAAA.BBBB'
+    assert r.port == 443
+    assert r.is_ssl
+    
+def test_request_set_url_params():
+    r = http.Request('GET / HTTP/1.1\r\n')
+    r.url = 'www.AAAA.BBBB?a=b&c=d#foo'
+    assert r.get_params.all_pairs() == [('a','b'), ('c','d')]
+    assert r.fragment == 'foo'
+    assert r.url == 'http://www.AAAA.BBBB?a=b&c=d#foo'
+    r.port = 400
+    assert r.url == 'http://www.AAAA.BBBB:400?a=b&c=d#foo'
+    r.is_ssl = True
+    assert r.url == 'https://www.AAAA.BBBB:400?a=b&c=d#foo'
+    
 
 ####################
 ## Response tests
@@ -1050,3 +1092,11 @@ def test_response_blank_headers():
 
     assert r.headers['header'] == ''
     assert r.headers['header2'] == ''
+
+def test_response_newlines():
+    r = http.Response(('HTTP/1.1 200 OK\n'
+                       'Content-Length: 4\n\r\n'
+                       'AAAA'))
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 4\r\n\r\n'
+                               'AAAA')

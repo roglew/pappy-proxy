@@ -1,6 +1,6 @@
+from pappyproxy import http
 from twisted.internet import defer
 from util import PappyException
-import http
 import shlex
 
 
@@ -384,20 +384,20 @@ def get_relation(s):
         return cmp_contains
     elif s in ("containsr", "ctr"):
         # TODO
-        return None
+        raise PappyException("Contains (regexp) is not implemented yet. Sorry.")
     elif s in ("exists", "ex"):
         return cmp_exists
-    elif s in ("Leq", "L="):
+    elif s in ("Leq"):
         return cmp_len_eq
-    elif s in ("Lgt", "L>"):
+    elif s in ("Lgt"):
         return cmp_len_gt
-    elif s in ("Llt", "L<"):
+    elif s in ("Llt"):
         return cmp_len_lt
-    elif s in ("eq", "="):
+    elif s in ("eq"):
         return cmp_eq
-    elif s in ("gt", ">"):
+    elif s in ("gt"):
         return cmp_gt
-    elif s in ("lt", "<"):
+    elif s in ("lt"):
         return cmp_lt
 
     raise FilterParseError("Invalid relation: %s" % s)

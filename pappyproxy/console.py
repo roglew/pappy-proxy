@@ -1,11 +1,10 @@
 import cmd2
-import config
-import context
 import crochet
-import mangle
-import proxy
-import repeater
-import select
+import curses
+import datetime
+import os
+import pappyproxy
+import pygments
 import shlex
 import string
 import subprocess
@@ -13,9 +12,10 @@ import sys
 import termios
 import time
 
-import http
 from twisted.internet import defer, reactor
-from util import PappyException
+from pappyproxy.util import PappyException
+from pygments.lexers import get_lexer_for_mimetype
+from pygments.formatters import TerminalFormatter
 
 """
 console.py
@@ -58,6 +58,37 @@ class ProxyCmd(cmd2.Cmd):
         return stop
 
     def help_view_request_headers(self):
+        print ("View information about request\n"
+               "Usage: view_request_info <reqid> [u]"
+               "If 'u' is given as an additional argument, the unmangled version "
+               "of the request will be displayed.")
+
+    @print_pappy_errors
+    @crochet.wait_for(timeout=30.0)
+    @defer.inlineCallbacks
+    def do_view_request_info(self, line):
+        args = shlex.split(line)
+        try:
+            reqid = int(args[0])
+            showid = reqid
+        except:
+            raise PappyException("Enter a valid number for the request id")
+
+        req = yield pappyproxy.http.Request.load_request(reqid)
+        showreq = req
+
+        show_unmangled = False
+        if len(args) > 1 and args[1][0].lower() == 'u':
+            if not req.unmangled:
+                raise PappyException("Request was not mangled")
+            show_unmangled = True
+            showreq = req.unmangled
+
+        print ''
+        print_request_extended(showreq)
+        print ''
+
+    def help_view_request_headers(self):
         print ("View the headers of the request\n"
                "Usage: view_request_headers <reqid> [u]"
                "If 'u' is given as an additional argument, the unmangled version "
@@ -74,7 +105,7 @@ class ProxyCmd(cmd2.Cmd):
         except:
             raise PappyException("Enter a valid number for the request id")
 
-        req = yield http.Request.load_request(reqid)
+        req = yield pappyproxy.http.Request.load_request(reqid)
         showreq = req
 
         show_unmangled = False
@@ -84,10 +115,7 @@ class ProxyCmd(cmd2.Cmd):
             show_unmangled = True
             showreq = req.unmangled
 
-        print ''
-        print_requests([showreq])
         if show_unmangled:
-            print ''
             print 'UNMANGLED --------------------'
         print ''
         view_full_request(showreq, True)
@@ -109,7 +137,7 @@ class ProxyCmd(cmd2.Cmd):
         except:
             raise PappyException("Enter a valid number for the request id")
 
-        req = yield http.Request.load_request(reqid)
+        req = yield pappyproxy.http.Request.load_request(reqid)
         showreq = req
 
         show_unmangled = False
@@ -119,10 +147,7 @@ class ProxyCmd(cmd2.Cmd):
             show_unmangled = True
             showreq = req.unmangled
 
-        print ''
-        print_requests([showreq])
         if show_unmangled:
-            print ''
             print 'UNMANGLED --------------------'
         print ''
         view_full_request(showreq)
@@ -142,7 +167,7 @@ class ProxyCmd(cmd2.Cmd):
         except:
             raise PappyException("Enter a valid number for the request id")
 
-        req = yield http.Request.load_request(reqid)
+        req = yield pappyproxy.http.Request.load_request(reqid)
         showrsp = req.response
 
         show_unmangled = False
@@ -152,8 +177,6 @@ class ProxyCmd(cmd2.Cmd):
             show_unmangled = True
             showrsp = req.response.unmangled
 
-        print ''
-        print_requests([req])
         if show_unmangled:
             print ''
             print 'UNMANGLED --------------------'
@@ -175,7 +198,7 @@ class ProxyCmd(cmd2.Cmd):
         except:
             raise PappyException("Enter a valid number for the request id")
 
-        req = yield http.Request.load_request(reqid)
+        req = yield pappyproxy.http.Request.load_request(reqid)
         showrsp = req.response
 
         show_unmangled = False
@@ -185,8 +208,6 @@ class ProxyCmd(cmd2.Cmd):
             show_unmangled = True
             showrsp = req.response.unmangled
 
-        print ''
-        print_requests([req])
         if show_unmangled:
             print ''
             print 'UNMANGLED --------------------'
@@ -212,14 +233,14 @@ class ProxyCmd(cmd2.Cmd):
         else:
             print_count = 25
         
-        context.sort()
+        pappyproxy.context.sort()
         if print_count > 0:
-            to_print = context.active_requests[:]
+            to_print = pappyproxy.context.active_requests[:]
             to_print = sorted(to_print, key=lambda x: x.reqid, reverse=True)
             to_print = to_print[:print_count]
             print_requests(to_print)
         else:
-            print_requests(context.active_requests)
+            print_requests(pappyproxy.context.active_requests)
 
     def help_filter(self):
         print ("Apply a filter to the current context\n"
@@ -231,8 +252,8 @@ class ProxyCmd(cmd2.Cmd):
         if not line:
             raise PappyException("Filter string required")
         
-        filter_to_add = context.Filter(line)
-        context.add_filter(filter_to_add)
+        filter_to_add = pappyproxy.context.Filter(line)
+        pappyproxy.context.add_filter(filter_to_add)
 
     def help_filter_clear(self):
         print ("Reset the context so that it contains no filters (ignores scope)\n"
@@ -242,8 +263,8 @@ class ProxyCmd(cmd2.Cmd):
     @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_filter_clear(self, line):
-        context.active_filters = []
-        yield context.reload_from_storage()
+        pappyproxy.context.active_filters = []
+        yield pappyproxy.context.reload_from_storage()
 
     def help_filter_list(self):
         print ("Print the filters that make up the current context\n"
@@ -251,7 +272,7 @@ class ProxyCmd(cmd2.Cmd):
 
     @print_pappy_errors
     def do_filter_list(self, line):
-        for f in context.active_filters:
+        for f in pappyproxy.context.active_filters:
             print f.filter_string
 
 
@@ -263,8 +284,8 @@ class ProxyCmd(cmd2.Cmd):
     @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_scope_save(self, line):
-        context.save_scope()
-        yield context.store_scope(http.dbpool)
+        pappyproxy.context.save_scope()
+        yield pappyproxy.context.store_scope(pappyproxy.http.dbpool)
 
     def help_scope_reset(self):
         print ("Set the context to be the scope (view in-scope items)\n"
@@ -274,7 +295,7 @@ class ProxyCmd(cmd2.Cmd):
     @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_scope_reset(self, line):
-        yield context.reset_to_scope()
+        yield pappyproxy.context.reset_to_scope()
 
     def help_scope_delete(self):
         print ("Delete the scope so that it contains all request/response pairs\n"
@@ -284,8 +305,8 @@ class ProxyCmd(cmd2.Cmd):
     @crochet.wait_for(timeout=30.0)
     @defer.inlineCallbacks
     def do_scope_delete(self, line):
-        context.set_scope([])
-        yield context.store_scope(http.dbpool)
+        pappyproxy.context.set_scope([])
+        yield pappyproxy.context.store_scope(pappyproxy.http.dbpool)
 
     def help_scope_list(self):
         print ("Print the filters that make up the scope\n"
@@ -293,7 +314,7 @@ class ProxyCmd(cmd2.Cmd):
 
     @print_pappy_errors
     def do_scope_list(self, line):
-        context.print_scope()
+        pappyproxy.context.print_scope()
 
     def help_repeater(self):
         print ("Open a request in the repeater\n"
@@ -312,7 +333,7 @@ class ProxyCmd(cmd2.Cmd):
             umid = get_unmangled(reqid)
             if umid is not None:
                 repid = umid
-        repeater.start_editor(repid)
+        pappyproxy.repeater.start_editor(repid)
 
     def help_submit(self):
         print "Submit a request again (NOT IMPLEMENTED)"
@@ -328,7 +349,7 @@ class ProxyCmd(cmd2.Cmd):
         # print printable_data(rsp.full_response)
 
     def help_intercept(self):
-        print ("Intercept requests and/or responses and edit them with vim before passing them along\n"
+        print ("Intercept requests and/or responses and edit them with before passing them along\n"
                "Usage: intercept <reqid>")
 
     @print_pappy_errors
@@ -346,34 +367,65 @@ class ProxyCmd(cmd2.Cmd):
         if any(a in rsp_names for a in args):
             intercept_responses = True
 
-        if intercept_requests:
-            print "Intercepting reqeusts"
-        if intercept_responses:
-            print "Intercepting responses"
+        if intercept_requests and intercept_responses:
+            intercept_str = 'Requests and responses'
+        elif intercept_requests:
+            intercept_str = 'Requests'
+        elif intercept_responses:
+            intercept_str = 'Responses'
+        else:
+            intercept_str = 'NOTHING'
 
-        mangle.set_intercept_requests(intercept_requests)
-        mangle.set_intercept_responses(intercept_responses)
-        while 1:
-            if select.select([sys.stdin,],[],[],0.0)[0]:
-                break;
-            else:
-                if len(edit_queue) > 0:
+        pappyproxy.mangle.set_intercept_requests(intercept_requests)
+        pappyproxy.mangle.set_intercept_responses(intercept_responses)
+
+        ## Interceptor loop
+        stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+
+        try:
+            editnext = False
+            stdscr.nodelay(True)
+            while True:
+                stdscr.addstr(0, 0, "Currently intercepting: %s" % intercept_str)
+                stdscr.clrtoeol()
+                stdscr.addstr(1, 0, "%d item(s) in queue." % len(edit_queue))
+                stdscr.clrtoeol()
+                if editnext:
+                    stdscr.addstr(2, 0, "Waiting for next item... Press 'q' to quit or 'b' to quit waiting")
+                else:
+                    stdscr.addstr(2, 0, "Press 'n' to edit the next item or 'q' to quit interceptor.")
+                stdscr.clrtoeol()
+
+                c = stdscr.getch()
+                if c == ord('q'):
+                    break
+                elif c == ord('n'):
+                    editnext = True
+                elif c == ord('b'):
+                    editnext = False
+
+                if editnext and edit_queue:
+                    editnext = False
                     (to_edit, deferred) = edit_queue.pop(0)
-                    # Edit the file
-                    subprocess.call(['vim', to_edit])
-                    # Fire the callback
+                    editor = 'vi'
+                    if 'EDITOR' in os.environ:
+                        editor = os.environ['EDITOR']
+                    subprocess.call([editor, to_edit])
+                    stdscr.clear()
                     deferred.callback(None)
-            time.sleep(0.2)
-
-        # Send remaining requests along
-        while len(edit_queue) > 0:
-            (fname, deferred) = edit_queue.pop(0)
-            deferred.callback(None)
-
-        # Flush stdin so that anything we typed doesn't go into the prompt
-        termios.tcflush(sys.stdin, termios.TCIOFLUSH)
-        mangle.set_intercept_requests(False)
-        mangle.set_intercept_responses(False)
+        finally:
+            curses.nocbreak()
+            stdscr.keypad(0)
+            curses.echo()
+            curses.endwin()
+            pappyproxy.mangle.set_intercept_requests(False)
+            pappyproxy.mangle.set_intercept_responses(False)
+            # Send remaining requests along
+            while len(edit_queue) > 0:
+                (fname, deferred) = edit_queue.pop(0)
+                deferred.callback(None)
 
     def help_gencerts(self):
         print ("Generate CA cert and private CA file\n"
@@ -381,14 +433,14 @@ class ProxyCmd(cmd2.Cmd):
 
     @print_pappy_errors
     def do_gencerts(self, line):
-        dest_dir = line or config.CERT_DIR
+        dest_dir = line or pappyproxy.config.CERT_DIR
         print "This will overwrite any existing certs in %s. Are you sure?" % dest_dir
         print "(y/N)",
         answer = raw_input()
         if not answer or answer[0].lower() != 'y':
             return False
         print "Generating certs to %s" % dest_dir
-        proxy.generate_ca_certs(dest_dir)
+        pappyproxy.proxy.generate_ca_certs(dest_dir)
 
     def help_log(self):
         print ("View the log\n"
@@ -402,9 +454,9 @@ class ProxyCmd(cmd2.Cmd):
             verbosity = int(line.strip())
         except:
             verbosity = 1
-        config.DEBUG_VERBOSITY = verbosity
+        pappyproxy.config.DEBUG_VERBOSITY = verbosity
         raw_input()
-        config.DEBUG_VERBOSITY = 0
+        pappyproxy.config.DEBUG_VERBOSITY = 0
 
     @print_pappy_errors
     def do_testerror(self, line):
@@ -436,6 +488,13 @@ class ProxyCmd(cmd2.Cmd):
     @print_pappy_errors
     def do_sls(self, line):
         self.onecmd('scope_list %s' % line)
+
+    def help_viq(self):
+        self.help_view_request_info()
+
+    @print_pappy_errors
+    def do_viq(self, line):
+        self.onecmd('view_request_info %s' % line)
 
     def help_vhq(self):
         self.help_view_request_headers()
@@ -512,12 +571,15 @@ class ProxyCmd(cmd2.Cmd):
 def cmd_failure(cmd):
     print "FAILURE"
 
-def edit_file(fname):
+def edit_file(fname, front=False):
     global edit_queue
     # Adds the filename to the edit queue. Returns a deferred that is fired once
     # the file is edited and the editor is closed
     d = defer.Deferred()
-    edit_queue.append((fname, d))
+    if front:
+        edit_queue = [(fname, d)] + edit_queue
+    else:
+        edit_queue.append((fname, d))
     return d
     
 def print_table(coldata, rows):
@@ -585,7 +647,7 @@ def printable_data(data):
 @crochet.wait_for(timeout=30.0)
 @defer.inlineCallbacks
 def get_unmangled(reqid):
-    req = yield http.Request.load_request(reqid)
+    req = yield pappyproxy.http.Request.load_request(reqid)
     if req.unmangled:
         defer.returnValue(req.unmangled.reqid)
     else:
@@ -599,24 +661,36 @@ def view_full_request(request, headers_only=False):
         print printable_data(request.full_request)
 
 def view_full_response(response, headers_only=False):
+    def check_type(response, against):
+        if 'Content-Type' in response.headers and against in response.headers['Content-Type']:
+            return True
+        return False
+
     if headers_only:
         print printable_data(response.raw_headers)
     else:
-        print printable_data(response.full_response)
+        print response.raw_headers,
+        to_print = printable_data(response.raw_data)
+        if 'content-type' in response.headers:
+            try:
+                lexer = get_lexer_for_mimetype(response.headers['content-type'].split(';')[0])
+                to_print = pygments.highlight(to_print, lexer, TerminalFormatter())
+            except ClassNotFound:
+                pass
+
+        print to_print
 
 def print_requests(requests):
     # Print a table with info on all the requests in the list
     cols = [
         {'name':'ID'},
-        {'name':'Method'},
+        {'name':'Verb'},
         {'name': 'Host'},
         {'name':'Path', 'width':40},
         {'name':'S-Code'},
         {'name':'Req Len'},
         {'name':'Rsp Len'},
         {'name':'Time'},
-        {'name': 'Prt'},
-        {'name': 'SSL'},
         {'name':'Mngl'},
     ]
     rows = []
@@ -624,9 +698,9 @@ def print_requests(requests):
         rid = request.reqid
         method = request.verb
         host = request.headers['host']
-        path = request.path
+        path = request.full_path
         reqlen = len(request.raw_data)
-        rsplen = 'None'
+        rsplen = 'N/A'
         mangle_str = '--'
 
         if request.unmangled:
@@ -656,6 +730,63 @@ def print_requests(requests):
             is_ssl = 'NO'
             
         rows.append([rid, method, host, path, response_code,
-                     reqlen, rsplen, time_str, port, is_ssl, mangle_str])
+                     reqlen, rsplen, time_str, mangle_str])
     print_table(cols, rows)
     
+def print_request_extended(request):
+    # Prints extended info for the request
+    title = "Request Info (reqid=%d)" % request.reqid
+    print title
+    print '-'*len(title)
+    reqlen = len(request.raw_data)
+    reqlen = '%d bytes' % reqlen
+    rsplen = 'No response'
+
+    mangle_str = 'Nothing mangled'
+    if request.unmangled:
+        mangle_str = 'Request'
+
+    if request.response:
+        response_code = str(request.response.response_code) + \
+            ' ' + request.response.response_text
+        rsplen = len(request.response.raw_data)
+        rsplen = '%d bytes' % rsplen
+
+        if request.response.unmangled:
+            if mangle_str == 'Nothing mangled':
+                mangle_str = 'Response'
+            else:
+                mangle_str += ' and Response'
+    else:
+        response_code = ''
+
+    time_str = '--'
+    if request.time_start and request.time_end:
+        time_delt = request.time_end - request.time_start
+        time_str = "%.2f sec" % time_delt.total_seconds()
+
+    port = request.port
+    if request.is_ssl:
+        is_ssl = 'YES'
+    else:
+        is_ssl = 'NO'
+
+    if request.time_start:
+        time_made_str = request.time_start.strftime('%a, %b %d, %Y, %I:%M:%S %p')
+    else:
+        time_made_str = '--'
+    
+    print 'Made on %s' % time_made_str
+    print 'ID: %d' % request.reqid
+    print 'Verb: %s' % request.verb
+    print 'Host: %s' % request.host
+    print 'Path: %s' % request.full_path
+    print 'Status Code: %s' % response_code
+    print 'Request Length: %s' % reqlen
+    print 'Response Length: %s' % rsplen
+    if request.response.unmangled:
+        print 'Unmangled Response Length: %s bytes' % len(request.response.unmangled.full_response)
+    print 'Time: %s' % time_str
+    print 'Port: %s' % request.port
+    print 'SSL: %s' % is_ssl
+    print 'Mangled: %s' % mangle_str

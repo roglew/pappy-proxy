@@ -1,10 +1,5 @@
-import config
-import console
-import context
 import datetime
 import gzip
-import mangle
-import http
 import os
 import random
 import re
@@ -16,6 +11,12 @@ import sys
 import urlparse
 import zlib
 from OpenSSL import SSL
+from pappyproxy import config
+from pappyproxy import console
+from pappyproxy import context
+from pappyproxy import http
+from pappyproxy import mangle
+from pappyproxy.util import PappyException
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, ssl
 from twisted.internet.protocol import ClientFactory
@@ -69,6 +70,7 @@ class ProxyClient(LineReceiver):
         self._response_sent = False
         self._sent = False
         self.request = request
+        self.data_defer = defer.Deferred()
 
         self._response_obj = http.Response()
 
@@ -121,6 +123,7 @@ class ProxyClient(LineReceiver):
         if not self._sent:
             self.transport.write(mangled_request.full_request)
             self._sent = True
+        self.data_defer.callback(mangled_request.full_request)
 
     def handle_response_end(self, *args, **kwargs):
         self.log("Remote response finished, returning data to original stream")
@@ -180,8 +183,7 @@ class ProxyServer(LineReceiver):
         self._request_obj = http.Request()
         self._connect_response = False
         self._forward = True
-        self._port = None
-        self._host = None
+        self._connect_uri = None
 
     def lineReceived(self, *args, **kwargs):
         line = args[0]
@@ -191,18 +193,17 @@ class ProxyServer(LineReceiver):
         if self._request_obj.verb.upper() == 'CONNECT':
             self._connect_response = True
             self._forward = False
-            # For if we only get the port in the connect request
-            if self._request_obj.port is not None:
-                self._port = self._request_obj.port
-            if self._request_obj.host is not None:
-                self._host = self._request_obj.host
+            self._connect_uri = self._request_obj.url
 
         if self._request_obj.headers_complete:
             self.setRawMode()
 
         if self._request_obj.complete:
             self.setLineMode()
-            self.full_request_received()
+            try:
+                self.full_request_received()
+            except PappyException as e:
+                print str(e)
             
     def rawDataReceived(self, *args, **kwargs):
         data = args[0]
@@ -210,7 +211,10 @@ class ProxyServer(LineReceiver):
         self.log(data, symbol='d>', verbosity_level=3)
 
         if self._request_obj.complete:
-            self.full_request_received()
+            try:
+                self.full_request_received()
+            except PappyException as e:
+                print str(e)
         
     def full_request_received(self, *args, **kwargs):
         global cached_certs
@@ -256,10 +260,8 @@ class ProxyServer(LineReceiver):
         self._connect_response = False
         self._forward = True
         self._request_obj = http.Request()
-        if self._port is not None:
-            self._request_obj.port = self._port
-        if self._host is not None:
-            self._request_obj.host = self._host
+        if self._connect_uri:
+            self._request_obj.url = self._connect_uri
         self.setLineMode()
 
     def send_response_back(self, response):
@@ -303,12 +305,24 @@ def generate_cert_serial():
     # Generates a random serial to be used for the cert
     return random.getrandbits(8*20)
 
+def load_certs_from_dir(cert_dir):
+    try:
+        with open(cert_dir+'/'+config.SSL_CA_FILE, 'rt') as f:
+            ca_raw = f.read()
+    except IOError:
+        raise PappyException("Could not load CA cert!")
+
+    try:
+        with open(cert_dir+'/'+config.SSL_PKEY_FILE, 'rt') as f:
+            ca_key_raw = f.read()
+    except IOError:
+        raise PappyException("Could not load CA private key!")
+
+    return (ca_raw, ca_key_raw)
         
 def generate_cert(hostname, cert_dir):
-    with open(cert_dir+'/'+config.SSL_CA_FILE, 'rt') as f:
-        ca_raw = f.read()
-    with open(cert_dir+'/'+config.SSL_PKEY_FILE, 'rt') as f:
-        ca_key_raw = f.read()
+    (ca_raw, ca_key_raw) = load_certs_from_dir(cert_dir)
+
     ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, ca_raw)
     ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, ca_key_raw)
 

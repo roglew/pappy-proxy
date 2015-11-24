@@ -1,6 +1,6 @@
 import base64
-import http
 import json
+import pappyproxy
 
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import defer
@@ -74,7 +74,7 @@ class CommServer(LineReceiver):
         except KeyError:
             raise PappyException("Request with given ID does not exist")
 
-        req = yield http.Request.load_request(reqid)
+        req = yield pappyproxy.http.Request.load_request(reqid)
         dat = json.loads(req.to_json())
         defer.returnValue(dat)
 
@@ -85,9 +85,9 @@ class CommServer(LineReceiver):
         except KeyError:
             raise PappyException("Request with given ID does not exist, cannot fetch associated response.")
 
-        req = yield http.Request.load_request(reqid)
+        req = yield pappyproxy.http.Request.load_request(reqid)
         if req.response:
-            rsp = yield http.Response.load_response(req.response.rspid)
+            rsp = yield pappyproxy.http.Response.load_response(req.response.rspid)
             dat = json.loads(rsp.to_json())
         else:
             dat = {}
@@ -96,7 +96,7 @@ class CommServer(LineReceiver):
     @defer.inlineCallbacks
     def action_submit_request(self, data):
         try:
-            req = http.Request(base64.b64decode(data['full_request']))
+            req = pappyproxy.http.Request(base64.b64decode(data['full_request']))
             req.port = data['port']
             req.is_ssl = data['is_ssl']
         except:

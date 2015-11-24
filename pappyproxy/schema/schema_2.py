@@ -1,4 +1,4 @@
-import http
+from pappyproxy import http
 from twisted.internet import defer
 
 """

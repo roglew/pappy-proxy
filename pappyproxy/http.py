@@ -1,18 +1,16 @@
 import base64
 import collections
-import console
-import context
 import crochet
 import datetime
 import gzip
 import json
-import proxy
+import pappyproxy
 import re
 import StringIO
 import urlparse
 import zlib
 from twisted.internet import defer, reactor
-from util import PappyException
+from pappyproxy.util import PappyException
 
 ENCODE_NONE = 0
 ENCODE_DEFLATE = 1
@@ -20,7 +18,7 @@ ENCODE_GZIP = 2
 
 dbpool = None
 
-class DataAlreadyComplete(Exception):
+class DataAlreadyComplete(PappyException):
     pass
 
 def init(pool):
@@ -63,6 +61,19 @@ def strip_leading_newlines(string):
         elif len(string) > 0 and string[0] == '\n':
             string = string[1:]
     return string
+
+def consume_line(instr):
+    # returns (line, rest)
+    l = []
+    pos = 0
+    while pos < len(instr):
+        if instr[pos] == '\n':
+            if l and l[-1] == '\r':
+                l = l[:-1]
+            return (''.join(l), instr[pos+1:])
+        l.append(instr[pos])
+        pos += 1
+    return instr
 
 class RepeatableDict:
     """
@@ -415,6 +426,14 @@ class Request(object):
     def status_line(self):
         if not self.verb and not self.path and not self.version:
             return ''
+        return '%s %s %s' % (self.verb, self.full_path, self.version)
+
+    @status_line.setter
+    def status_line(self, val):
+        self.handle_statusline(val)
+
+    @property
+    def full_path(self):
         path = self.path
         if self.get_params:
             path += '?'
@@ -428,11 +447,7 @@ class Request(object):
         if self.fragment:
             path += '#'
             path += self.fragment
-        return '%s %s %s' % (self.verb, path, self.version)
-
-    @status_line.setter
-    def status_line(self, val):
-        self.handle_statusline(val)
+        return path
 
     @property
     def raw_headers(self):
@@ -460,6 +475,32 @@ class Request(object):
         self.update_from_data()
         self.complete = True
 
+    @property
+    def url(self):
+        if self.is_ssl:
+            retstr = 'https://'
+        else:
+            retstr = 'http://'
+        retstr += self.host
+        if not ((self.is_ssl and self.port == 443) or \
+                (not self.is_ssl and self.port == 80)):
+            retstr += ':%d' % self.port
+        if self.path:
+            retstr += self.path
+        if self.get_params:
+            retstr += '?'
+            pairs = []
+            for p in self.get_params.all_pairs():
+                pairs.append('='.join(p))
+            retstr += '&'.join(pairs)
+        if self.fragment:
+            retstr += '#%s' % self.fragment
+        return retstr
+        
+    @url.setter
+    def url(self, val):
+        self._handle_statusline_uri(val)
+
     def set_dict_callbacks(self):
         # Add callbacks to dicts
         self.headers.set_modify_callback(self.update_from_text)
@@ -473,22 +514,19 @@ class Request(object):
         if full_request == '':
             return
 
-        # We do redundant splits, but whatever
-        lines = full_request.splitlines()
-        for line in lines:
-            if self.headers_complete:
-                break
+        remaining = full_request
+        while remaining and not self.headers_complete:
+            line, remaining = consume_line(remaining)
             self.add_line(line)
 
         if not self.headers_complete:
             self.add_line('')
 
         if not self.complete:
-            data = full_request[self.header_len:]
             if update_content_length:
-                self.raw_data = data
+                self.raw_data = remaining
             else:
-                self.add_data(data)
+                self.add_data(remaining)
         assert(self.complete)
 
     def update_from_data(self):
@@ -533,20 +571,22 @@ class Request(object):
         else:
             self._partial_data += data
 
-    def _process_host(self, hostline, overwrite=False):
-        # Only overwrite if told to since we may set it during the CONNECT request and we don't want to
-        # overwrite that
+    def _process_host(self, hostline):
         # Get address and port
+        # Returns true if port was explicitly stated
+        port_given = False
         if ':' in hostline:
             self.host, self.port = hostline.split(':')
             self.port = int(self.port)
             if self.port == 443:
                 self.is_ssl = True
+            port_given = True
         else:
             self.host = hostline
-            if not self.port or overwrite: # could be changed by connect request
+            if not self.port:
                 self.port = 80
         self.host.strip()
+        return port_given
             
     def add_line(self, line):
         # Add a line (for status line and headers)
@@ -572,6 +612,40 @@ class Request(object):
                     self.headers.append(key, val, do_callback=False)
         self.header_len += len(line)+2
 
+    def _handle_statusline_uri(self, uri):
+        if not re.match('(?:^.+)://', uri):
+            uri = '//' + uri
+
+        parsed_path = urlparse.urlparse(uri)
+        netloc = parsed_path.netloc
+        port_given = False
+        if netloc:
+            port_given = self._process_host(netloc)
+
+        if re.match('^https://', uri) or self.port == 443:
+            self.is_ssl = True
+            if not port_given:
+                self.port = 443
+        if re.match('^http://', uri):
+            self.is_ssl = False
+
+        if not self.port:
+            if self.is_ssl:
+                self.port = 443
+            else:
+                self.port = 80
+
+        reqpath = parsed_path.path
+        self.path = parsed_path.path
+        if parsed_path.query:
+            reqpath += '?'
+            reqpath += parsed_path.query
+            self.get_params = repeatable_parse_qs(parsed_path.query)
+        if parsed_path.fragment:
+            reqpath += '#'
+            reqpath += parsed_path.fragment
+            self.fragment = parsed_path.fragment
+        
     def handle_statusline(self, status_line):
         parts = status_line.split()
         uri = None
@@ -584,27 +658,7 @@ class Request(object):
 
         # Get path using urlparse
         if uri is not None:
-            if not re.match('(?:^.+)://', uri):
-                uri = '//' + uri
-            parsed_path = urlparse.urlparse(uri)
-            netloc = parsed_path.netloc
-            self._process_host(netloc)
-
-            # Check for https
-            if re.match('^https://', uri) or self.port == 443:
-                self.is_ssl = True
-                self.port = 443
-
-            reqpath = parsed_path.path
-            self.path = parsed_path.path
-            if parsed_path.query:
-                reqpath += '?'
-                reqpath += parsed_path.query
-                self.get_params = repeatable_parse_qs(parsed_path.query)
-            if parsed_path.fragment:
-                reqpath += '#'
-                reqpath += parsed_path.fragment
-                self.fragment = parsed_path.fragment
+            self._handle_statusline_uri(uri)
                 
     def handle_header(self, key, val):
         # We may have duplicate headers
@@ -795,10 +849,10 @@ class Request(object):
     @defer.inlineCallbacks
     def submit(host, port, is_ssl, full_request):
         new_obj = Request(full_request)
-        factory = proxy.ProxyClientFactory(new_obj)
-        factory.connection_id = proxy.get_next_connection_id()
+        factory = pappyproxy.proxy.ProxyClientFactory(new_obj)
+        factory.connection_id = pappyproxy.proxy.get_next_connection_id()
         if is_ssl:
-            reactor.connectSSL(host, port, factory, proxy.ClientTLSContext())
+            reactor.connectSSL(host, port, factory, pappyproxy.proxy.ClientTLSContext())
         else:
             reactor.connectTCP(host, port, factory)
         new_req = yield factory.data_defer
@@ -860,7 +914,7 @@ class Request(object):
             newreq = yield Request.load_request(int(r[0]))
             reqs.append(newreq)
 
-        reqs = context.filter_reqs(reqs, filters)
+        reqs = pappyproxy.context.filter_reqs(reqs, filters)
 
         defer.returnValue(reqs)
             
@@ -942,21 +996,19 @@ class Response(object):
         if full_response == '':
             return
 
-        # We do redundant splits, but whatever
-        lines = full_response.splitlines()
-        for line in lines:
-            if self.headers_complete:
-                break
+        remaining = full_response
+        while remaining and not self.headers_complete:
+            line, remaining = consume_line(remaining)
             self.add_line(line)
+
         if not self.headers_complete:
             self.add_line('')
 
         if not self.complete:
-            data = full_response[self.header_len:]
             if update_content_length:
-                self.raw_data = data
+                self.raw_data = remaining
             else:
-                self.add_data(data)
+                self.add_data(remaining)
         assert(self.complete)
 
     def add_line(self, line):

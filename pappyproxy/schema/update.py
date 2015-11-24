@@ -34,12 +34,17 @@ def add_schema_files(schemas):
 def update_schema(dbpool):
     # Update the database schema to the latest version
     schema_version = yield get_schema_version(dbpool)
+    if schema_version == 0:
+        verbose_update = False
+    else:
+        verbose_update = True
     schemas = []
     add_schema_files(schemas)
     schemas = sorted(schemas, key=lambda tup: tup[0])
     for i in range(schema_version, len(schemas)):
         # schemas[0] is v1, schemas[1] is v2, etc
-        print "Updating datafaile schema to version %d" % (i+1)
+        if verbose_update:
+            print "Updating datafaile schema to version %d" % (i+1)
         yield schemas[i][1].update(dbpool)
     
 @defer.inlineCallbacks

@@ -1,5 +1,5 @@
 *.pyc
-certs/*
+pappyproxy/certs/*
 debug_out/*
 data.db
 .coverage
@@ -9,3 +9,4 @@ tests/.cache
 TAGS
 config.json
 build/*
+*.egg-info/*

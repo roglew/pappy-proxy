@@ -3,7 +3,7 @@ The Pappy Proxy
 
 Introduction
 ------------
-The Pappy (**P**roxy **A**ttack **P**roxy **P**rox**Y**) Proxy is an intercepting proxy for performing web application security testing. Its features are often similar, or straight up rippoffs from [Burp Suite](https://portswigger.net/burp/). However, Burp Suite is neither open source nor a command line tool, thus making a proxy like Pappy inevitable. The project is still in its early stages, so there are bugs and not a ton of features, but it should be ready for the bigtime soon (I'm already trying to use it as a replacement for Burp Suite).
+The Pappy (**P**roxy **A**ttack **P**roxy **P**rox**Y**) Proxy is an intercepting proxy for performing web application security testing. Its features are often similar, or straight up rippoffs from [Burp Suite](https://portswigger.net/burp/). However, Burp Suite is neither open source nor a command line tool, thus making a proxy like Pappy inevitable. The project is still in its early stages, so there are bugs and only the bare minimum features, but it should be able to do some cool stuff soon (I'm already using it for real<sup>tm</sup> work).
 
 Contributing
 ------------
@@ -16,11 +16,11 @@ How to Use It
 
 Installation
 ------------
-Installation requires `pip` or some other command that can handle a `setup.py` with requirements. Once the requirements are installed, you can run the `pappy.py` script to run the proxy. You're on your own to link it somewhere in your PATH.
+Pappy supports OS X and Linux (sorry Windows). Installation requires `pip` or some other command that can handle a `setup.py` with requirements. Once the requirements are installed, you can check that it installed correctly by running `pappy -l` to start the proxy.
 ```
 $ git clone https://github.com/roglew/pappy-proxy.git
 $ cd pappy-proxy
-$ pip install -e .
+$ pip install .
 ```
 
 Quickstart
@@ -30,9 +30,8 @@ Pappy projects take up an entire directory. While a full directory may seem like
 ```
 $ mkdir test_project
 $ cd test_project 
-$ /path/to/pappy.py
+$ pappy
 Copying default config to directory
-Updating schema to version 1
 Proxy is listening on port 8000
 itsPappyTime> exit
 $ ls
@@ -41,6 +40,20 @@ $
 ```
 
 And that's it! The proxy will by default be running on port 8000 and bound to localhost (to keep the hackers out). You can modify the port/interface in `config.json`. You can list all your intercepted requests with `ls`, view a full request with `vfq <reqid>` or view a full response with `vfs <reqid>`. No you can't delete them yet. I'm working on it.
+
+Lite Mode
+---------
+If you don't want to dirty up a directory, you can run Pappy in "lite" mode. Pappy will use the default configuration settings and will create a temporary datafile in `/tmp` to use. When you quit, the file will be deleted. If you want to run Pappy in line mode, run Pappy with either `-l` or `--lite`.
+
+Example:
+```
+$ pappy -l
+Temporary datafile is /tmp/tmpw4mGv2
+Proxy is listening on port 8000
+itsPappyTime> quit
+Deleting temporary datafile
+$ 
+```
 
 Adding The CA Cert to Your Browser
 ----------------------------------
@@ -56,7 +69,7 @@ You can add the CA cert to Chrome by going to `Settings -> Show advanced setting
 For Safari (on macs, obviously), you need to add the CA cert to your system keychain. You can do this by double clicking on the CA cert and following the prompts.
 
 ### Internet Explorer
-I didn't search too hard for instructions on this and I don't own a Windows machine to try this, so if you have trouble, hit me up and I'll see if I can help and add real instructions. According to Google you can double-click the cert to install it to the system, or you can do `Tools -> Content -> Certificates -> Trusted Root Certificates -> Import`
+I didn't search too hard for instructions on this (since Pappy doesn't support windows) and I don't own a Windows machine to try this, so if you have trouble, I'm not the one to ask. According to Google you can double-click the cert to install it to the system, or you can do `Tools -> Content -> Certificates -> Trusted Root Certificates -> Import`.
 
 Configuration
 -------------
@@ -64,16 +77,16 @@ Configuration for each project is done in the `config.json` file. The file is a 
 
 | Key | Value |
 |:--|:--|
-| data_file | The file where requests and images will be stored |
-| debug_dir (optional) | Where connection debug info should be stored. If not present, debug info is not saved to a file. |
-| cert_dir | Where the CA cert and the private key for the CA cert are stored |
-| proxy_listeners | A list of dicts which describe which ports the proxy will listen on. Each item is a dict with "port" and "interface" values which determine which port and interface to listen on. For example, if port=8000 and the interface is 127.0.0.1, the proxy will only accept connections from localhost on port 8000. To accept connections from anywhere, set the interface to 0.0.0.0. |
+| `data_file` | The file where requests and images will be stored |
+| `debug_dir` (optional) | Where connection debug info should be stored. If not present, debug info is not saved to a file. |
+| `cert_dir` | Where the CA cert and the private key for the CA cert are stored |
+| `proxy_listeners` | A list of dicts which describe which ports the proxy will listen on. Each item is a dict with "port" and "interface" values which determine which port and interface to listen on. For example, if port=8000 and the interface is 127.0.0.1, the proxy will only accept connections from localhost on port 8000. To accept connections from anywhere, set the interface to 0.0.0.0. |
 
 The following tokens will also be replaced with values:
 
 | Token | Replaced with |
 |:--|:--|
-| {PAPPYDIR} | The directory where Pappy's files are stored |
+| `{PAPPYDIR}` | The directory where Pappy's files are stored |
 
 Generating Pappy's CA Cert
 --------------------------
@@ -89,7 +102,8 @@ The following commands can be used to view requests and responses
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| `ls [a|<num>]`| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 50 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
+| `ls [a|<num>`]| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
+| `viq <id> [u]` | view_request_info, viq | View additional information about a request. Includes the target port, if SSL was used, and other information. If 'u' is given as an additional argument, it will print information on the unmangled version of the request. |
 | `vfq <id> [u]` | view_full_request, vfq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. If 'u' is given as an additional argument, it will print the unmangled version of the request. |
 | `vhq <id> [u]` | view_request_headers, vhq | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request. If 'u' is given as an additional argument, it will print the unmangled version of the request. |
 | `vfs <id> [u]` | view_full_response, vfs |[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data. If 'u' is given as an additional argument, it will print the unmangled version of the response. |
@@ -115,7 +129,7 @@ The context is a set of filters that define which requests are considered "activ
 
 | Command | Aliases | Description |
 |:--------|:------------|:---|
-| `fl <filter string>` | filter, fl |Add a filter that limits which requests are included in the current context. See the Filter String section for how to create a filter string |
+| `f <filter string>` | filter, fl, f |Add a filter that limits which requests are included in the current context. See the Filter String section for how to create a filter string |
 | `fc` | filter_clear, fc | Clears the filters and resets the context to contain all requests and responses. Ignores scope |
 | `fls` | filter_list, fls | Print the filters that make up the current context |
 
@@ -184,12 +198,12 @@ Matches both A and B but not C
 | contains | contains, ct | A contain B is true if B is a substring of A |
 | containsr | containsr, ctr | A containr B is true if A matches regexp B (NOT IMPLEMENTED) |
 | exists | exists, ex | A exists B if A is not an empty string (likely buggy) |
-| Leq | Leq, L= | A Leq B if A's length equals B (B must be a number) |
-| Lgt | Lgt, L> | A Lgt B if A's length is greater than B (B must be a number ) |
-| Llt | Llt, L< | A Llt B if A's length is less than B (B must be a number) |
-| eq | eq, = | A eq B if A = B (A and B must be a number) |
-| gt | gt, > | A gt B if A > B (A and B must be a number) |
-| lt | lt, < | A lt B if A < B (A and B must be a number) |
+| Leq | Leq | A Leq B if A's length equals B (B must be a number) |
+| Lgt | Lgt | A Lgt B if A's length is greater than B (B must be a number ) |
+| Llt | Llt | A Llt B if A's length is less than B (B must be a number) |
+| eq | eq | A eq B if A = B (A and B must be a number) |
+| gt | gt | A gt B if A > B (A and B must be a number) |
+| lt | lt | A lt B if A < B (A and B must be a number) |
 
 Scope
 -----
@@ -207,13 +221,15 @@ Any requests which don't match all the filters in the scope will be passed strai
 
 Interceptor
 -----------
-This feature is like Burp's proxy with "Intercept Mode" turned on, except it's not turned on unless you explicitly turn it on. When the proxy gets a request while in intercept mode, it lets you edit it with vim before it forwards it to the server. In addition, it can stop responses from the server and let you edit them with vim before they get forwarded to the browser. When you run the command, you can pass `request` and/or `response` as arguments to say whether you would like to intercept requests and/or responses. Only in-scope requests/responses will be intercepted (see Scope section)
+This feature is like Burp's proxy with "Intercept Mode" turned on, except it's not turned on unless you explicitly turn it on. When the proxy gets a request while in intercept mode, it lets you edit it before it forwards it to the server. In addition, it can stop responses from the server and let you edit them before they get forwarded to the browser. When you run the command, you can pass `request` and/or `response` as arguments to say whether you would like to intercept requests and/or responses. Only in-scope requests/responses will be intercepted (see Scope section).
+
+The interceptor will use your EDITOR variable to decide which editor to edit the request/response with. If no editor variable is set, it will default to `vi`.
 
 To forward a request, edit it, save the file, then quit.
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| `ic <requests, responses, request, response, req, rsp>+` | intercept, ic | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
+| `ic <requests,responses,request,response,req,rsp>+` | intercept, ic | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
 
 ```
 Intercept both requests and responses:
@@ -236,6 +252,8 @@ Repeater
 --------
 This feature is like Burp's repeater (yes, really). You choose a request and Pappy will open vim in a split window with your request on the left and the original response on the right. You can make changes to the request and then run ":RepeaterSubmitBuffer" to submit the modified request. The response will be displayed on the right. This command is bound to `<leader>f` by default, but you can rebind it in your vimrc (I think, dunno if vim will complain if it's undefined). This command will submit whatever buffer your cursor is in, so make sure it's in the request buffer.
 
+To drop a request, delete everything, save and quit (`ggdG:wq`).
+
 When you're done with repeater, run ":qa!" to avoid having to save changes to nonexistent files.
 
 | Command | Aliases | Description |
@@ -244,7 +262,7 @@ When you're done with repeater, run ":qa!" to avoid having to save changes to no
 
 | Vim Command | Keybinding | Action |
 |:--------|:-----------|:-------|
-| RepeaterSubmitBuffer | `<leader>f` | Submit the current buffer, split the windows vertically, and show the result in the right window |
+| `RepeaterSubmitBuffer` | <leader>f | Submit the current buffer, split the windows vertically, and show the result in the right window |
 
 Logging
 -------
