@@ -35,6 +35,9 @@ setup(name='pappyproxy',
           'Programming Language :: Python :: 2.7',
           'License :: OSI Approved :: MIT License',
           'Topic :: Security',
+<<<<<<< HEAD
           'Topic :: Security :: Pwning Ur Mum',
+=======
+>>>>>>> master
         ]
 )
