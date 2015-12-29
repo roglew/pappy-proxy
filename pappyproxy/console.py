@@ -807,8 +807,7 @@ class ProxyCmd(cmd2.Cmd):
     def do_gencerts(self, line):
         dest_dir = line or pappyproxy.config.CERT_DIR
         message = "This will overwrite any existing certs in %s. Are you sure?" % dest_dir
-        answer = confirm(message, 'n')
-        if not answer or answer[0].lower() != 'y':
+        if not confirm(message, 'n'):
             return False
         print "Generating certs to %s" % dest_dir
         pappyproxy.proxy.generate_ca_certs(dest_dir)

@@ -5,7 +5,6 @@ import random
 import re
 
 from pappyproxy import http
-from pappyproxy import templates
 from pappyproxy import config
 from twisted.internet import defer
 from jinja2 import Environment, FileSystemLoader

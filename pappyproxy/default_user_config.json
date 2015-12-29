@@ -1,6 +1,6 @@
 {
     "data_file": "./data.db",
-    "cert_dir": "{PAPPYDIR}/certs",
+    "cert_dir": "{DATADIR}/certs",
     "proxy_listeners": [
         {"port": 8000, "interface": "127.0.0.1"}
     ]

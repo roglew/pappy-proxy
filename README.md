@@ -57,7 +57,7 @@ $
 
 Adding The CA Cert to Your Browser
 ----------------------------------
-In order for Pappy to view data sent using HTTPS, you need to add a generated CA cert (`certificate.crt`) to your browser. Certificates are generated using the `gencerts` command and are by default stored in the same directory as the main `pappy.py` script. This allows Pappy to act as a CA and sign any HTTPS certificate it wants without the browser complaining. This allows Pappy to decrypt and modify HTTPS requests. The certificate installation instructions are different for each browser.
+In order for Pappy to view data sent using HTTPS, you need to add a generated CA cert (`certificate.crt`) to your browser. Certificates are generated using the `gencerts` command and are by default stored in `~/.pappy/certs`. This allows Pappy to act as a CA and sign any HTTPS certificate it wants without the browser complaining. This allows Pappy to decrypt and modify HTTPS requests. The certificate installation instructions are different for each browser.
 
 ### Firefox
 You can add the CA cert to Firefox by going to `Preferences -> Advanced -> View Certificates -> Authorities -> Import` and selecting the `certificate.crt` file in the `certs` directory.
@@ -86,13 +86,13 @@ The following tokens will also be replaced with values:
 
 | Token | Replaced with |
 |:--|:--|
-| `{PAPPYDIR}` | The directory where Pappy's files are stored |
+| `{DATADIR}` | The directory where Pappy's data files are stored |
 
 See the default `config.json` for examples.
 
 Generating Pappy's CA Cert
 --------------------------
-In order to intercept and modify requests to sites that use HTTPS, you have to generate and install CA certs to your browser. You can do this by running the `gencerts` command in Pappy. By default, certs are stored in the same directory as Pappy's script files. This is also the default location that Pappy will look for certificates (unless you specify otherwise in `config.json`.) In addition, you can give the `gencerts` command an argument to have it put the generated certs in a different directory.
+In order to intercept and modify requests to sites that use HTTPS, you have to generate and install CA certs to your browser. You can do this by running the `gencerts` command in Pappy. By default, certs are stored `~/.pappy/certs`. This is also the default location that Pappy will look for certificates (unless you specify otherwise in `config.json`.) In addition, you can give the `gencerts` command an argument to have it put the generated certs in a different directory.
 
 | Command | Description |
 |:--------|:------------|

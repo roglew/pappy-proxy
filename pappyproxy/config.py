@@ -4,8 +4,9 @@ import os
 import shutil
 
 PAPPY_DIR = os.path.dirname(os.path.realpath(__file__))
+DATA_DIR = os.path.join(os.path.expanduser('~'), '.pappy')
 
-CERT_DIR = PAPPY_DIR
+CERT_DIR = os.path.join(DATA_DIR, 'certs')
 DATAFILE = 'data.db'
 DEBUG_DIR = None
 DEBUG_TO_FILE = False
@@ -29,12 +30,14 @@ def load_settings(proj_config):
     global DEBUG_VERBOSITY
     global LISTENERS
     global PAPPY_DIR
+    global DATA_DIR
     global SSL_CA_FILE 
     global SSL_PKEY_FILE
 
     # Substitution dictionary
     subs = {}
-    subs['PAPPYDIR'] = PAPPY_DIR
+    #subs['PAPPYDIR'] = PAPPY_DIR
+    subs['DATADIR'] = DATA_DIR
 
     # Data file settings
     if 'data_file' in proj_config:

@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+import pkgutil
+from setuptools import setup, find_packages
 
 setup(name='pappyproxy',
-      version='0.0.2',
+      version='0.1.1',
       description='The Pappy Intercepting Proxy',
       author='Rob Glew',
       author_email='rglew56@gmail.com',
       url='https://www.github.com/roglew/pappy-proxy',
-      packages=['pappyproxy'],
+      packages=['pappyproxy', 'pappyproxy.schema'],
+      include_package_data = True,
       license='MIT',
       entry_points = {
           'console_scripts':['pappy = pappyproxy.pappy:start'],
           },
       long_description=open('docs/source/overview.rst').read(),
       keywords='http proxy hacking 1337hax pwnurmum',
-      download_url='https://github.com/roglew/pappy-proxy/archive/0.0.2.tar.gz',
+      download_url='https://github.com/roglew/pappy-proxy/archive/0.1.1.tar.gz',
       install_requires=[
           'beautifulsoup4>=4.4.1',
           'cmd2>=0.6.8',
