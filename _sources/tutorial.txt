@@ -25,7 +25,7 @@ Install from pypi::
 
 or install from source::
 
-    $ git clone https://github.com/roglew/pappy-proxy.git
+    $ git clone --recursive https://github.com/roglew/pappy-proxy.git
     $ cd pappy-proxy
     $ pip install .
 

@@ -63,7 +63,7 @@ testing. Its features are often similar, or straight up rippoffs from
 neither open source nor a command line tool, thus making a proxy like
 Pappy inevitable. The project is still in its early stages, so there are
 bugs and only the bare minimum features, but it should be able to do
-some cool stuff soon (I&#8217;m already using it for realtm work).</p>
+some cool stuff soon (I&#8217;m already using it for real work).</p>
 </div>
 <div class="section" id="contributing">
 <h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
@@ -74,9 +74,9 @@ better, if you want Burp to do something that it doesn&#8217;t already, let me
 know so that I can [STRIKEOUT:use it to stomp them into the dust]
 improve my project.</p>
 <p>If you&#8217;re brave and want to try and contribute code, please let me know.
-Right now the codebase is a giant clusterfun which I have refactored a
-few times already, but I would be more than happy to find a stable part
-of the codebase that you can contribute to.</p>
+Right now the codebase is kind of rough and I have refactored it a few
+times already, but I would be more than happy to find a stable part of
+the codebase that you can contribute to.</p>
 </div>
 </div>
 <div class="section" id="how-to-use-it">
@@ -95,11 +95,10 @@ $ pip install .
 </div>
 <div class="section" id="quickstart">
 <h2>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h2>
-<p>Pappy projects take up an entire directory. While a full directory may
-seem like a dumb idea compared to storing everything in a zip file, but
-when it comes to generating attack strips and things, it&#8217;s easier to
-just keep everything in a directory so you can view/edit files with
-other programs. To start a project, do something like:</p>
+<p>Pappy projects take up an entire directory. Any generated scripts,
+exported responses, etc. will be placed in the current directory so it&#8217;s
+good to give your project a directory of its own. To start a project, do
+something like:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ mkdir test_project
 $ cd test_project
 $ pappy
@@ -115,15 +114,17 @@ $
 bound to localhost (to keep the hackers out). You can modify the
 port/interface in <code class="docutils literal"><span class="pre">config.json</span></code>. You can list all your intercepted
 requests with <code class="docutils literal"><span class="pre">ls</span></code>, view a full request with <code class="docutils literal"><span class="pre">vfq</span> <span class="pre">&lt;reqid&gt;</span></code> or view a
-full response with <code class="docutils literal"><span class="pre">vfs</span> <span class="pre">&lt;reqid&gt;</span></code>. No you can&#8217;t delete them yet. I&#8217;m
-working on it.</p>
+full response with <code class="docutils literal"><span class="pre">vfs</span> <span class="pre">&lt;reqid&gt;</span></code>. Right now, the only command to
+delete requests is <code class="docutils literal"><span class="pre">filter_prune</span></code> which deletes all the requests that
+aren&#8217;t in the current context (look at the sections on the
+context/filter strings for more information on that).</p>
 </div>
 <div class="section" id="lite-mode">
 <h2>Lite Mode<a class="headerlink" href="#lite-mode" title="Permalink to this headline">¶</a></h2>
 <p>If you don&#8217;t want to dirty up a directory, you can run Pappy in &#8220;lite&#8221;
 mode. Pappy will use the default configuration settings and will create
-a temporary datafile in <code class="docutils literal"><span class="pre">/tmp</span></code> to use. When you quit, the file will be
-deleted. If you want to run Pappy in line mode, run Pappy with either
+a temporary data file in <code class="docutils literal"><span class="pre">/tmp</span></code> to use. When you quit, the file will
+be deleted. If you want to run Pappy in lite mode, run Pappy with either
 <code class="docutils literal"><span class="pre">-l</span></code> or <code class="docutils literal"><span class="pre">--lite</span></code>.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ pappy -l
@@ -140,11 +141,10 @@ $
 <p>In order for Pappy to view data sent using HTTPS, you need to add a
 generated CA cert (<code class="docutils literal"><span class="pre">certificate.crt</span></code>) to your browser. Certificates
 are generated using the <code class="docutils literal"><span class="pre">gencerts</span></code> command and are by default stored
-in the same directory as <code class="docutils literal"><span class="pre">pappy.py</span></code>. This allows Pappy to act as a CA
-and MITM HTTPS connections. I believe that Firefox and Chrome ignore
-keychain/system certs, so you will have to install the CA cert to the
-browsers instead of (or in addition to) adding the cert to your
-keychain.</p>
+in <code class="docutils literal"><span class="pre">~/.pappy/certs</span></code>. This allows Pappy to act as a CA and sign any
+HTTPS certificate it wants without the browser complaining. This allows
+Pappy to decrypt and modify HTTPS requests. The certificate installation
+instructions are different for each browser.</p>
 <div class="section" id="firefox">
 <h3>Firefox<a class="headerlink" href="#firefox" title="Permalink to this headline">¶</a></h3>
 <p>You can add the CA cert to Firefox by going to
@@ -205,8 +205,8 @@ proxy. The following fields can be used to configure the proxy:</p>
 <p>The following tokens will also be replaced with values:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="27%" />
-<col width="73%" />
+<col width="24%" />
+<col width="76%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Token</th>
@@ -214,25 +214,26 @@ proxy. The following fields can be used to configure the proxy:</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">{PAPPYDIR}</span></code></td>
-<td>The directory where Pappy&#8217;s files are stored</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">{DATADIR}</span></code></td>
+<td>The directory where Pappy&#8217;s data files are stored</td>
 </tr>
 </tbody>
 </table>
+<p>See the default <code class="docutils literal"><span class="pre">config.json</span></code> for examples.</p>
 </div>
 <div class="section" id="generating-pappy-s-ca-cert">
 <h2>Generating Pappy&#8217;s CA Cert<a class="headerlink" href="#generating-pappy-s-ca-cert" title="Permalink to this headline">¶</a></h2>
 <p>In order to intercept and modify requests to sites that use HTTPS, you
 have to generate and install CA certs to your browser. You can do this
 by running the <code class="docutils literal"><span class="pre">gencerts</span></code> command in Pappy. By default, certs are
-stored in the same directory as Pappy&#8217;s script files. However, you can
-change where Pappy will look for the private key file in the config
-file. In addition, you can give the <code class="docutils literal"><span class="pre">gencerts</span></code> command an argument to
-have it put the generated certs in a different directory.</p>
+stored <code class="docutils literal"><span class="pre">~/.pappy/certs</span></code>. This is also the default location that Pappy
+will look for certificates (unless you specify otherwise in
+<code class="docutils literal"><span class="pre">config.json</span></code>.) In addition, you can give the <code class="docutils literal"><span class="pre">gencerts</span></code> command an
+argument to have it put the generated certs in a different directory.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="20%" />
-<col width="80%" />
+<col width="13%" />
+<col width="87%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -241,7 +242,7 @@ have it put the generated certs in a different directory.</p>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">gencerts</span> <span class="pre">[/path/to/put/certs/in]</span></code></td>
-<td>Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory.</td>
+<td>Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory. If no path is given, the certs will be placed in the default certificate location. Overwrites any existing certs.</td>
 </tr>
 </tbody>
 </table>
@@ -292,7 +293,7 @@ have it put the generated certs in a different directory.</p>
 </tr>
 </tbody>
 </table>
-<p>The table shown will have the following columns:</p>
+<p>The table shown by <code class="docutils literal"><span class="pre">ls</span></code> will have the following columns:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="5%" />
@@ -337,7 +338,7 @@ have it put the generated certs in a different directory.</p>
 <div class="section" id="tags">
 <h2>Tags<a class="headerlink" href="#tags" title="Permalink to this headline">¶</a></h2>
 <p>You can apply tags to a request and use filters to view specific tags.
-The following commands can be used to apply tags to requests:</p>
+The following commands can be used to apply and remove tags to requests:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="18%" />
@@ -368,10 +369,13 @@ The following commands can be used to apply tags to requests:</p>
 </div>
 <div class="section" id="request-ids">
 <h2>Request IDs<a class="headerlink" href="#request-ids" title="Permalink to this headline">¶</a></h2>
-<p>Request IDs are how you identify a request. You can see it when you run
-<code class="docutils literal"><span class="pre">ls</span></code>. In addition, you can prepend an ID with prefixes to get requests
-or responses associated with the request (for example its unmangled
-request or response) Here are the valid prefixes:</p>
+<p>Request IDs are how you identify a request and every command that
+involves specifying a request will take one or more request IDs. You can
+see it when you run <code class="docutils literal"><span class="pre">ls</span></code>. In addition, you can prepend an ID with
+prefixes to get requests or responses associated with the request (for
+example if you modified the request or its response with the
+interceptor, you can get the unmangled versions.) Here are the valid
+prefixes:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="4%" />
@@ -391,9 +395,9 @@ request or response) Here are the valid prefixes:</p>
 </tr>
 </tbody>
 </table>
-<p>I know it sounds kind of weird, but here are some example commands that
-will hopefully make things clearer. Suppose request 1 had its request
-mangled, and request 2 had its response mangled.</p>
+<p>I know it sounds kind of unintuitive. Here are some example commands
+that will hopefully make things clearer. Suppose request 1 had its
+request mangled, and request 2 had its response mangled.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">vfq</span> <span class="pre">1</span></code> Prints the mangled version of request 1</li>
 <li><code class="docutils literal"><span class="pre">vfq</span> <span class="pre">u1</span></code> Prints the unmangled version of request 1</li>
@@ -412,7 +416,7 @@ mangled</li>
 <div class="section" id="passing-multiple-request-ids-to-a-command">
 <h3>Passing Multiple Request IDs to a Command<a class="headerlink" href="#passing-multiple-request-ids-to-a-command" title="Permalink to this headline">¶</a></h3>
 <p>Some arguments can take multiple IDs for an argument. To pass multiple
-IDs to a command, separate the IDs with commas (no spaces!). A few
+IDs to a command, separate the IDs with commas <strong>(no spaces!)</strong>. A few
 examples:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">viq</span> <span class="pre">1,2,u3</span></code> View information about requests 1, 2, and the
@@ -426,13 +430,12 @@ unmangled version of 3</li>
 <h2>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
 <p>The context is a set of filters that define which requests are
 considered &#8220;active&#8221;. Only requests in the current context are displayed
-with <code class="docutils literal"><span class="pre">ls</span></code>, and eventually contexts will be how Pappy will manage
-requests for group operations. By default, the context includes every
-single request that passes through the proxy. You can limit down the
-current context by applying filters. Filters apply rules such as &#8220;the
-response code must equal 500&#8221; or &#8220;the host must contain google.com&#8221;.
-Once you apply one or more filters, only requests/responses which pass
-every active filter will be a part of the current context.</p>
+with <code class="docutils literal"><span class="pre">ls</span></code>. By default, the context includes every single request that
+passes through the proxy. You can limit down the current context by
+applying filters. Filters apply rules such as &#8220;the response code must
+equal 500&#8221; or &#8220;the host must contain google.com&#8221;. Once you apply one or
+more filters, only requests/responses which pass every active filter
+will be a part of the current context.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="13%" />
@@ -458,26 +461,40 @@ every active filter will be a part of the current context.</p>
 <td>filter_list, fls</td>
 <td>Print the filters that make up the current context</td>
 </tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">filter_prune</span></code></td>
+<td>filter_prune</td>
+<td>Delete all the requests that aren&#8217;t in the current context from the data file</td>
+</tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="filter-strings">
 <h2>Filter Strings<a class="headerlink" href="#filter-strings" title="Permalink to this headline">¶</a></h2>
 <p>Filter strings define a condition that a request/response pair must pass
-to be part of a context. Most filter strings have the following format:</p>
+to be part of the context. Most filter strings have the following
+format:</p>
 <div class="highlight-python"><div class="highlight"><pre>&lt;field&gt; &lt;comparer&gt; &lt;value&gt;
 </pre></div>
 </div>
 <p>Where <code class="docutils literal"><span class="pre">&lt;field&gt;</span></code> is some part of the request/response, <code class="docutils literal"><span class="pre">&lt;comparer&gt;</span></code>
-is some comparison to <code class="docutils literal"><span class="pre">&lt;value&gt;</span></code>. Also <strong>if you prefix a comparer with
-&#8216;n&#8217; it turns it into a negation.</strong> For example, if you wanted a filter
-that only matches requests to target.org, you could use the following
-filter string:</p>
+is some comparison to <code class="docutils literal"><span class="pre">&lt;value&gt;</span></code>. For example, if you wanted a filter
+that only matches requests to <code class="docutils literal"><span class="pre">target.org</span></code>, you could use the
+following filter string:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">host</span> <span class="ow">is</span> <span class="n">target</span><span class="o">.</span><span class="n">org</span>
 
 <span class="n">field</span> <span class="o">=</span> <span class="s">&quot;host&quot;</span>
 <span class="n">comparer</span> <span class="o">=</span> <span class="s">&quot;is&quot;</span>
 <span class="n">value</span> <span class="o">=</span> <span class="s">&quot;target.org&quot;</span>
+</pre></div>
+</div>
+<p>Also <strong>if you prefix a comparer with &#8216;n&#8217; it turns it into a negation.</strong>
+Using the previous example, the following will match any request except
+for ones where the host contains <code class="docutils literal"><span class="pre">target.org</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre>host nis target.org
+
+field = &quot;host&quot;
+comparer = &quot;nis&quot;
+value = &quot;target.org&quot;
 </pre></div>
 </div>
 <p>For fields that are a list of key/value pairs (headers, get params, post
@@ -649,15 +666,14 @@ Matches both A and B but not C
 <h2>Scope<a class="headerlink" href="#scope" title="Permalink to this headline">¶</a></h2>
 <p>Scope is a set of rules to define whether Pappy should mess with a
 request. You define the scope by setting the context to what you want
-the scope to be and running <code class="docutils literal"><span class="pre">scope_save</span></code>. The scope is saved in
-data.db and is automatically restored when using the same project
+the scope to be and running <code class="docutils literal"><span class="pre">scope_save</span></code>. The scope is saved in the
+data file and is automatically restored when using the same project
 directory.</p>
 <p>Any requests which don&#8217;t match all the filters in the scope will be
 passed straight to the browser and will not be caught by the interceptor
-or recorded in the database. This is useful to make sure you don&#8217;t
+or recorded in the data file. This is useful to make sure you don&#8217;t
 accidentally do something like log in to your email through the proxy
-and have your plaintext username/password stored and accidentally shown
-to your coworkers.</p>
+and have your plaintext username/password stored.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="20%" />
@@ -696,8 +712,8 @@ things that you may want to filter by but may be too tedius to type out.
 The <code class="docutils literal"><span class="pre">fbi</span></code> command also supports tab completion.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="29%" />
-<col width="71%" />
+<col width="25%" />
+<col width="75%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Filter</th>
@@ -707,6 +723,9 @@ The <code class="docutils literal"><span class="pre">fbi</span></code> command a
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">not_image</span></code></td>
 <td>Matches anything that isn&#8217;t an image.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">not_jscss</span></code></td>
+<td>Matches anything that isn&#8217;t JavaScript or CSS.</td>
 </tr>
 </tbody>
 </table>
@@ -736,12 +755,12 @@ The <code class="docutils literal"><span class="pre">fbi</span></code> command a
 <p>This feature is like Burp&#8217;s proxy with &#8220;Intercept Mode&#8221; turned on,
 except it&#8217;s not turned on unless you explicitly turn it on. When the
 proxy gets a request while in intercept mode, it lets you edit it before
-it forwards it to the server. In addition, it can stop responses from
-the server and let you edit them before they get forwarded to the
-browser. When you run the command, you can pass <code class="docutils literal"><span class="pre">request</span></code> and/or
-<code class="docutils literal"><span class="pre">response</span></code> as arguments to say whether you would like to intercept
-requests and/or responses. Only in-scope requests/responses will be
-intercepted (see Scope section).</p>
+forwarding it to the server. In addition, it can stop responses from the
+server and let you edit them before they get forwarded to the browser.
+When you run the command, you can pass <code class="docutils literal"><span class="pre">req</span></code> and/or <code class="docutils literal"><span class="pre">rsp</span></code> as
+arguments to say whether you would like to intercept requests and/or
+responses. Only in-scope requests/responses will be intercepted (see
+Scope section).</p>
 <p>The interceptor will use your EDITOR variable to decide which editor to
 edit the request/response with. If no editor variable is set, it will
 default to <code class="docutils literal"><span class="pre">vi</span></code>.</p>
@@ -781,6 +800,7 @@ Be totally useless:
 &gt; ic
 </pre></div>
 </div>
+<p>To drop a request, delete everything, save and quit.</p>
 </div>
 <div class="section" id="repeater">
 <h2>Repeater<a class="headerlink" href="#repeater" title="Permalink to this headline">¶</a></h2>
@@ -789,11 +809,11 @@ and Pappy will open vim in a split window with your request on the left
 and the original response on the right. You can make changes to the
 request and then run &#8221;:RepeaterSubmitBuffer&#8221; to submit the modified
 request. The response will be displayed on the right. This command is
-bound to <code class="docutils literal"><span class="pre">&lt;leader&gt;f</span></code> by default, but you can rebind it in your vimrc
-(I think, dunno if vim will complain if it&#8217;s undefined). This command
-will submit whatever buffer your cursor is in, so make sure it&#8217;s in the
-request buffer.</p>
-<p>To drop a request, delete everything, save and quit (<code class="docutils literal"><span class="pre">ggdG:wq</span></code>).</p>
+bound to <code class="docutils literal"><span class="pre">&lt;leader&gt;f</span></code> by default, but you can bind it to something else
+too in your vimrc (I think, dunno if vim will complain if the function
+undefined which it will be for regular files). This command will submit
+whatever buffer your cursor is in, so make sure it&#8217;s in the request
+buffer.</p>
 <p>When you&#8217;re done with repeater, run &#8221;:qa!&#8221; to avoid having to save
 changes to nonexistent files.</p>
 <table border="1" class="docutils">
@@ -939,7 +959,6 @@ def run_macro(args):
     # req.save() # save the request to the data file
     # or copy req0 into a loop and use string substitution to automate requests
     pass
-$
 </pre></div>
 </div>
 <p>If you enter in a value for <code class="docutils literal"><span class="pre">SHORT_NAME</span></code>, you can use it as a shortcut
@@ -990,8 +1009,8 @@ the carpet out from underneath you.</p>
 <code class="docutils literal"><span class="pre">RepeatableDict</span></code>. I haven&#8217;t gotten around to writing docs on it yet,
 so just interact with it like a dict and don&#8217;t be surprised if it&#8217;s
 missing some methods you would expect a dict to have.</p>
-<p>Here is a quick (non-comprehensive) list of attributes that you can use
-with <code class="docutils literal"><span class="pre">Request</span></code> objects:</p>
+<p>Here is a quick list of attributes that you can use with <code class="docutils literal"><span class="pre">Request</span></code>
+objects:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="11%" />
@@ -1144,8 +1163,8 @@ with <code class="docutils literal"><span class="pre">Request</span></code> obje
 </tr>
 </tbody>
 </table>
-<p>And here is a quick (non-comprehensive) list of attributes that you can
-use with <code class="docutils literal"><span class="pre">Response</span></code> objects:</p>
+<p>And here is a quick list of attributes that you can use with
+<code class="docutils literal"><span class="pre">Response</span></code> objects:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="8%" />
@@ -1224,8 +1243,8 @@ can fix it.</p>
 </div>
 <div class="section" id="useful-functions">
 <h3>Useful Functions<a class="headerlink" href="#useful-functions" title="Permalink to this headline">¶</a></h3>
-<p>There are also a few functions which could be useful for making
-requests.</p>
+<p>There are also a few functions which could be useful for creating
+requests in macros.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="34%" />
@@ -1267,9 +1286,10 @@ untouched, just return <code class="docutils literal"><span class="pre">request.
 intercepting macros</em>. Technically you <strong>can</strong>, but to do that you&#8217;ll
 have to define <code class="docutils literal"><span class="pre">async_mangle_request</span></code> (or response) instead of
 <code class="docutils literal"><span class="pre">mangle_request</span></code> (or response) then use <code class="docutils literal"><span class="pre">Request.async_deep_save</span></code>
-which returns a deferred, then return a deferred from
+which generates a deferred, then generate a deferred from
 <code class="docutils literal"><span class="pre">async_mangle_requests</span></code> (inline callbacks work too). If you&#8217;ve never
-used twisted before, please don&#8217;t try. Twisted is hard.</p>
+used twisted before, please don&#8217;t try. Twisted is hard. Plus the mangled
+request will be saved before it is submitted anyways.</p>
 <p>Confusing? Here are some example intercepting macros:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">## int_cloud2butt.py</span>
 
@@ -1299,9 +1319,7 @@ used twisted before, please don&#8217;t try. Twisted is hard.</p>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">## int_adminplz.py</span>
 
-<span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">ResponseCookie</span>
 <span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">base64encode</span> <span class="k">as</span> <span class="n">b64e</span>
-<span class="kn">import</span> <span class="nn">string</span>
 
 <span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Admin Session&#39;</span>
 
@@ -1351,36 +1369,6 @@ used twisted before, please don&#8217;t try. Twisted is hard.</p>
 </table>
 </div>
 </div>
-<div class="section" id="additional-commands">
-<h2>Additional Commands<a class="headerlink" href="#additional-commands" title="Permalink to this headline">¶</a></h2>
-<p>This is a list of other random stuff you can do that isn&#8217;t categorized
-under anything else. These are mostly commands that I found that I
-needed while doing a test and just added. They likely don&#8217;t do a ton of
-error checking and are likely not super full-featured.</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="19%" />
-<col width="10%" />
-<col width="71%" />
-</colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Command</th>
-<th class="head">Aliases</th>
-<th class="head">Description</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">dump_response</span> <span class="pre">&lt;reqid&gt;</span> <span class="pre">[filename]</span></code></td>
-<td><code class="docutils literal"><span class="pre">dump_response</span></code></td>
-<td>Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path.</td>
-</tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">export</span> <span class="pre">&lt;req|rsp&gt;</span> <span class="pre">&lt;reqid&gt;</span></code></td>
-<td><code class="docutils literal"><span class="pre">export</span></code></td>
-<td>Writes either the full request or response to a file in the current directory.</td>
-</tr>
-</tbody>
-</table>
-</div>
 <div class="section" id="logging">
 <h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>You can watch in real-time what requests are going through the proxy.
@@ -1404,6 +1392,36 @@ every start though!)</p>
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">log</span> <span class="pre">[verbosity]</span></code></td>
 <td>View the log at the given verbosity. Default verbosity is 1 which just shows connections being made/lost and some other info, verbosity 3 shows full requests/responses as they pass through and are processed by the proxy</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="additional-commands">
+<h2>Additional Commands<a class="headerlink" href="#additional-commands" title="Permalink to this headline">¶</a></h2>
+<p>This is a list of other random stuff you can do that isn&#8217;t categorized
+under anything else. These are mostly commands that I found that I
+needed while doing a test and just added. They likely don&#8217;t do a ton of
+error checking.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="10%" />
+<col width="71%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Command</th>
+<th class="head">Aliases</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">dump_response</span> <span class="pre">&lt;reqid&gt;</span> <span class="pre">[filename]</span></code></td>
+<td><code class="docutils literal"><span class="pre">dump_response</span></code></td>
+<td>Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">export</span> <span class="pre">&lt;req|rsp&gt;</span> <span class="pre">&lt;reqid&gt;</span></code></td>
+<td><code class="docutils literal"><span class="pre">export</span></code></td>
+<td>Writes either the full request or response to a file in the current directory.</td>
 </tr>
 </tbody>
 </table>
@@ -1464,8 +1482,8 @@ every start though!)</p>
 <li><a class="reference internal" href="#enabling-disabling-intercepting-macros">Enabling/Disabling Intercepting Macros</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#additional-commands">Additional Commands</a></li>
 <li><a class="reference internal" href="#logging">Logging</a></li>
+<li><a class="reference internal" href="#additional-commands">Additional Commands</a></li>
 </ul>
 </li>
 </ul>
