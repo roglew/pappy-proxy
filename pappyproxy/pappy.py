@@ -3,6 +3,7 @@
 import argparse
 import cmd2
 import crochet
+import datetime
 import imp
 import os
 import schema.update
@@ -20,6 +21,7 @@ from twisted.enterprise import adbapi
 from twisted.internet import reactor, defer
 from twisted.internet.threads import deferToThread
 from twisted.internet.protocol import ServerFactory
+from twisted.internet.error import CannotListenError
 
 
 crochet.no_setup()
@@ -50,6 +52,7 @@ def delete_datafile():
 @defer.inlineCallbacks
 def main():
     settings = parse_args()
+    load_start = datetime.datetime.now()
 
     if settings['lite']:
         conf_settings = config.get_default_config()
@@ -82,17 +85,23 @@ def main():
     if config.DEBUG_DIR and os.path.exists(config.DEBUG_DIR):
         shutil.rmtree(config.DEBUG_DIR)
         print 'Removing old debugging output'
-    factory = ServerFactory()
-    factory.protocol = proxy.ProxyServer
+    serv_factory = proxy.ProxyServerFactory(save_all=True)
     listen_strs = []
+    listening = False
     for listener in config.LISTENERS:
-        reactor.listenTCP(listener[0], factory, interface=listener[1])
-        listener_str = 'port %d' % listener[0]
-        if listener[1] not in ('127.0.0.1', 'localhost'):
-            listener_str += ' (bound to %s)' % listener[1]
-        listen_strs.append(listener_str)
+        try:
+            reactor.listenTCP(listener[0], serv_factory, interface=listener[1])
+            listening = True
+            listener_str = 'port %d' % listener[0]
+            if listener[1] not in ('127.0.0.1', 'localhost'):
+                listener_str += ' (bound to %s)' % listener[1]
+            listen_strs.append(listener_str)
+        except CannotListenError as e:
+            print repr(e)
     if listen_strs:
         print 'Proxy is listening on %s' % (', '.join(listen_strs))
+    else:
+        print 'No listeners opened'
 
     com_factory = ServerFactory()
     com_factory.protocol = comm.CommServer
@@ -101,15 +110,25 @@ def main():
     comm_port = reactor.listenTCP(0, com_factory, interface='127.0.0.1')
     comm.set_comm_port(comm_port.getHost().port)
 
+    # Load the scope
+    yield context.load_scope(http.dbpool)
+    context.reset_to_scope()
+
+    # Apologize for slow start times
+    load_end = datetime.datetime.now()
+    load_time = (load_end - load_start)
+    if load_time.total_seconds() > 20:
+        print 'Startup was slow (%s)! Sorry!' % load_time
+        print 'Database has {0} requests (~{1:.2f}ms per request)'.format(len(context.active_requests), ((load_time.total_seconds()/len(context.active_requests))*1000))
+
     sys.argv = [sys.argv[0]] # cmd2 tries to parse args
-    d = deferToThread(console.ProxyCmd().cmdloop)
+    cons = console.ProxyCmd()
+    console.set_proxy_server_factory(serv_factory)
+    d = deferToThread(cons.cmdloop)
     d.addCallback(lambda ignored: reactor.stop())
     if delete_data_on_quit:
         d.addCallback(lambda ignored: delete_datafile())
 
-    # Load the scope
-    yield context.load_scope(http.dbpool)
-    context.reset_to_scope()
 
 def start():
     reactor.callWhenRunning(main)

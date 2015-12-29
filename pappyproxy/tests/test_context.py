@@ -56,21 +56,18 @@ def test_gen_filter_by_all_request():
     # Cookie key
     r = Request('GET / HTTP/1.1\r\n')
     r.cookies['hello'] = 'world'
-    r.update_from_objects()
     assert f(r)
     assert not fn(r)
 
     # Cookie value
     r = Request('GET / HTTP/1.1\r\n')
     r.cookies['world'] = 'hello'
-    r.update_from_objects()
     assert f(r)
     assert not fn(r)
 
     # Nowhere in cookie
     r = Request('GET / HTTP/1.1\r\n')
     r.cookies['world'] = 'sucks'
-    r.update_from_objects()
     assert not f(r)
     assert fn(r)
 
@@ -123,7 +120,6 @@ def test_gen_filter_by_all_response(http_request):
     r = Response('HTTP/1.1 200 OK\r\n')
     http_request.response = r
     r.add_cookie(ResponseCookie('hello=goodbye'))
-    r.update_from_objects()
     assert f(http_request)
     assert not fn(http_request)
 
@@ -131,7 +127,6 @@ def test_gen_filter_by_all_response(http_request):
     r = Response('HTTP/1.1 200 OK\r\n')
     http_request.response = r
     r.add_cookie(ResponseCookie('goodbye=hello'))
-    r.update_from_objects()
     assert f(http_request)
     assert not fn(http_request)
 
@@ -139,7 +134,6 @@ def test_gen_filter_by_all_response(http_request):
     r = Response('HTTP/1.1 200 OK\r\n')
     http_request.response = r
     r.add_cookie(ResponseCookie('goodbye=for real'))
-    r.update_from_objects()
     assert not f(http_request)
     assert fn(http_request)
 
@@ -153,7 +147,6 @@ def test_filter_by_host(http_request):
     assert fn(http_request)
 
     http_request.headers['Host'] = 'vim.sexy'
-    http_request.update_from_text()
     assert http_request.host == 'vim.sexy'
     assert f(http_request)
     assert not fn(http_request)

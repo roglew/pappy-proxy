@@ -70,22 +70,22 @@ class CommServer(LineReceiver):
     @defer.inlineCallbacks
     def action_get_request(self, data):
         try:
-            reqid = int(data['reqid'])
+            reqid = data['reqid']
+            req = yield pappyproxy.http.Request.load_request(reqid)
         except KeyError:
             raise PappyException("Request with given ID does not exist")
 
-        req = yield pappyproxy.http.Request.load_request(reqid)
         dat = json.loads(req.to_json())
         defer.returnValue(dat)
 
     @defer.inlineCallbacks
     def action_get_response(self, data):
         try:
-            reqid = int(data['reqid'])
+            reqid = data['reqid']
+            req = yield pappyproxy.http.Request.load_request(reqid)
         except KeyError:
             raise PappyException("Request with given ID does not exist, cannot fetch associated response.")
 
-        req = yield pappyproxy.http.Request.load_request(reqid)
         if req.response:
             rsp = yield pappyproxy.http.Response.load_response(req.response.rspid)
             dat = json.loads(rsp.to_json())
@@ -101,11 +101,11 @@ class CommServer(LineReceiver):
             req.is_ssl = data['is_ssl']
         except:
             raise PappyException("Error parsing request")
-        req_sub = yield req.submit_self()
-        yield req_sub.deep_save()
+        yield req.async_submit()
+        yield req.async_deep_save()
 
         retdata = {}
-        retdata['request'] = json.loads(req_sub.to_json())
-        if req_sub.response:
-            retdata['response'] = json.loads(req_sub.response.to_json())
+        retdata['request'] = json.loads(req.to_json())
+        if req.response:
+            retdata['response'] = json.loads(req.response.to_json())
         defer.returnValue(retdata)

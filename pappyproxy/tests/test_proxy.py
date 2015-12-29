@@ -1,11 +1,14 @@
+import os
 import pytest
 import mock
 import twisted.internet
 import twisted.test
 
 from pappyproxy import http
+from pappyproxy import macros
 from pappyproxy import mangle
-from pappyproxy.proxy import ProxyClient, ProxyClientFactory, ProxyServer
+from pappyproxy import config
+from pappyproxy.proxy import ProxyClient, ProxyClientFactory, ProxyServerFactory
 from testutil import mock_deferred, func_deleted, func_ignored_deferred, func_ignored, no_tcp
 from twisted.internet.protocol import ServerFactory
 from twisted.test.iosim import FakeTransport
@@ -14,12 +17,14 @@ from twisted.internet import defer, reactor
 ####################
 ## Fixtures
 
+MANGLED_REQ = 'GET /mangled HTTP/1.1\r\n\r\n'
+MANGLED_RSP = 'HTTP/1.1 500 MANGLED\r\n\r\n'
+
 @pytest.fixture
 def unconnected_proxyserver(mocker):
     mocker.patch("twisted.test.iosim.FakeTransport.startTLS")
     mocker.patch("pappyproxy.proxy.load_certs_from_dir", new=mock_generate_cert)
-    factory = ServerFactory()
-    factory.protocol = ProxyServer
+    factory = ProxyServerFactory()
     protocol = factory.buildProtocol(('127.0.0.1', 0))
     protocol.makeConnection(FakeTransport(protocol, True))
     return protocol
@@ -28,8 +33,7 @@ def unconnected_proxyserver(mocker):
 def proxyserver(mocker):
     mocker.patch("twisted.test.iosim.FakeTransport.startTLS")
     mocker.patch("pappyproxy.proxy.load_certs_from_dir", new=mock_generate_cert)
-    factory = ServerFactory()
-    factory.protocol = ProxyServer
+    factory = ProxyServerFactory()
     protocol = factory.buildProtocol(('127.0.0.1', 0))
     protocol.makeConnection(FakeTransport(protocol, True))
     protocol.lineReceived('CONNECT https://www.AAAA.BBBB:443 HTTP/1.1')
@@ -40,26 +44,40 @@ def proxyserver(mocker):
 @pytest.fixture
 def proxy_connection():
     @defer.inlineCallbacks
-    def gen_connection(send_data):
+    def gen_connection(send_data, new_req=False, new_rsp=False,
+                       drop_req=False, drop_rsp=False):
         factory = ProxyClientFactory(http.Request(send_data))
+
+        macro = gen_mangle_macro(new_req, new_rsp, drop_req, drop_rsp)
+        factory.intercepting_macros['pappy_mangle'] = macro
+
         protocol = factory.buildProtocol(None)
         tr = FakeTransport(protocol, True)
         protocol.makeConnection(tr)
         sent = yield protocol.data_defer
+        print sent
         defer.returnValue((protocol, sent, factory.data_defer))
     return gen_connection
 
+@pytest.fixture
+def in_scope_true(mocker):
+    new_in_scope = mock.MagicMock()
+    new_in_scope.return_value = True
+    mocker.patch("pappyproxy.context.in_scope", new=new_in_scope)
+    return new_in_scope
+
+@pytest.fixture
+def in_scope_false(mocker):
+    new_in_scope = mock.MagicMock()
+    new_in_scope.return_value = False
+    mocker.patch("pappyproxy.context.in_scope", new=new_in_scope)
+    return new_in_scope
+
 ## Autorun fixtures
-    
-# @pytest.fixture(autouse=True)
-# def no_mangle(mocker):
-#     # Don't call anything in mangle.py
-#     mocker.patch("mangle.mangle_request", notouch_mangle_req)
-#     mocker.patch("mangle.mangle_response", notouch_mangle_rsp)
     
 @pytest.fixture(autouse=True)
 def ignore_save(mocker):
-    mocker.patch("pappyproxy.http.Request.deep_save", func_ignored_deferred)
+    mocker.patch("pappyproxy.http.Request.async_deep_save", func_ignored_deferred)
 
 ####################
 ## Mock functions
@@ -117,31 +135,55 @@ def mock_generate_cert(cert_dir):
               '-----END CERTIFICATE-----')
     return (ca_key, private_key)
 
-def notouch_mangle_req(request, conn_id):
-    orig_req = http.Request(request.full_request)
-    orig_req.port = request.port
-    orig_req.is_ssl = request.is_ssl
-    d = mock_deferred(orig_req)
+def gen_mangle_macro(modified_req=None, modified_rsp=None,
+                     drop_req=False, drop_rsp=False):
+    macro = mock.MagicMock()
+    if modified_req or drop_req:
+        macro.async_req = True
+        macro.do_req = True
+        if drop_req:
+            newreq = None
+        else:
+            newreq = http.Request(modified_req)
+        macro.async_mangle_request.return_value = mock_deferred(newreq)
+    else:
+        macro.do_req = False
+
+    if modified_rsp or drop_rsp:
+        macro.async_rsp = True
+        macro.do_rsp = True
+        if drop_rsp:
+            newrsp = None
+        else:
+            newrsp = http.Response(modified_rsp)
+        macro.async_mangle_response.return_value = mock_deferred(newrsp)
+    else:
+        macro.do_rsp = False
+    return macro
+
+def notouch_mangle_req(request):
+    d = mock_deferred(request)
     return d
 
-def notouch_mangle_rsp(response, conn_id):
-    req = http.Request()
-    orig_rsp = http.Response(response.full_response)
-    req.response = orig_rsp
-    d = mock_deferred(req)
+def notouch_mangle_rsp(request):
+    d = mock_deferred(request.response)
     return d
 
-def req_mangler_change(request, conn_id):
+def req_mangler_change(request):
     req = http.Request('GET /mangled HTTP/1.1\r\n\r\n')
     d = mock_deferred(req)
     return d
 
-def rsp_mangler_change(request, conn_id):
-    req = http.Request()
+def rsp_mangler_change(request):
     rsp = http.Response('HTTP/1.1 500 MANGLED\r\n\r\n')
-    req.response = rsp
-    d = mock_deferred(req)
+    d = mock_deferred(rsp)
     return d
+
+def req_mangler_drop(request):
+    return mock_deferred(None)
+
+def rsp_mangler_drop(request):
+    return mock_deferred(None)
 
 ####################
 ## Unit test tests
@@ -165,14 +207,14 @@ def test_deleted():
 ####################
 ## Proxy Server Tests
 
-def test_proxy_server_connect(unconnected_proxyserver, mocker):
+def test_proxy_server_connect(unconnected_proxyserver, mocker, in_scope_true):
     mocker.patch("twisted.internet.reactor.connectSSL")
     unconnected_proxyserver.lineReceived('CONNECT https://www.dddddd.fff:433 HTTP/1.1')
     unconnected_proxyserver.lineReceived('')
     assert unconnected_proxyserver.transport.getOutBuffer() == 'HTTP/1.1 200 Connection established\r\n\r\n'
     assert unconnected_proxyserver._request_obj.is_ssl
     
-def test_proxy_server_basic(proxyserver, mocker):
+def test_proxy_server_basic(proxyserver, mocker, in_scope_true):
     mocker.patch("twisted.internet.reactor.connectSSL")
     mocker.patch('pappyproxy.proxy.ProxyServer.setRawMode')
     proxyserver.lineReceived('GET / HTTP/1.1')
@@ -184,37 +226,60 @@ def test_proxy_server_basic(proxyserver, mocker):
     assert args[1] == 443
     
 @pytest.inlineCallbacks
-def test_proxy_client_basic(mocker, proxy_connection):
-    mocker.patch('pappyproxy.mangle.mangle_request', new=notouch_mangle_req)
-    mocker.patch('pappyproxy.mangle.mangle_response', new=notouch_mangle_rsp)
+def test_proxy_client_nomangle(mocker, proxy_connection, in_scope_true):
     # Make the connection
-    (prot, sent, resp_deferred) = yield proxy_connection('GET / HTTP/1.1\r\n\r\n')
-    assert sent == 'GET / HTTP/1.1\r\n\r\n'
+    (prot, sent, retreq_deferred) = \
+                    yield proxy_connection('GET / HTTP/1.1\r\n\r\n', None, None)
+    assert sent.full_request == 'GET / HTTP/1.1\r\n\r\n'
     prot.lineReceived('HTTP/1.1 200 OK')
     prot.lineReceived('Content-Length: 0')
     prot.lineReceived('')
-    ret_req = yield resp_deferred
+    ret_req = yield retreq_deferred
     response = ret_req.response.full_response
     assert response == 'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n'
 
 @pytest.inlineCallbacks
-def test_proxy_client_mangle_req(mocker, proxy_connection):
-    mocker.patch('pappyproxy.mangle.mangle_request', new=req_mangler_change)
-    mocker.patch('pappyproxy.mangle.mangle_response', new=notouch_mangle_rsp)
-    
+def test_proxy_client_mangle_req(mocker, proxy_connection, in_scope_true):
     # Make the connection
-    (prot, sent, resp_deferred) = yield proxy_connection('GET / HTTP/1.1\r\n\r\n')
-    assert sent == 'GET /mangled HTTP/1.1\r\n\r\n'
+    (prot, sent, retreq_deferred) = \
+                    yield proxy_connection('GET / HTTP/1.1\r\n\r\n', MANGLED_REQ, None)
+    assert sent.full_request == 'GET /mangled HTTP/1.1\r\n\r\n'
 
 @pytest.inlineCallbacks
-def test_proxy_client_basic(mocker, proxy_connection):
-    mocker.patch('pappyproxy.mangle.mangle_request', new=notouch_mangle_req)
-    mocker.patch('pappyproxy.mangle.mangle_response', new=rsp_mangler_change)
+def test_proxy_client_mangle_rsp(mocker, proxy_connection, in_scope_true):
     # Make the connection
-    (prot, sent, resp_deferred) = yield proxy_connection('GET / HTTP/1.1\r\n\r\n')
+    (prot, sent, retreq_deferred) = \
+                    yield proxy_connection('GET / HTTP/1.1\r\n\r\n', None, MANGLED_RSP)
     prot.lineReceived('HTTP/1.1 200 OK')
     prot.lineReceived('Content-Length: 0')
     prot.lineReceived('')
-    ret_req = yield resp_deferred
-    response = ret_req.response.full_response
+    req = yield retreq_deferred
+    response = req.response.full_response
     assert response == 'HTTP/1.1 500 MANGLED\r\n\r\n'
+
+@pytest.inlineCallbacks
+def test_proxy_drop_req(mocker, proxy_connection, in_scope_true):
+    (prot, sent, retreq_deferred) = \
+                    yield proxy_connection('GET / HTTP/1.1\r\n\r\n', None, None, True, False)
+    assert sent is None
+
+@pytest.inlineCallbacks
+def test_proxy_drop_rsp(mocker, proxy_connection, in_scope_true):
+    (prot, sent, retreq_deferred) = \
+                    yield proxy_connection('GET / HTTP/1.1\r\n\r\n', None, None, False, True)
+    prot.lineReceived('HTTP/1.1 200 OK')
+    prot.lineReceived('Content-Length: 0')
+    prot.lineReceived('')
+    retreq = yield retreq_deferred
+    assert retreq.response is None
+
+@pytest.inlineCallbacks
+def test_proxy_client_360_noscope(mocker, proxy_connection, in_scope_false):
+    # Make the connection
+    (prot, sent, retreq_deferred) = yield proxy_connection('GET / HTTP/1.1\r\n\r\n')
+    assert sent.full_request == 'GET / HTTP/1.1\r\n\r\n'
+    prot.lineReceived('HTTP/1.1 200 OK')
+    prot.lineReceived('Content-Length: 0')
+    prot.lineReceived('')
+    req = yield retreq_deferred
+    assert req.response.full_response == 'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n'

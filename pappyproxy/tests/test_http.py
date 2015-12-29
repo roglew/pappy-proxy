@@ -1,4 +1,5 @@
 import base64
+import copy
 import gzip
 import json
 import pytest
@@ -6,6 +7,7 @@ import StringIO
 import zlib
 
 from pappyproxy.pappy import http
+from pappyproxy.util import PappyException
 
 ####################
 # Helper Functions
@@ -201,7 +203,7 @@ def test_length_overflow():
     # Test throwing an exception when adding data after complete
     l = http.LengthData(100)
     l.add_data('A'*100)
-    with pytest.raises(http.DataAlreadyComplete):
+    with pytest.raises(PappyException):
         l.add_data('A')
 
 def test_repeatable_dict_simple():
@@ -391,7 +393,6 @@ def test_request_simple():
         assert r.complete
         assert r.fragment == None
         assert r.full_request == headers+data
-        assert r.header_len == len(headers)
         assert r.headers_complete
         assert r.host == 'www.test.com'
         assert r.is_ssl == False
@@ -424,8 +425,8 @@ def test_request_urlparams():
     def test(r):
         assert r.complete
         assert r.fragment == 'frag'
-        assert r.get_params['p1'] == 'foo'
-        assert r.get_params['p2'] == 'bar'
+        assert r.url_params['p1'] == 'foo'
+        assert r.url_params['p2'] == 'bar'
         assert r.full_request == ('GET /?p1=foo&p2=bar#frag HTTP/1.1\r\n'
                                   'Content-Length: 0\r\n'
                                   '\r\n')
@@ -444,8 +445,8 @@ def test_request_questionmark_url():
     def test(r):
         assert r.complete
         assert r.fragment == 'frag'
-        assert r.get_params['?/to/?p1'] == 'foo'
-        assert r.get_params['p2'] == 'bar'
+        assert r.url_params['?/to/?p1'] == 'foo'
+        assert r.url_params['p2'] == 'bar'
         assert r.full_request == ('GET /path/??/to/?p1=foo&p2=bar#frag HTTP/1.1\r\n'
                                   'Content-Length: 0\r\n'
                                   '\r\n')
@@ -471,6 +472,22 @@ def test_request_postparams():
     test(rl)
     test(ru)
     test(rj)
+    
+def test_post_params_update():
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Content-Type: application/x-www-form-urlencoded\r\n'
+                      'Content-Length: 7\r\n\r\n'
+                      'a=b&c=d'))
+    r.post_params['c'] = 'e'
+    assert r.full_request == ('GET / HTTP/1.1\r\n'
+                              'Content-Type: application/x-www-form-urlencoded\r\n'
+                              'Content-Length: 7\r\n\r\n'
+                              'a=b&c=e')
+    r.post_params['a'] = 'f'
+    assert r.full_request == ('GET / HTTP/1.1\r\n'
+                              'Content-Type: application/x-www-form-urlencoded\r\n'
+                              'Content-Length: 7\r\n\r\n'
+                              'a=f&c=e')
     
 def test_headers_end():
     header_lines = [
@@ -632,20 +649,22 @@ def test_request_to_json():
     r = http.Request()
     r.status_line = 'GET / HTTP/1.1'
     r.headers['content-length'] = 500
+    r.tags = ['foo', 'bar']
     r.raw_data = 'AAAA'
-    r.reqid = 1
+    r.reqid = '1'
 
     rsp = http.Response()
     rsp.status_line = 'HTTP/1.1 200 OK'
-    rsp.rspid = 2
+    rsp.rspid = '2'
 
     r.response = rsp
 
     expected_reqdata = {u'full_request': unicode(base64.b64encode(r.full_request)),
-                        u'response_id': rsp.rspid,
+                        u'response_id': str(rsp.rspid),
                         u'port': 80,
                         u'is_ssl': False,
-                        u'reqid': r.reqid,
+                        u'tags': ['foo', 'bar'],
+                        u'reqid': str(r.reqid),
                        }
 
     assert json.loads(r.to_json()) == expected_reqdata
@@ -659,7 +678,7 @@ def test_request_update_content_length():
                                'Content-Length: 10\r\n\r\n'
                                'AAAAAAAAAA'))
     
-def test_request_blank_get_params():
+def test_request_blank_url_params():
     r = http.Request()
     r.add_line('GET /this/??-asdf/ HTTP/1.1')
     assert r.full_request == ('GET /this/??-asdf/ HTTP/1.1\r\n\r\n')
@@ -667,9 +686,9 @@ def test_request_blank_get_params():
     r = http.Request()
     r.add_line('GET /this/??-asdf/?a=b&c&d=ef HTTP/1.1')
     assert r.full_request == ('GET /this/??-asdf/?a=b&c&d=ef HTTP/1.1\r\n\r\n')
-    assert r.get_params['?-asdf/?a'] == 'b'
-    assert r.get_params['c'] == None
-    assert r.get_params['d'] == 'ef'
+    assert r.url_params['?-asdf/?a'] == 'b'
+    assert r.url_params['c'] == None
+    assert r.url_params['d'] == 'ef'
 
 def test_request_blank():
     r = http.Request('\r\n\n\n')
@@ -726,13 +745,31 @@ def test_request_set_url():
 def test_request_set_url_params():
     r = http.Request('GET / HTTP/1.1\r\n')
     r.url = 'www.AAAA.BBBB?a=b&c=d#foo'
-    assert r.get_params.all_pairs() == [('a','b'), ('c','d')]
+    assert r.url_params.all_pairs() == [('a','b'), ('c','d')]
     assert r.fragment == 'foo'
     assert r.url == 'http://www.AAAA.BBBB?a=b&c=d#foo'
     r.port = 400
     assert r.url == 'http://www.AAAA.BBBB:400?a=b&c=d#foo'
     r.is_ssl = True
     assert r.url == 'https://www.AAAA.BBBB:400?a=b&c=d#foo'
+    
+def test_request_copy():
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Content-Length: 4\r\n\r\n'
+                      'AAAA'))
+    r2 = copy.copy(r)
+    assert r2.full_request == ('GET / HTTP/1.1\r\n'
+                               'Content-Length: 4\r\n\r\n'
+                               'AAAA')
+    
+def test_request_url_blankpath():
+    r = http.Request()
+    r.status_line = 'GET / HTTP/1.1'
+    r.url = 'https://www.google.com'
+    r.headers['Host'] = r.host
+    r.url_params.from_dict({'foo': 'bar'})
+    assert r.full_path == '/?foo=bar'
+    assert r.url == 'https://www.google.com?foo=bar'
     
 
 ####################
@@ -749,11 +786,9 @@ def test_response_simple():
         '',
         ]
     data = 'A'*100
-    header_len = len('\r\n'.join(header_lines)+'\r\n')
     rf, rl, ru, rj = rsp_by_lines_and_full(header_lines, data)
     def test(r):
         assert r.complete
-        assert r.header_len == header_len
         assert r.raw_data == data
         assert r.response_code == 200
         assert r.response_text == 'OK'
@@ -1100,3 +1135,55 @@ def test_response_newlines():
     assert r.full_response == ('HTTP/1.1 200 OK\r\n'
                                'Content-Length: 4\r\n\r\n'
                                'AAAA')
+
+def test_copy_response():
+    r = http.Response(('HTTP/1.1 200 OK\r\n'
+                       'Content-Length: 4\r\n\r\n'
+                       'AAAA'))
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 4\r\n\r\n'
+                               'AAAA')
+
+    r2 = copy.copy(r)
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 4\r\n\r\n'
+                               'AAAA')
+
+def test_response_add_cookie():
+    r = http.Response(('HTTP/1.1 200 OK\r\n'
+                       'Content-Length: 0\r\n'
+                       'Set-Cookie: foo=bar\r\n\r\n'))
+    r.add_cookie(http.ResponseCookie('foo=baz'))
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 0\r\n'
+                               'Set-Cookie: foo=bar\r\n'
+                               'Set-Cookie: foo=baz\r\n\r\n')
+
+def test_response_set_cookie():
+    r = http.Response(('HTTP/1.1 200 OK\r\n'
+                       'Content-Length: 0\r\n'))
+    r.set_cookie(http.ResponseCookie('foo=bar'))
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 0\r\n'
+                               'Set-Cookie: foo=bar\r\n\r\n')
+
+    r.set_cookie(http.ResponseCookie('foo=baz'))
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 0\r\n'
+                               'Set-Cookie: foo=baz\r\n\r\n')
+
+def test_response_delete_cookie():
+    r = http.Response(('HTTP/1.1 200 OK\r\n'
+                       'Content-Length: 0\r\n'
+                       'Set-Cookie: foo=bar\r\n\r\n'))
+    r.delete_cookie('foo')
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 0\r\n\r\n')
+
+    r = http.Response(('HTTP/1.1 200 OK\r\n'
+                       'Content-Length: 0\r\n'
+                       'Set-Cookie: foo=bar\r\n'
+                       'Set-Cookie: foo=baz\r\n\r\n'))
+    r.delete_cookie('foo')
+    assert r.full_response == ('HTTP/1.1 200 OK\r\n'
+                               'Content-Length: 0\r\n\r\n')

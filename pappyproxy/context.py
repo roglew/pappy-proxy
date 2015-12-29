@@ -1,7 +1,10 @@
 from pappyproxy import http
 from twisted.internet import defer
 from util import PappyException
+import crochet
 import shlex
+import datetime
+import re
 
 
 """
@@ -13,7 +16,40 @@ Functions and classes involved with managing the current context and filters
 scope = []
 base_filters = []
 active_filters = []
-active_requests = []
+active_requests = set()
+inactive_requests = set()
+all_reqs = set()
+in_memory_requests = set()
+next_in_mem_id = 1
+
+class BuiltinFilters(object):
+    _filters = {
+        'not_image': (
+            ['path nctr "(\.png$|\.jpg$|\.gif$)"'],
+            'Filter out image requests',
+        ),
+        'not_jscss': (
+            ['path nctr "(\.js$|\.css$)"'],
+            'Filter out javascript and css files',
+        ),
+    }
+    
+    @staticmethod
+    def get(name):
+        if name not in BuiltinFilters._filters:
+            raise PappyException('%s not a bult in filter' % name)
+        if name in BuiltinFilters._filters:
+            return [Filter(f) for f in BuiltinFilters._filters[name][0]]
+
+    @staticmethod
+    def list():
+        return [k for k, v in BuiltinFilters._filters.iteritems()]
+
+    @staticmethod
+    def help(name):
+        if name not in BuiltinFilters._filters:
+            raise PappyException('%s not a bult in filter' % name)
+        return Filter(BuiltinFilters._filters[name][1])
 
 class FilterParseError(PappyException):
     pass
@@ -27,6 +63,9 @@ class Filter(object):
     def __call__(self, *args, **kwargs):
         return self.filter_func(*args, **kwargs)
 
+    def __repr__(self):
+        return '<Filter "%s">' % self.filter_string
+
     @staticmethod
     def from_filter_string(filter_string):
         args = shlex.split(filter_string)
@@ -38,9 +77,6 @@ class Filter(object):
         if relation[0] == 'n' and len(relation) > 1:
             negate = True
             relation = relation[1:]
-
-        # Raises exception if invalid
-        comparer = get_relation(relation)
 
         if len(args) > 2:
             val1 = args[2]
@@ -57,6 +93,9 @@ class Filter(object):
         else:
             comp2 = None
 
+        # Raises exception if invalid
+        comparer = get_relation(relation, val1)
+
         if field in ("all",):
             new_filter = gen_filter_by_all(comparer, val1, negate)
         elif field in ("host", "domain", "hs", "dm"):
@@ -69,7 +108,7 @@ class Filter(object):
             new_filter = gen_filter_by_verb(comparer, val1, negate)
         elif field in ("param", "pm"):
             if len(args) > 4:
-                comparer2 = get_relation(comp2)
+                comparer2 = get_relation(comp2, val2)
                 new_filter = gen_filter_by_params(comparer, val1,
                                                   comparer2, val2, negate)
             else:
@@ -77,7 +116,7 @@ class Filter(object):
                                                   negate=negate)
         elif field in ("header", "hd"):
             if len(args) > 4:
-                comparer2 = get_relation(comp2)
+                comparer2 = get_relation(comp2, val2)
                 new_filter = gen_filter_by_headers(comparer, val1,
                                                    comparer2, val2, negate)
             else:
@@ -87,7 +126,7 @@ class Filter(object):
             new_filter = gen_filter_by_raw_headers(comparer, val1, negate)
         elif field in ("sentcookie", "sck"):
             if len(args) > 4:
-                comparer2 = get_relation(comp2)
+                comparer2 = get_relation(comp2, val2)
                 new_filter = gen_filter_by_submitted_cookies(comparer, val1,
                                                              comparer2, val2, negate)
             else:
@@ -95,7 +134,7 @@ class Filter(object):
                                                              negate=negate)
         elif field in ("setcookie", "stck"):
             if len(args) > 4:
-                comparer2 = get_relation(comp2)
+                comparer2 = get_relation(comp2, val2)
                 new_filter = gen_filter_by_set_cookies(comparer, val1,
                                                        comparer2, val2, negate)
             else:
@@ -105,6 +144,10 @@ class Filter(object):
             new_filter = gen_filter_by_response_code(comparer, val1, negate)
         elif field in ("responsetime", "rt"):
             pass
+        elif field in ("tag", "tg"):
+            new_filter = gen_filter_by_tag(comparer, val1, negate)
+        elif field in ("saved", "svd"):
+            new_filter = gen_filter_by_saved(comparer, val1, negate)
         else:
             raise FilterParseError("%s is not a valid field" % field)
 
@@ -113,19 +156,16 @@ class Filter(object):
         else:
             raise FilterParseError("Error creating filter")
 
-
 def filter_reqs(requests, filters):
-    to_delete = []
+    to_delete = set()
     # Could definitely be more efficient, but it stays like this until
     # it impacts performance
-    for filt in filters:
-        for req in requests:
+    for req in requests:
+        for filt in filters:
             if not filt(req):
-                to_delete.append(req)
-        new_requests = [r for r in requests if r not in to_delete]
-        requests = new_requests
-        to_delete = []
-    return requests
+                to_delete.add(req)
+    requests = [r for r in requests if r not in to_delete]
+    return (requests, list(to_delete))
 
 def cmp_is(a, b):
     return str(a) == str(b)
@@ -134,7 +174,7 @@ def cmp_contains(a, b):
     return (b.lower() in a.lower())
 
 def cmp_exists(a, b=None):
-    return (a is not None)
+    return (a is not None and a != [])
 
 def cmp_len_eq(a, b):
     return (len(a) == int(b))
@@ -154,9 +194,18 @@ def cmp_gt(a, b):
 def cmp_lt(a, b):
     return (int(a) < int(b))
 
+def cmp_containsr(a, b):
+    try:
+        if re.search(b, a):
+            return True
+        return False
+    except re.error as e:
+        raise PappyException('Invalid regexp: %s' % e)
+
 
 def gen_filter_by_attr(comparer, val, attr, negate=False):
     """
+    NOINDEX
     Filters by an attribute whose name is shared by the request and response
     objects
     """
@@ -222,7 +271,7 @@ def gen_filter_by_response_code(comparer, val, negate=False):
         
 def gen_filter_by_path(comparer, val, negate=False):
     def f(req):
-        result = comparer(req.path, val)
+        result = comparer(req.full_path, val)
         if negate:
             return not result
         else:
@@ -249,6 +298,35 @@ def gen_filter_by_verb(comparer, val, negate=False):
             return result
 
     return f
+
+def gen_filter_by_tag(comparer, val, negate=False):
+    def f(req):
+        result = False
+        for tag in req.tags:
+            if comparer(tag, val):
+                result = True
+                break
+        if negate:
+            return not result
+        else:
+            return result
+
+    return f
+
+def gen_filter_by_saved(comparer, val, negate=False):
+    def f(req):
+        result = False
+        if req.saved:
+            result = comparer('true', val)
+        else:
+            result = comparer('false', val)
+        if negate:
+            return not result
+        else:
+            return result
+
+    return f
+                
 
 def check_repeatable_dict(d, comparer1, val1, comparer2=None, val2=None, negate=False):
     result = False
@@ -319,11 +397,11 @@ def gen_filter_by_set_cookies(keycomparer, keyval, valcomparer=None,
 
     return f
 
-def gen_filter_by_get_params(keycomparer, keyval, valcomparer=None, valval=None,
+def gen_filter_by_url_params(keycomparer, keyval, valcomparer=None, valval=None,
                          negate=False):
     def f(req):
         matched = False
-        for k, v in req.get_params.all_pairs():
+        for k, v in req.url_params.all_pairs():
             if keycomparer(k, keyval):
                 if not valcomparer:
                     matched = True
@@ -362,7 +440,7 @@ def gen_filter_by_params(keycomparer, keyval, valcomparer=None, valval=None,
         matched = False
         # purposely don't pass negate here, otherwise we get double negatives
         f1 = gen_filter_by_post_params(keycomparer, keyval, valcomparer, valval)
-        f2 = gen_filter_by_get_params(keycomparer, keyval, valcomparer, valval)
+        f2 = gen_filter_by_url_params(keycomparer, keyval, valcomparer, valval)
         if f1(req):
             matched = True
         if f2(req):
@@ -375,7 +453,7 @@ def gen_filter_by_params(keycomparer, keyval, valcomparer=None, valval=None,
 
     return f
 
-def get_relation(s):
+def get_relation(s, val):
     # Gets the relation function associated with the string
     # Returns none if not found
     if s in ("is",):
@@ -383,21 +461,21 @@ def get_relation(s):
     elif s in ("contains", "ct"):
         return cmp_contains
     elif s in ("containsr", "ctr"):
-        # TODO
-        raise PappyException("Contains (regexp) is not implemented yet. Sorry.")
+        validate_regexp(val)
+        return cmp_containsr
     elif s in ("exists", "ex"):
         return cmp_exists
-    elif s in ("Leq"):
+    elif s in ("Leq",):
         return cmp_len_eq
-    elif s in ("Lgt"):
+    elif s in ("Lgt",):
         return cmp_len_gt
-    elif s in ("Llt"):
+    elif s in ("Llt",):
         return cmp_len_lt
-    elif s in ("eq"):
+    elif s in ("eq",):
         return cmp_eq
-    elif s in ("gt"):
+    elif s in ("gt",):
         return cmp_gt
-    elif s in ("lt"):
+    elif s in ("lt",):
         return cmp_lt
 
     raise FilterParseError("Invalid relation: %s" % s)
@@ -409,27 +487,78 @@ def init():
 @defer.inlineCallbacks
 def reload_from_storage():
     global active_requests
-    active_requests = yield http.Request.load_from_filters(active_filters)
+    global all_reqs
+    active_requests = set()
+    inactive_requests = set()
+    all_reqs = set()
+    reqs = yield http.Request.load_all_requests()
+    for req in reqs:
+        add_request(req)
+        
+def update_active_requests():
+    global active_requests
+    global all_reqs
 
+    inactive_requests = set()
+    active_requests = set()
+    for req in all_reqs:
+        add_request(req)
+    
 def add_filter(filt):
     global active_requests
     global active_filters
     active_filters.append(filt)
-    active_requests = filter_reqs(active_requests, active_filters)
-
+    (active_requests, deleted) = filter_reqs(active_requests, active_filters)
+    for r in deleted:
+        inactive_requests.add(r)
+    
 def add_request(req):
     global active_requests
+    global active_filters
+    global in_memory_requests
+    global all_reqs
+
+    # Check if we have to add it to in_memory
+    if not req.reqid:
+        req.reqid = get_memid()
+    if req.reqid[0] == 'm':
+        in_memory_requests.add(req)
+
+    # Check if we have to add it to active_requests
     if passes_filters(req, active_filters):
-        active_requests.append(req)
-        
+        active_requests.add(req)
+    else:
+        inactive_requests.add(req)
+
+    # Add it to all_reqs
+    all_reqs.add(req)
+    
+def remove_request(req):
+    global in_memory_requests
+    global inactive_requests
+    global active_requests
+    global all_reqs
+
+    if req in in_memory_requests:
+        in_memory_requests.remove(req)
+    if req in inactive_requests:
+        inactive_requests.remove(req)
+    if req in active_requests:
+        active_requests.remove(req)
+    if req in all_reqs:
+        all_reqs.remove(req)
+
 def filter_recheck():
     global active_requests
-    global active_filters
-    new_reqs = []
-    for req in active_requests:
+    global inactive_requests
+    global all_reqs
+    active_requests = set()
+    inactive_requests = set()
+    for req in all_reqs:
         if passes_filters(req, active_filters):
-            new_reqs.append(req)
-    active_requests = new_reqs
+            active_requests.add(req)
+        else:
+            inactive_requests.add(req)
     
 def passes_filters(request, filters):
     for filt in filters:
@@ -437,13 +566,6 @@ def passes_filters(request, filters):
             return False
     return True
 
-def sort(key=None):
-    global active_requests
-    if key:
-        active_requests = sorted(active_requests, key=key)
-    else:
-        active_requests = sorted(active_requests, key=lambda r: r.reqid)
-    
 def in_scope(request):
     global scope
     return passes_filters(request, scope)
@@ -457,12 +579,11 @@ def save_scope():
     global scope
     scope = active_filters[:]
 
-@defer.inlineCallbacks
 def reset_to_scope():
-    global active_filters
     global scope
+    global active_filters
     active_filters = scope[:]
-    yield reload_from_storage()
+    update_active_requests()
     
 def print_scope():
     global scope
@@ -503,3 +624,51 @@ def load_scope(dbpool):
         new_filter = Filter(row[1])
         new_scope.append(new_filter)
     scope = new_scope
+
+def get_memid():
+    global next_in_mem_id
+    i = 'm%d' % next_in_mem_id
+    next_in_mem_id += 1
+    return i
+
+@defer.inlineCallbacks
+def clear_tag(tag):
+    # Remove a tag from every request
+    reqs = yield http.Request.load_requests_by_tag(tag)
+    for req in reqs:
+        req.tags.remove(tag)
+        if req.saved:
+            yield req.async_save()
+    filter_recheck()
+
+@defer.inlineCallbacks
+def async_set_tag(tag, reqs):
+    """
+    async_set_tag(tag, reqs)
+    Remove the tag from every request then add the given requests to memory and
+    give them the tag.
+    """
+    yield clear_tag(tag)
+    for req in reqs:
+        if not req.reqid:
+            req.reqid = get_memid()
+        req.tags.append(tag)
+        add_request(req)
+
+@crochet.wait_for(timeout=180.0)
+@defer.inlineCallbacks
+def set_tag(tag, reqs):
+    yield async_set_tag(tag, reqs)
+
+def validate_regexp(r):
+    try:
+        re.compile(r)
+    except re.error as e:
+        raise PappyException('Invalid regexp: %s' % e)
+
+def filter_up():
+    # Deletes the last filter of the context
+    global active_filters
+    if active_filters:
+        active_filters = active_filters[:-1]
+        filter_recheck()

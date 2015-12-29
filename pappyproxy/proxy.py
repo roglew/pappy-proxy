@@ -1,3 +1,4 @@
+import copy
 import datetime
 import gzip
 import os
@@ -19,7 +20,7 @@ from pappyproxy import mangle
 from pappyproxy.util import PappyException
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, ssl
-from twisted.internet.protocol import ClientFactory
+from twisted.internet.protocol import ClientFactory, ServerFactory
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import defer
 
@@ -34,6 +35,16 @@ def get_next_connection_id():
     ret_id = next_connection_id
     next_connection_id += 1
     return ret_id
+
+def add_intercepting_macro(key, macro, int_macro_dict):
+    if key in int_macro_dict:
+        raise PappyException('Macro with key %s already exists' % key)
+    int_macro_dict[key] = macro
+
+def remove_intercepting_macro(key, int_macro_dict):
+    if not key in int_macro_dict:
+        raise PappyException('Macro with key %s not loaded' % key)
+    del int_macro_dict[key]
 
 def log(message, id=None, symbol='*', verbosity_level=1):
 
@@ -113,34 +124,72 @@ class ProxyClient(LineReceiver):
         lines = self.request.full_request.splitlines()
         for l in lines:
             self.log(l, symbol='>r', verbosity_level=3)
-        mangled_request = yield mangle.mangle_request(self.request,
-            self.factory.connection_id)
-        if mangled_request is None:
-            self.transport.loseConnection()
-            return
-        if context.in_scope(mangled_request):
-            yield mangled_request.deep_save()
-        if not self._sent:
-            self.transport.write(mangled_request.full_request)
-            self._sent = True
-        self.data_defer.callback(mangled_request.full_request)
 
+        sendreq = self.request
+        if context.in_scope(sendreq):
+
+            if self.factory.save_all:
+                yield sendreq.async_deep_save()
+
+            ## Run intercepting macros
+            # if we don't copy it, when we delete a macro from the console,
+            # we get a crash. We do a shallow copy to keep the macro
+            # instances the same.
+            to_mangle = copy.copy(self.factory.intercepting_macros).iteritems()
+            for k, macro in to_mangle:
+                if macro.do_req:
+                    if macro.async_req:
+                        sendreq = yield macro.async_mangle_request(sendreq)
+                    else:
+                        sendreq = macro.mangle_request(sendreq)
+
+                    if sendreq is None:
+                        self.transport.loseConnection()
+                        self.request = None
+                        self.data_defer.callback(None)
+                        if self.factory.save_all:
+                            yield sendreq.async_deep_save()
+                        defer.returnValue(None)
+
+            if sendreq != self.request:
+                sendreq.unmangled = self.request
+
+            if self.factory.save_all:
+                yield sendreq.async_deep_save()
+        else:
+            self.log("Request out of scope, passing along unmangled")
+                
+        if not self._sent:
+            self.factory.start_time = datetime.datetime.now()
+            self.transport.write(sendreq.full_request)
+            self.request = sendreq
+            self.request.submitted = True
+            self._sent = True
+            self.data_defer.callback(sendreq)
+        defer.returnValue(None)
+
+    def connectionLost(self, reason):
+        pass
+        
     def handle_response_end(self, *args, **kwargs):
         self.log("Remote response finished, returning data to original stream")
+        self.request.response = self._response_obj
         self.transport.loseConnection()
         assert self._response_obj.full_response
-        self.factory.return_response(self._response_obj)
+        self.factory.return_request_pair(self.request)
 
 
 class ProxyClientFactory(ClientFactory):
 
-    def __init__(self, request):
+    def __init__(self, request, save_all=False):
         self.request = request
         #self.proxy_server = None
+        self.intercepting_macros = {}
         self.connection_id = -1
         self.data_defer = defer.Deferred()
         self.start_time = datetime.datetime.now()
         self.end_time = None
+        self.save_all = save_all
 
     def log(self, message, symbol='*', verbosity_level=1):
         log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
@@ -157,19 +206,66 @@ class ProxyClientFactory(ClientFactory):
         self.log("Connection lost with remote server: %s" % reason.getErrorMessage())
 
     @defer.inlineCallbacks
-    def return_response(self, response):
+    def return_request_pair(self, request):
         self.end_time = datetime.datetime.now()
-        log_request(console.printable_data(response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
-        mangled_reqrsp_pair = yield mangle.mangle_response(response, self.connection_id)
-        if mangled_reqrsp_pair:
-            log_request(console.printable_data(mangled_reqrsp_pair.response.full_response),
-                        id=self.connection_id, symbol='<', verbosity_level=3)
-            mangled_reqrsp_pair.time_start = self.start_time
-            mangled_reqrsp_pair.time_end = self.end_time
-            if context.in_scope(mangled_reqrsp_pair):
-                yield mangled_reqrsp_pair.deep_save()
-        self.data_defer.callback(mangled_reqrsp_pair)
+        log_request(console.printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
 
+        request.time_start = self.start_time
+        request.time_end = self.end_time
+        if context.in_scope(request):
+
+            if self.save_all:
+                yield request.async_deep_save()
+
+            # if we don't copy it, when we delete a macro from the console,
+            # we get a crash. We do a shallow copy to keep the macro
+            # instances the same.
+            to_mangle = copy.copy(self.intercepting_macros).iteritems()
+            old_rsp = request.response
+            for k, macro in to_mangle:
+                if macro.do_rsp:
+                    if macro.async_rsp:
+                        mangled_rsp = yield macro.async_mangle_response(request)
+                    else:
+                        mangled_rsp = macro.mangle_response(request)
+
+                    if mangled_rsp is None:
+                        request.response = None
+                        self.data_defer.callback(request)
+                        if self.save_all:
+                            yield request.async_deep_save()
+                        self.transport.loseConnection()
+                        defer.returnValue(None)
+
+                    request.response = mangled_rsp
+
+            if request.response != old_rsp:
+                request.response.unmangled = old_rsp
+
+            if self.save_all:
+                yield request.async_deep_save()
+
+            # re-check after all the mangling
+            context.filter_recheck()
+
+            if request.response:
+                log_request(console.printable_data(request.response.full_response),
+                            id=self.connection_id, symbol='<', verbosity_level=3)
+        else:
+            self.log("Response out of scope, passing along unmangled")
+        self.data_defer.callback(request)
+        defer.returnValue(None)
+
+class ProxyServerFactory(ServerFactory):
+
+    def __init__(self, save_all=False):
+        self.intercepting_macros = {}
+        self.save_all = save_all
+
+    def buildProtocol(self, addr):
+        prot = ProxyServer()
+        prot.factory = self
+        return prot
 
 class ProxyServer(LineReceiver):
 
@@ -244,8 +340,9 @@ class ProxyServer(LineReceiver):
 
         if self._forward:
             self.log("Forwarding to %s on %d" % (self._request_obj.host, self._request_obj.port))
-            factory = ProxyClientFactory(self._request_obj)
-            factory.proxy_server = self
+            factory = ProxyClientFactory(self._request_obj,
+                                         save_all=self.factory.save_all)
+            factory.intercepting_macros = self.factory.intercepting_macros
             factory.connection_id = self.connection_id
             factory.data_defer.addCallback(self.send_response_back)
             if self._request_obj.is_ssl:

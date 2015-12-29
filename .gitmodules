@@ -1,0 +1,3 @@
+[submodule "pappyproxy/lists/fuzzdb"]
+	path = pappyproxy/lists/fuzzdb
+	url = https://github.com/fuzzdb-project/fuzzdb.git

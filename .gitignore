@@ -10,3 +10,4 @@ TAGS
 config.json
 build/*
 *.egg-info/*
+.#*

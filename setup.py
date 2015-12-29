@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='pappyproxy',
-      version='0.0.1',
+      version='0.0.2',
       description='The Pappy Intercepting Proxy',
       author='Rob Glew',
       author_email='rglew56@gmail.com',
@@ -13,11 +13,14 @@ setup(name='pappyproxy',
       entry_points = {
           'console_scripts':['pappy = pappyproxy.pappy:start'],
           },
-      long_description=open('README.md').read(),
+      long_description=open('docs/source/overview.rst').read(),
       keywords='http proxy hacking 1337hax pwnurmum',
+      download_url='https://github.com/roglew/pappy-proxy/archive/0.0.2.tar.gz',
       install_requires=[
+          'beautifulsoup4>=4.4.1',
           'cmd2>=0.6.8',
           'crochet>=1.4.0',
+          'Jinja2>=2.8',
           'pygments>=2.0.2',
           'pytest-cov>=2.2.0',
           'pytest-mock>=0.9.0',
@@ -28,6 +31,7 @@ setup(name='pappyproxy',
           ],
       classifiers=[
           'Intended Audience :: Developers',
+          'Intended Audience :: Information Technology',
           'Operating System :: MacOS',
           'Operating System :: POSIX :: Linux',
           'Development Status :: 2 - Pre-Alpha',
