@@ -1,0 +1,883 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pappyproxy package &mdash; Pappy Proxy 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Pappy Proxy 0.1.1 documentation" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pappyproxy-package">
+<h1>pappyproxy package<a class="headerlink" href="#pappyproxy-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-pappyproxy.context">
+<span id="pappyproxy-context-module"></span><h2>pappyproxy.context module<a class="headerlink" href="#module-pappyproxy.context" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pappyproxy.context.async_set_tag">
+<code class="descclassname">pappyproxy.context.</code><code class="descname">async_set_tag</code><span class="sig-paren">(</span><em>tag</em>, <em>reqs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.context.async_set_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the tag from every request then add the given requests to memory and
+give them the tag.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.http">
+<span id="pappyproxy-http-module"></span><h2>pappyproxy.http module<a class="headerlink" href="#module-pappyproxy.http" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pappyproxy.http.RepeatableDict">
+<em class="property">class </em><code class="descclassname">pappyproxy.http.</code><code class="descname">RepeatableDict</code><span class="sig-paren">(</span><em>from_pairs=None</em>, <em>case_insensitive=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.RepeatableDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict that retains the order of items inserted and keeps track of
+duplicate values. Can optionally treat keys as case insensitive.
+Custom made for the proxy, so it has strange features</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pappyproxy.http.Request">
+<em class="property">class </em><code class="descclassname">pappyproxy.http.</code><code class="descname">Request</code><span class="sig-paren">(</span><em>full_request=None</em>, <em>update_content_length=True</em>, <em>port=None</em>, <em>is_ssl=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>time_end</strong> (<a class="reference external" href="https://docs.python.org/library/datetime.html#datetime.datetime" title="(in Python v2.7)"><em>datetime.datetime</em></a>) &#8211; The datetime that the request ended.</li>
+<li><strong>time_start</strong> (<a class="reference external" href="https://docs.python.org/library/datetime.html#datetime.datetime" title="(in Python v2.7)"><em>datetime.datetime</em></a>) &#8211; The datetime that the request was made</li>
+<li><strong>complete</strong> (<em>Bool</em>) &#8211; When creating the request with <a class="reference internal" href="#pappyproxy.http.Request.add_line" title="pappyproxy.http.Request.add_line"><code class="xref py py-func docutils literal"><span class="pre">add_line()</span></code></a>
+and <a class="reference internal" href="#pappyproxy.http.Request.add_data" title="pappyproxy.http.Request.add_data"><code class="xref py py-func docutils literal"><span class="pre">add_data()</span></code></a>, returns whether
+the request is complete.</li>
+<li><strong>cookies</strong> (<a class="reference internal" href="#pappyproxy.http.RepeatableDict" title="pappyproxy.http.RepeatableDict"><em>RepeatableDict</em></a>) &#8211; Cookies sent with the request</li>
+<li><strong>fragment</strong> (<em>String</em>) &#8211; The fragment part of the url (The part that comes after the #)</li>
+<li><strong>url_params</strong> (<a class="reference internal" href="#pappyproxy.http.RepeatableDict" title="pappyproxy.http.RepeatableDict"><em>RepeatableDict</em></a>) &#8211; The url parameters of the request (aka the get parameters)</li>
+<li><strong>headers</strong> (<a class="reference internal" href="#pappyproxy.http.RepeatableDict" title="pappyproxy.http.RepeatableDict"><em>RepeatableDict</em></a>) &#8211; The headers of the request</li>
+<li><strong>headers_complete</strong> (<em>Bool</em>) &#8211; When creating the request with
+<a class="reference internal" href="#pappyproxy.http.Request.add_line" title="pappyproxy.http.Request.add_line"><code class="xref py py-func docutils literal"><span class="pre">add_line()</span></code></a> and
+<a class="reference internal" href="#pappyproxy.http.Request.add_data" title="pappyproxy.http.Request.add_data"><code class="xref py py-func docutils literal"><span class="pre">add_data()</span></code></a>, returns whether the headers
+are complete</li>
+<li><strong>path</strong> (<em>String</em>) &#8211; The path of the request</li>
+<li><strong>port</strong> (<em>Integer</em>) &#8211; The port that the request was sent to (or will be sent to)</li>
+<li><strong>post_params</strong> (<a class="reference internal" href="#pappyproxy.http.RepeatableDict" title="pappyproxy.http.RepeatableDict"><em>RepeatableDict</em></a>) &#8211; The post parameters of the request</li>
+<li><strong>reqid</strong> (<em>String</em>) &#8211; The request id of the request</li>
+<li><strong>response</strong> (<a class="reference internal" href="#pappyproxy.http.Response" title="pappyproxy.http.Response"><em>Response</em></a>) &#8211; The associated response of this request</li>
+<li><strong>submitted</strong> (<em>Bool</em>) &#8211; Whether the request has been submitted</li>
+<li><strong>unmangled</strong> (<a class="reference internal" href="#pappyproxy.http.Request" title="pappyproxy.http.Request"><em>Request</em></a>) &#8211; If the request was mangled, the version of the request
+before it was mangled.</li>
+<li><strong>verb</strong> (<em>String</em>) &#8211; The HTTP verb of the request (ie POST, GET)</li>
+<li><strong>version</strong> (<em>String</em>) &#8211; The HTTP version of the request (ie HTTP/1.1)</li>
+<li><strong>tags</strong> (<em>List of Strings</em>) &#8211; Tags associated with the request</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pappyproxy.http.Request.add_data">
+<code class="descname">add_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.add_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used for building a request from a Twisted protocol.
+Add data to the request.
+I do not suggest that you use this function ever.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference external" href="https://docs.python.org/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) &#8211; The data to add</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.add_line">
+<code class="descname">add_line</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.add_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used for building a request from a Twisted protocol.
+Add a line (for status line and headers). Lines must be added in order
+and the first line must be the status line. The line should not contain
+the trailing carriage return/newline. I do not suggest you use this for
+anything.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>line</strong> (<a class="reference external" href="https://docs.python.org/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) &#8211; The line to add</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.async_deep_save">
+<code class="descname">async_deep_save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.async_deep_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves self, unmangled, response, and unmangled response. Returns a deferred
+which fires after everything has been saved.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.async_save">
+<code class="descname">async_save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.async_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save/update the request in the data file. Returns a twisted deferred which
+fires when the save is complete.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.async_submit">
+<code class="descname">async_submit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.async_submit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <a class="reference internal" href="#pappyproxy.http.Request.submit" title="pappyproxy.http.Request.submit"><code class="xref py py-func docutils literal"><span class="pre">submit()</span></code></a> but generates deferreds.
+Submits the request using its host, port, etc. and updates its response value
+to the resulting response.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Twisted deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.copy">
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of the request</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#pappyproxy.http.Request" title="pappyproxy.http.Request">Request</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.from_json">
+<code class="descname">from_json</code><span class="sig-paren">(</span><em>json_string</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the metadata of the request to match data from
+<a class="reference internal" href="#pappyproxy.http.Request.to_json" title="pappyproxy.http.Request.to_json"><code class="xref py py-func docutils literal"><span class="pre">to_json()</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>json_string</strong> (<em>JSON data in a string</em>) &#8211; The JSON data to use</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.full_path">
+<code class="descname">full_path</code><a class="headerlink" href="#pappyproxy.http.Request.full_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>The full path of the request including URL params and fragment.
+ie <cite>/path/to/stuff?foo=bar&amp;baz=something#somewhere</cite></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the full path of the request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.full_request">
+<code class="descname">full_request</code><a class="headerlink" href="#pappyproxy.http.Request.full_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>The full text of the request including the headers and data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the full text of the request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.host">
+<code class="descname">host</code><a class="headerlink" href="#pappyproxy.http.Request.host" title="Permalink to this definition">¶</a></dt>
+<dd><p>The host of the request. ie <cite>www.google.com</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the host of the request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Changes the host of the request and updates the Host header</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.is_ssl">
+<code class="descname">is_ssl</code><a class="headerlink" href="#pappyproxy.http.Request.is_ssl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the request is sent over SSL</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns if the request is sent over SSL</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Sets if the request is sent over SSL</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">Bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pappyproxy.http.Request.load_all_requests">
+<em class="property">static </em><code class="descname">load_all_requests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_all_requests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all the requests in the data file and return them in a list.
+Returns a deferred which calls back with the list of requests when complete.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pappyproxy.http.Request.load_request">
+<em class="property">static </em><code class="descname">load_request</code><span class="sig-paren">(</span><em>to_load</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a request with the given request id and return it.
+Returns a deferred which calls back with the request when complete.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pappyproxy.http.Request.load_requests_by_tag">
+<em class="property">static </em><code class="descname">load_requests_by_tag</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_requests_by_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all the requests in the data file with a given tag and return them in a list.
+Returns a deferred which calls back with the list of requests when complete.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.path_tuple">
+<code class="descname">path_tuple</code><a class="headerlink" href="#pappyproxy.http.Request.path_tuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>The path in tuple form starting with the host. For example, path_parts for
+a request to <a class="reference external" href="http://www.example.com/foo/bar.php">http://www.example.com/foo/bar.php</a> would be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="s">&#39;www.example.com&#39;</span><span class="p">,</span> <span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar.php&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the path in tuple form</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">Tuple</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.raw_data">
+<code class="descname">raw_data</code><a class="headerlink" href="#pappyproxy.http.Request.raw_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The data portion of the request</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the data portion of the request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Set the data of the request and update metadata</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.raw_headers">
+<code class="descname">raw_headers</code><a class="headerlink" href="#pappyproxy.http.Request.raw_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>The raw text of the headers including the extra newline at the end.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the raw text of the headers including the extra newline at the end.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.rsptime">
+<code class="descname">rsptime</code><a class="headerlink" href="#pappyproxy.http.Request.rsptime" title="Permalink to this definition">¶</a></dt>
+<dd><p>The response time of the request</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the response time of the request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">datetime.timedelta</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.save">
+<code class="descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save/update the request in the data file.
+Saves the request, its unmangled version, the response, and the unmanbled response.
+Cannot be called from inside an async function.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.saved">
+<code class="descname">saved</code><a class="headerlink" href="#pappyproxy.http.Request.saved" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the request is saved in the data file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns True if the request is saved in the data file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">Bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.status_line">
+<code class="descname">status_line</code><a class="headerlink" href="#pappyproxy.http.Request.status_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>The status line of the request. ie <cite>GET / HTTP/1.1</cite></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the status line of the request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Sets the status line of the request</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.submit">
+<code class="descname">submit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.submit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits the request using its host, port, etc. and updates its response value
+to the resulting response.
+Cannot be called in async functions.
+This is what you should use to submit your requests in macros.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pappyproxy.http.Request.submit_new">
+<em class="property">static </em><code class="descname">submit_new</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>is_ssl</em>, <em>full_request</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.submit_new" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits a request with the given parameters and returns a request object
+with the response.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>host</strong> (<a class="reference external" href="https://docs.python.org/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) &#8211; The host to submit to</li>
+<li><strong>port</strong> (<em>Integer</em>) &#8211; The port to submit to</li>
+<li><strong>full_request</strong> (<a class="reference external" href="https://docs.python.org/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) &#8211; The request data to send</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Twisted deferred that calls back with a Request</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Request.to_json">
+<code class="descname">to_json</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON encoding of the request that can be used by
+<a class="reference internal" href="#pappyproxy.http.Request.from_json" title="pappyproxy.http.Request.from_json"><code class="xref py py-func docutils literal"><span class="pre">from_json()</span></code></a> to recreate the request.
+The <cite>full_request</cite> portion is base64 encoded because json doesn&#8217;t play
+nice with binary blobs.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.url">
+<code class="descname">url</code><a class="headerlink" href="#pappyproxy.http.Request.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>The full url of the request including url params, protocol, etc.
+ie <cite>https://www.google.com</cite>, <cite>http://foo.fakewebsite.com:1234/path?a=b</cite>.
+When setting the URL, the port, is_ssl, path, url params, host, etc are all
+automatically updated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the url of the request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Sets the url of the request and updates metadata</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pappyproxy.http.Response">
+<em class="property">class </em><code class="descclassname">pappyproxy.http.</code><code class="descname">Response</code><span class="sig-paren">(</span><em>full_response=None</em>, <em>update_content_length=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>complete</strong> (<em>Bool</em>) &#8211; When creating the response with <a class="reference internal" href="#pappyproxy.http.Response.add_line" title="pappyproxy.http.Response.add_line"><code class="xref py py-func docutils literal"><span class="pre">add_line()</span></code></a>
+and <a class="reference internal" href="#pappyproxy.http.Response.add_data" title="pappyproxy.http.Response.add_data"><code class="xref py py-func docutils literal"><span class="pre">add_data()</span></code></a>, returns whether
+the request is complete.</li>
+<li><strong>cookies</strong> (<em>RepeatableDict of ResponseCookie objects</em>) &#8211; Cookies set by the response</li>
+<li><strong>headers</strong> (<a class="reference internal" href="#pappyproxy.http.RepeatableDict" title="pappyproxy.http.RepeatableDict"><em>RepeatableDict</em></a>) &#8211; The headers of the response</li>
+<li><strong>headers_complete</strong> (<em>Bool</em>) &#8211; When creating the response with
+<a class="reference internal" href="#pappyproxy.http.Response.add_line" title="pappyproxy.http.Response.add_line"><code class="xref py py-func docutils literal"><span class="pre">add_line()</span></code></a> and
+<a class="reference internal" href="#pappyproxy.http.Response.add_data" title="pappyproxy.http.Response.add_data"><code class="xref py py-func docutils literal"><span class="pre">add_data()</span></code></a>, returns whether the headers
+are complete</li>
+<li><strong>response_code</strong> (<em>Integer</em>) &#8211; The response code of the response</li>
+<li><strong>response_text</strong> (<em>String</em>) &#8211; The text associated with the response code (ie OK, NOT FOUND, etc)</li>
+<li><strong>rspid</strong> (<em>String</em>) &#8211; If the response is saved in the data file, the id of the response</li>
+<li><strong>unmangled</strong> (<a class="reference internal" href="#pappyproxy.http.Response" title="pappyproxy.http.Response"><em>Response</em></a>) &#8211; If the response was mangled, the unmangled version of the response</li>
+<li><strong>version</strong> (<em>String</em>) &#8211; The version part of the status line (ie HTTP/1.1)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pappyproxy.http.Response.add_cookie">
+<code class="descname">add_cookie</code><span class="sig-paren">(</span><em>cookie</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.add_cookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a <a class="reference internal" href="#pappyproxy.http.ResponseCookie" title="pappyproxy.http.ResponseCookie"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.http.ResponseCookie</span></code></a> to the response.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This will add duplicate cookies. If you want to add a cookie you&#8217;re not sure exists,
+use <a class="reference internal" href="#pappyproxy.http.Response.set_cookie" title="pappyproxy.http.Response.set_cookie"><code class="xref py py-func docutils literal"><span class="pre">set_cookie()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.add_data">
+<code class="descname">add_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.add_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used for building a response from a Twisted protocol.
+Add data to the response. The data must conform to the content encoding
+and transfer encoding given in the headers passed in to
+<a class="reference internal" href="#pappyproxy.http.Response.add_line" title="pappyproxy.http.Response.add_line"><code class="xref py py-func docutils literal"><span class="pre">add_line()</span></code></a>. Can be any fragment of the data.
+I do not suggest that you use this function ever.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference external" href="https://docs.python.org/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) &#8211; The data to add</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.add_line">
+<code class="descname">add_line</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.add_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used for building a response from a Twisted protocol.
+Add a line (for status line and headers). Lines must be added in order
+and the first line must be the status line. The line should not contain
+the trailing carriage return/newline. I do not suggest you use this for
+anything.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>line</strong> (<a class="reference external" href="https://docs.python.org/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) &#8211; The line to add</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.async_save">
+<code class="descname">async_save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.async_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save/update the just request in the data file. Returns a twisted deferred which
+fires when the save is complete. It is suggested that you use
+:func: <cite>~pappyproxy.http.Request.async_deep_save</cite> instead to save responses.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.delete_cookie">
+<code class="descname">delete_cookie</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.delete_cookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a cookie from the response by its key</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.from_json">
+<code class="descname">from_json</code><span class="sig-paren">(</span><em>json_string</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the metadata of the response to match data from
+<a class="reference internal" href="#pappyproxy.http.Response.to_json" title="pappyproxy.http.Response.to_json"><code class="xref py py-func docutils literal"><span class="pre">to_json()</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>json_string</strong> (<em>JSON data in a string</em>) &#8211; The JSON data to use</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Response.full_response">
+<code class="descname">full_response</code><a class="headerlink" href="#pappyproxy.http.Response.full_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>The full text of the response including the headers and data.
+Response is automatically converted from compressed/chunked into an
+uncompressed response with a Content-Length header.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the full text of the response</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pappyproxy.http.Response.load_response">
+<em class="property">static </em><code class="descname">load_response</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.load_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a response from its response id. Returns a deferred. I don&#8217;t suggest you use this.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Response.raw_data">
+<code class="descname">raw_data</code><a class="headerlink" href="#pappyproxy.http.Response.raw_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The data portion of the response</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the data portion of the response</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Set the data of the response and update metadata</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Response.raw_headers">
+<code class="descname">raw_headers</code><a class="headerlink" href="#pappyproxy.http.Response.raw_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>The raw text of the headers including the extra newline at the end.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the raw text of the headers including the extra newline at the end.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.set_cookie">
+<code class="descname">set_cookie</code><span class="sig-paren">(</span><em>cookie</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.set_cookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a cookie in the response. <code class="docutils literal"><span class="pre">cookie</span></code> must be a <a class="reference internal" href="#pappyproxy.http.ResponseCookie" title="pappyproxy.http.ResponseCookie"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.http.ResponseCookie</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.set_cookie_kv">
+<code class="descname">set_cookie_kv</code><span class="sig-paren">(</span><em>key</em>, <em>val</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.set_cookie_kv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a cookie by key and value. Will not have path, secure, etc set at all.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Response.soup">
+<code class="descname">soup</code><a class="headerlink" href="#pappyproxy.http.Response.soup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a beautifulsoup4 object for parsing the html of the response</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns a BeautifulSoup object representing the html of the response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Response.status_line">
+<code class="descname">status_line</code><a class="headerlink" href="#pappyproxy.http.Response.status_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>The status line of the response. ie <cite>HTTP/1.1 200 OK</cite></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the status line of the response</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Sets the status line of the response</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.http.Response.to_json">
+<code class="descname">to_json</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Response.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON encoding of the response that can be used by
+<a class="reference internal" href="#pappyproxy.http.Response.from_json" title="pappyproxy.http.Response.from_json"><code class="xref py py-func docutils literal"><span class="pre">from_json()</span></code></a> to recreate the response.
+The <code class="docutils literal"><span class="pre">full_response</span></code> portion is base64 encoded because json doesn&#8217;t play
+nice with binary blobs.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pappyproxy.http.ResponseCookie">
+<em class="property">class </em><code class="descclassname">pappyproxy.http.</code><code class="descname">ResponseCookie</code><span class="sig-paren">(</span><em>set_cookie_string=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.ResponseCookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>A cookie representing a cookie set by a response</p>
+<dl class="attribute">
+<dt id="pappyproxy.http.ResponseCookie.cookie_str">
+<code class="descname">cookie_str</code><a class="headerlink" href="#pappyproxy.http.ResponseCookie.cookie_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the full string of the cookie. ie <code class="docutils literal"><span class="pre">foo=bar;</span> <span class="pre">secure;</span> <span class="pre">path=/</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Getter:</th><td class="field-body">Returns the full string of the cookie.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Setter:</th><td class="field-body">Set the metadata from a cookie string. ie from a <code class="docutils literal"><span class="pre">Set-Cookie</span></code> header</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.http.get_request">
+<code class="descclassname">pappyproxy.http.</code><code class="descname">get_request</code><span class="sig-paren">(</span><em>url=''</em>, <em>url_params={}</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.get_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a request object that makes a GET request to the given url with the
+given url params.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.http.init">
+<code class="descclassname">pappyproxy.http.</code><code class="descname">init</code><span class="sig-paren">(</span><em>pool</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the http module.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pool</strong> (<em>SQLite ConnectionPool</em>) &#8211; The ConnectionPool to use to store the request/response objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.http.post_request">
+<code class="descclassname">pappyproxy.http.</code><code class="descname">post_request</code><span class="sig-paren">(</span><em>url</em>, <em>post_params={}</em>, <em>url_params={}</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.post_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a request object that makes a POST request to the given url with the
+given post and url params.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.iter">
+<span id="pappyproxy-iter-module"></span><h2>pappyproxy.iter module<a class="headerlink" href="#module-pappyproxy.iter" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pappyproxy.iter.common_passwords">
+<code class="descclassname">pappyproxy.iter.</code><code class="descname">common_passwords</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.iter.common_passwords" title="Permalink to this definition">¶</a></dt>
+<dd><p>List common passwords</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.iter.common_usernames">
+<code class="descclassname">pappyproxy.iter.</code><code class="descname">common_usernames</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.iter.common_usernames" title="Permalink to this definition">¶</a></dt>
+<dd><p>List common usernames</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.iter.fuzz_path_trav">
+<code class="descclassname">pappyproxy.iter.</code><code class="descname">fuzz_path_trav</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.iter.fuzz_path_trav" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fuzz common values for path traversal.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.iter.fuzz_sqli">
+<code class="descclassname">pappyproxy.iter.</code><code class="descname">fuzz_sqli</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.iter.fuzz_sqli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fuzz common values that could cause sql errors</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.iter.fuzz_xss">
+<code class="descclassname">pappyproxy.iter.</code><code class="descname">fuzz_xss</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.iter.fuzz_xss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fuzz values for finding XSS</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pappyproxy package</a><ul>
+<li><a class="reference internal" href="#module-pappyproxy.context">pappyproxy.context module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.http">pappyproxy.http module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.iter">pappyproxy.iter module</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pappyproxy.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Rob Glew.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>
