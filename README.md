@@ -1,6 +1,6 @@
 The Pappy Proxy
 ===============
-[Documentation](https://roglew.github.io/pappy-proxy/)
+[Documentation](https://roglew.github.io/pappy-proxy/) - [Tutorial](https://roglew.github.io/pappy-proxy/tutorial.html)
 
 Introduction
 ------------
