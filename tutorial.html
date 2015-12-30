@@ -133,7 +133,7 @@ Proxy is listening on port 8000
 itsPappyTime&gt;
 </pre></div>
 </div>
-<p>If you look at what&#8217;s in the file, you&#8217;ll notice that there&#8217;s a <code class="docutils literal"><span class="pre">data.db</span></code> file and a <code class="docutils literal"><span class="pre">config.json</span></code> file.</p>
+<p>If you look at what&#8217;s in the directory, you&#8217;ll notice that there&#8217;s a <code class="docutils literal"><span class="pre">data.db</span></code> file and a <code class="docutils literal"><span class="pre">config.json</span></code> file.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">data.db</span></code> is a SQLite file that stores all the (in-scope) requests that pass through the proxy</li>
 <li><code class="docutils literal"><span class="pre">config.json</span></code> stores settings for the proxy</li>
@@ -250,7 +250,7 @@ itsPappyTime&gt; scope_save
 </div>
 <div class="section" id="natas-1">
 <h3>Natas 1<a class="headerlink" href="#natas-1" title="Permalink to this headline">¶</a></h3>
-<p>Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There&#8217;s still ways to view the source in the browser, but we&#8217;ll use Pappy here. The two commands we&#8217;ll learn here are <code class="docutils literal"><span class="pre">ls</span></code>, <code class="docutils literal"><span class="pre">vfq</span></code>, and <code class="docutils literal"><span class="pre">vfs</span></code>.</p>
+<p>Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There&#8217;s still ways to view the source in the browser, but we&#8217;ll use Pappy here. The commands we&#8217;ll learn here are <code class="docutils literal"><span class="pre">ls</span></code>, <code class="docutils literal"><span class="pre">vfq</span></code>, and <code class="docutils literal"><span class="pre">vfs</span></code>.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">ls</span></code> lists the most current requests that are in the current context. You&#8217;ll be using this a lot to get the IDs of requests you want to do things with.</li>
 <li><code class="docutils literal"><span class="pre">vfq</span> <span class="pre">&lt;reqid&gt;</span></code> prints the full request of a request you specify</li>
@@ -494,16 +494,16 @@ Referer: http://natas5.natas.labs.overthewire.org/
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key <code class="docutils literal"><span class="pre">here</span> <span class="pre">&lt;https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file&gt;</span></code>. By default &lt;leader&gt; is bound to <code class="docutils literal"><span class="pre">\</span></code>.</p>
+<p class="last">You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key <a class="reference external" href="https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file">here</a>. By default &lt;leader&gt; is bound to <code class="docutils literal"><span class="pre">\</span></code>.</p>
 </div>
-<dl class="docutils">
-<dt>Submit a request then open that request in the repeater.::</dt>
-<dd>itsPappyTime&gt; ls
-196  GET   natas9.natas.labs.overthewire.org  /index.php?needle=ball&amp;submit=Search      200 OK            0        1686     0.27  &#8211;
-195  GET   natas9.natas.labs.overthewire.org  /index-source.html                        200 OK            0        1952     0.27  &#8211;
+<p>Submit a request then open that request in the repeater:</p>
+<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+196  GET   natas9.natas.labs.overthewire.org  /index.php?needle=ball&amp;submit=Search      200 OK            0        1686     0.27  --
+195  GET   natas9.natas.labs.overthewire.org  /index-source.html                        200 OK            0        1952     0.27  --
 ... snip ...
-itsPappyTime&gt; rp 196</dd>
-</dl>
+itsPappyTime&gt; rp 196
+</pre></div>
+</div>
 <p>Vim will open up in a vertical split with the request on the left and the response on the right.</p>
 <p>In the repeater, you edit the response on the left, then press the <code class="docutils literal"><span class="pre">&lt;leader&gt;</span></code> key then <code class="docutils literal"><span class="pre">f</span></code> to submit the modified request (note that your cursor must be in the left window). The response will then be put in the right window. This makes it easy to quickly make requests which are all slight variations of each other.</p>
 <p>In this case, we&#8217;ll be editing the <code class="docutils literal"><span class="pre">needle</span></code> get parameter. Try changing &#8220;ball&#8221; to &#8220;bill&#8221; and submitting it. You&#8217;ll notice that the output in the right window changes to contain words that have the word &#8220;bill&#8221; in them. The repeater will make it easy to make tweaks to your payload and get quick feedback without having to use the browser.</p>

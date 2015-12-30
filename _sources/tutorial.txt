@@ -42,7 +42,7 @@ That was easy! Make a project directory anywhere for Natas and fire up Pappy.::
     Proxy is listening on port 8000
     itsPappyTime>
 
-If you look at what's in the file, you'll notice that there's a ``data.db`` file and a ``config.json`` file.
+If you look at what's in the directory, you'll notice that there's a ``data.db`` file and a ``config.json`` file.
 
 * ``data.db`` is a SQLite file that stores all the (in-scope) requests that pass through the proxy
 * ``config.json`` stores settings for the proxy
@@ -151,7 +151,7 @@ First, go to `<http://natas0.natas.labs.overthewire.org>`_ and log in with the d
 
 Natas 1
 -------
-Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There's still ways to view the source in the browser, but we'll use Pappy here. The two commands we'll learn here are ``ls``, ``vfq``, and ``vfs``.
+Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There's still ways to view the source in the browser, but we'll use Pappy here. The commands we'll learn here are ``ls``, ``vfq``, and ``vfs``.
 
 * ``ls`` lists the most current requests that are in the current context. You'll be using this a lot to get the IDs of requests you want to do things with.
 * ``vfq <reqid>`` prints the full request of a request you specify
@@ -405,9 +405,10 @@ For this one, when you view the source you'll notice they're taking value you en
    Use ``:wq!`` to quit the repeater without having to save buffers
   
 .. note::
-   You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key ``here <https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file>``. By default <leader> is bound to ``\``.
+   You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key `here <https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file>`_. By default <leader> is bound to ``\``.
    
-Submit a request then open that request in the repeater.::
+Submit a request then open that request in the repeater::
+
   itsPappyTime> ls
   196  GET   natas9.natas.labs.overthewire.org  /index.php?needle=ball&submit=Search      200 OK            0        1686     0.27  --
   195  GET   natas9.natas.labs.overthewire.org  /index-source.html                        200 OK            0        1952     0.27  --
