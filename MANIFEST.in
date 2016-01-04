@@ -1,6 +1,6 @@
 include README.md
 include LICENSE.txt
-include pappyproxy default_user_config.json
+recursive-include pappyproxy *.json
 recursive-include pappyproxy *.py
 recursive-include pappyproxy *.vim
 recursive-include pappyproxy *.txt
