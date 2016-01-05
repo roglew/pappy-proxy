@@ -19,6 +19,7 @@ from pappyproxy.util import PappyException
 from pappyproxy.macros import load_macros, macro_from_requests, gen_imacro
 from pappyproxy.repeater import start_editor
 from pygments.lexers import get_lexer_for_mimetype
+from pygments.lexers import HttpLexer
 from pygments.formatters import TerminalFormatter
 
 """
@@ -1124,9 +1125,12 @@ def check_reqid(reqid):
     
 def view_full_request(request, headers_only=False):
     if headers_only:
-        print printable_data(request.raw_headers)
+        to_print = printable_data(request.raw_headers)
     else:
-        print printable_data(request.full_request)
+        to_print = printable_data(request.full_request)
+    to_print = pygments.highlight(to_print, HttpLexer(), TerminalFormatter())
+
+    print to_print
 
 def view_full_response(response, headers_only=False):
     def check_type(response, against):
@@ -1135,13 +1139,17 @@ def view_full_response(response, headers_only=False):
         return False
 
     if headers_only:
-        print printable_data(response.raw_headers)
+        to_print = printable_data(response.raw_headers)
+        to_print = pygments.highlight(to_print, HttpLexer(), TerminalFormatter())
+        print to_print
     else:
-        print response.raw_headers,
+        headers = printable_data(response.raw_headers)
+        headers = pygments.highlight(headers, HttpLexer(), TerminalFormatter())
+        print headers
         to_print = printable_data(response.raw_data)
-        if 'content-type' in response.headers:
+        if 'Content-Type' in response.headers:
             try:
-                lexer = get_lexer_for_mimetype(response.headers['content-type'].split(';')[0])
+                lexer = get_lexer_for_mimetype(response.headers['Content-Type'].split(';')[0])
                 to_print = pygments.highlight(to_print, lexer, TerminalFormatter())
             except ClassNotFound:
                 pass
