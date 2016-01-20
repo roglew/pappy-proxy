@@ -1,6 +1,9 @@
 The Pappy Proxy
 ===============
 
+`Documentation <https://roglew.github.io/pappy-proxy/>`__ -
+`Tutorial <https://roglew.github.io/pappy-proxy/tutorial.html>`__
+
 Introduction
 ------------
 
@@ -10,8 +13,8 @@ testing. Its features are often similar, or straight up rippoffs from
 `Burp Suite <https://portswigger.net/burp/>`__. However, Burp Suite is
 neither open source nor a command line tool, thus making a proxy like
 Pappy inevitable. The project is still in its early stages, so there are
-bugs and only the bare minimum features, but it should be able to do
-some cool stuff soon (I'm already using it for real work).
+bugs and only the bare minimum features, but it can already do some cool
+stuff.
 
 Contributing
 ------------
@@ -27,6 +30,12 @@ If you're brave and want to try and contribute code, please let me know.
 Right now the codebase is kind of rough and I have refactored it a few
 times already, but I would be more than happy to find a stable part of
 the codebase that you can contribute to.
+
+Another option is to try writing a plugin. It might be a bit easier than
+contributing code and plugins are extremely easy to integrate as a core
+feature. So you can also contribute by writing a plugin and letting me
+know about it. You can find out more by looking at `the official plugin
+docs <https://roglew.github.io/pappy-proxy/pappyplugins.html>`__.
 
 How to Use It
 =============
@@ -49,9 +58,9 @@ Quickstart
 ----------
 
 Pappy projects take up an entire directory. Any generated scripts,
-exported responses, etc. will be placed in the current directory so it's
-good to give your project a directory of its own. To start a project, do
-something like:
+exported responses, plugin data, etc. will be placed in the current
+directory so it's good to give your project a directory of its own. To
+start a project, do something like:
 
 ::
 
@@ -60,7 +69,7 @@ something like:
     $ pappy
     Copying default config to directory
     Proxy is listening on port 8000
-    itsPappyTime> exit
+    pappy> exit
     $ ls
     data.db      project_config.json
     $ 
@@ -90,7 +99,7 @@ Example:
     $ pappy -l
     Temporary datafile is /tmp/tmpw4mGv2
     Proxy is listening on port 8000
-    itsPappyTime> quit
+    pappy> quit
     Deleting temporary datafile
     $ 
 
@@ -142,172 +151,17 @@ Configuration for each project is done in the ``config.json`` file. The
 file is a JSON-formatted dictionary that contains settings for the
 proxy. The following fields can be used to configure the proxy:
 
-+------+------+
-| Key  | Valu |
-|      | e    |
-+======+======+
-| ``da | The  |
-| ta_f | file |
-| ile` | wher |
-| `    | e    |
-|      | requ |
-|      | ests |
-|      | and  |
-|      | imag |
-|      | es   |
-|      | will |
-|      | be   |
-|      | stor |
-|      | ed   |
-+------+------+
-| ``de | Wher |
-| bug_ | e    |
-| dir` | conn |
-| `    | ecti |
-| (opt | on   |
-| iona | debu |
-| l)   | g    |
-|      | info |
-|      | shou |
-|      | ld   |
-|      | be   |
-|      | stor |
-|      | ed.  |
-|      | If   |
-|      | not  |
-|      | pres |
-|      | ent, |
-|      | debu |
-|      | g    |
-|      | info |
-|      | is   |
-|      | not  |
-|      | save |
-|      | d    |
-|      | to a |
-|      | file |
-|      | .    |
-+------+------+
-| ``ce | Wher |
-| rt_d | e    |
-| ir`` | the  |
-|      | CA   |
-|      | cert |
-|      | and  |
-|      | the  |
-|      | priv |
-|      | ate  |
-|      | key  |
-|      | for  |
-|      | the  |
-|      | CA   |
-|      | cert |
-|      | are  |
-|      | stor |
-|      | ed   |
-+------+------+
-| ``pr | A    |
-| oxy_ | list |
-| list | of   |
-| ener | dict |
-| s``  | s    |
-|      | whic |
-|      | h    |
-|      | desc |
-|      | ribe |
-|      | whic |
-|      | h    |
-|      | port |
-|      | s    |
-|      | the  |
-|      | prox |
-|      | y    |
-|      | will |
-|      | list |
-|      | en   |
-|      | on.  |
-|      | Each |
-|      | item |
-|      | is a |
-|      | dict |
-|      | with |
-|      | "por |
-|      | t"   |
-|      | and  |
-|      | "int |
-|      | erfa |
-|      | ce"  |
-|      | valu |
-|      | es   |
-|      | whic |
-|      | h    |
-|      | dete |
-|      | rmin |
-|      | e    |
-|      | whic |
-|      | h    |
-|      | port |
-|      | and  |
-|      | inte |
-|      | rfac |
-|      | e    |
-|      | to   |
-|      | list |
-|      | en   |
-|      | on.  |
-|      | For  |
-|      | exam |
-|      | ple, |
-|      | if   |
-|      | port |
-|      | =800 |
-|      | 0    |
-|      | and  |
-|      | the  |
-|      | inte |
-|      | rfac |
-|      | e    |
-|      | is   |
-|      | 127. |
-|      | 0.0. |
-|      | 1,   |
-|      | the  |
-|      | prox |
-|      | y    |
-|      | will |
-|      | only |
-|      | acce |
-|      | pt   |
-|      | conn |
-|      | ecti |
-|      | ons  |
-|      | from |
-|      | loca |
-|      | lhos |
-|      | t    |
-|      | on   |
-|      | port |
-|      | 8000 |
-|      | .    |
-|      | To   |
-|      | acce |
-|      | pt   |
-|      | conn |
-|      | ecti |
-|      | ons  |
-|      | from |
-|      | anyw |
-|      | here |
-|      | ,    |
-|      | set  |
-|      | the  |
-|      | inte |
-|      | rfac |
-|      | e    |
-|      | to   |
-|      | 0.0. |
-|      | 0.0. |
-+------+------+
++----------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Key                        | Value                                                                                                                                                                                                                                                                                                                                                                                 |
++============================+=======================================================================================================================================================================================================================================================================================================================================================================================+
+| ``data_file``              | The file where requests and images will be stored                                                                                                                                                                                                                                                                                                                                     |
++----------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``debug_dir`` (optional)   | Where connection debug info should be stored. If not present, debug info is not saved to a file.                                                                                                                                                                                                                                                                                      |
++----------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``cert_dir``               | Where the CA cert and the private key for the CA cert are stored                                                                                                                                                                                                                                                                                                                      |
++----------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``proxy_listeners``        | A list of dicts which describe which ports the proxy will listen on. Each item is a dict with "port" and "interface" values which determine which port and interface to listen on. For example, if port=8000 and the interface is 127.0.0.1, the proxy will only accept connections from localhost on port 8000. To accept connections from anywhere, set the interface to 0.0.0.0.   |
++----------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 The following tokens will also be replaced with values:
 
@@ -330,197 +184,58 @@ will look for certificates (unless you specify otherwise in
 ``config.json``.) In addition, you can give the ``gencerts`` command an
 argument to have it put the generated certs in a different directory.
 
-+------------+----------------+
-| Command    | Description    |
-+============+================+
-| ``gencerts | Generate a CA  |
-|  [/path/to | cert that can  |
-| /put/certs | be added to    |
-| /in]``     | your browser   |
-|            | to let Pappy   |
-|            | decrypt HTTPS  |
-|            | traffic. Also  |
-|            | generates the  |
-|            | private key    |
-|            | for that cert  |
-|            | in the same    |
-|            | directory. If  |
-|            | no path is     |
-|            | given, the     |
-|            | certs will be  |
-|            | placed in the  |
-|            | default        |
-|            | certificate    |
-|            | location.      |
-|            | Overwrites any |
-|            | existing       |
-|            | certs.         |
-+------------+----------------+
++----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command                                | Description                                                                                                                                                                                                                                                                      |
++========================================+==================================================================================================================================================================================================================================================================================+
+| ``gencerts [/path/to/put/certs/in]``   | Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory. If no path is given, the certs will be placed in the default certificate location. Overwrites any existing certs.   |
++----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Browsing Recorded Requests/Responses
 ------------------------------------
 
 The following commands can be used to view requests and responses
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``ls [a|<n | list, ls   | List requests  |
-| um>``]     |            | that are in    |
-|            |            | the current    |
-|            |            | context (see   |
-|            |            | Context        |
-|            |            | section). Has  |
-|            |            | information    |
-|            |            | like the host, |
-|            |            | target path,   |
-|            |            | and status     |
-|            |            | code. With no  |
-|            |            | arguments, it  |
-|            |            | will print the |
-|            |            | 25 most recent |
-|            |            | requests in    |
-|            |            | the current    |
-|            |            | context. If    |
-|            |            | you pass 'a'   |
-|            |            | or 'all' as an |
-|            |            | argument, it   |
-|            |            | will print all |
-|            |            | the requests   |
-|            |            | in the current |
-|            |            | context. If    |
-|            |            | you pass a     |
-|            |            | number "n" as  |
-|            |            | an argument,   |
-|            |            | it will print  |
-|            |            | the n most     |
-|            |            | recent         |
-|            |            | requests in    |
-|            |            | the current    |
-|            |            | context.       |
-+------------+------------+----------------+
-| ``sm``     | sm,        | Print a tree   |
-|            | site\_map  | showing the    |
-|            |            | site map. It   |
-|            |            | will display   |
-|            |            | all requests   |
-|            |            | in the current |
-|            |            | context that   |
-|            |            | did not have a |
-|            |            | 404 response.  |
-+------------+------------+----------------+
-| ``viq <id( | view\_requ | View           |
-| s)>``      | est\_info, | additional     |
-|            | viq        | information    |
-|            |            | about          |
-|            |            | requests.      |
-|            |            | Includes the   |
-|            |            | target port,   |
-|            |            | if SSL was     |
-|            |            | used, applied  |
-|            |            | tags, and      |
-|            |            | other          |
-|            |            | information.   |
-+------------+------------+----------------+
-| ``vfq <id( | view\_full | [V]iew [F]ull  |
-| s)>``      | \_request, | Re[Q]uest,     |
-|            | vfq        | prints the     |
-|            |            | full request   |
-|            |            | including      |
-|            |            | headers and    |
-|            |            | data.          |
-+------------+------------+----------------+
-| ``vhq <id( | view\_requ | [V]iew         |
-| s)>``      | est\_heade | [H]eaders of a |
-|            | rs,        | Re[Q]uest.     |
-|            | vhq        | Prints just    |
-|            |            | the headers of |
-|            |            | a request.     |
-+------------+------------+----------------+
-| ``vfs <id( | view\_full | [V]iew [F]ull  |
-| s)>``      | \_response | Re[S]ponse,    |
-|            | ,          | prints the     |
-|            | vfs        | full response  |
-|            |            | associated     |
-|            |            | with a request |
-|            |            | including      |
-|            |            | headers and    |
-|            |            | data.          |
-+------------+------------+----------------+
-| ``vhs <id( | view\_resp | [V]iew         |
-| s)>``      | onse\_head | [H]eaders of a |
-|            | ers,       | Re[S]ponse.    |
-|            | vhs        | Prints just    |
-|            |            | the headers of |
-|            |            | a response     |
-|            |            | associated     |
-|            |            | with a         |
-|            |            | request.       |
-+------------+------------+----------------+
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command            | Aliases                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                        |
++====================+================================+====================================================================================================================================================================================================================================================================================================================================================================================================================================+
+| ``ls [a|<num>``]   | list, ls                       | List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context.   |
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``sm``             | sm, site\_map                  | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response.                                                                                                                                                                                                                                                                                                           |
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``viq <id(s)>``    | view\_request\_info, viq       | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information.                                                                                                                                                                                                                                                                                                        |
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``vfq <id(s)>``    | view\_full\_request, vfq       | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data.                                                                                                                                                                                                                                                                                                                                                       |
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``vhq <id(s)>``    | view\_request\_headers, vhq    | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request.                                                                                                                                                                                                                                                                                                                                                             |
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``vfs <id(s)>``    | view\_full\_response, vfs      | [V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data.                                                                                                                                                                                                                                                                                                                           |
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``vhs <id(s)>``    | view\_response\_headers, vhs   | [V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request.                                                                                                                                                                                                                                                                                                                                 |
++--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 The table shown by ``ls`` will have the following columns:
 
-+----------+----------------+
-| Label    | Description    |
-+==========+================+
-| ID       | The request ID |
-|          | of that        |
-|          | request. Used  |
-|          | to identify    |
-|          | the request    |
-|          | for other      |
-|          | commands.      |
-+----------+----------------+
-| Method   | The            |
-|          | method(/http   |
-|          | verb) for the  |
-|          | request        |
-+----------+----------------+
-| Host     | The host that  |
-|          | the request    |
-|          | was sent to    |
-+----------+----------------+
-| Path     | The path of    |
-|          | the request    |
-+----------+----------------+
-| S-Code   | The status     |
-|          | code of the    |
-|          | response       |
-+----------+----------------+
-| Req Len  | The length of  |
-|          | the data       |
-|          | submitted      |
-+----------+----------------+
-| Rsp Len  | The length of  |
-|          | the data       |
-|          | returned in    |
-|          | the response   |
-+----------+----------------+
-| Time     | The time in    |
-|          | seconds it     |
-|          | took to        |
-|          | complete the   |
-|          | request        |
-+----------+----------------+
-| Mngl     | If the request |
-|          | or response    |
-|          | were mangled   |
-|          | with the       |
-|          | interceptor.   |
-|          | If the request |
-|          | was mangled,   |
-|          | the column     |
-|          | will show 'q'. |
-|          | If the         |
-|          | response was   |
-|          | mangled, the   |
-|          | column will    |
-|          | show 's'. If   |
-|          | both were      |
-|          | mangled, it    |
-|          | will show      |
-|          | 'q/s'.         |
-+----------+----------------+
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Label     | Description                                                                                                                                                                                                            |
++===========+========================================================================================================================================================================================================================+
+| ID        | The request ID of that request. Used to identify the request for other commands.                                                                                                                                       |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method    | The method(/http verb) for the request                                                                                                                                                                                 |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Host      | The host that the request was sent to                                                                                                                                                                                  |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Path      | The path of the request                                                                                                                                                                                                |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| S-Code    | The status code of the response                                                                                                                                                                                        |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Req Len   | The length of the data submitted                                                                                                                                                                                       |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Rsp Len   | The length of the data returned in the response                                                                                                                                                                        |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Time      | The time in seconds it took to complete the request                                                                                                                                                                    |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Mngl      | If the request or response were mangled with the interceptor. If the request was mangled, the column will show 'q'. If the response was mangled, the column will show 's'. If both were mangled, it will show 'q/s'.   |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Tags
 ----
@@ -528,32 +243,15 @@ Tags
 You can apply tags to a request and use filters to view specific tags.
 The following commands can be used to apply and remove tags to requests:
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``tag <tag | tag        | Apply a tag to |
-| > [id(s)]` |            | the given      |
-| `          |            | requests. If   |
-|            |            | no IDs are     |
-|            |            | given, the tag |
-|            |            | will be        |
-|            |            | applied to all |
-|            |            | in-context     |
-|            |            | requests.      |
-+------------+------------+----------------+
-| ``untag <t | untag      | Remove a tag   |
-| ag> [id(s) |            | from the given |
-| ]``        |            | ids. If no IDs |
-|            |            | are given, the |
-|            |            | tag is removed |
-|            |            | from every     |
-|            |            | in-context     |
-|            |            | request.       |
-+------------+------------+----------------+
-| ``clrtag < | clrtag     | Removes all    |
-| id(s)>``   |            | tags from the  |
-|            |            | given ids.     |
-+------------+------------+----------------+
++---------------------------+-----------+---------------------------------------------------------------------------------------------------------------+
+| Command                   | Aliases   | Description                                                                                                   |
++===========================+===========+===============================================================================================================+
+| ``tag <tag> [id(s)]``     | tag       | Apply a tag to the given requests. If no IDs are given, the tag will be applied to all in-context requests.   |
++---------------------------+-----------+---------------------------------------------------------------------------------------------------------------+
+| ``untag <tag> [id(s)]``   | untag     | Remove a tag from the given ids. If no IDs are given, the tag is removed from every in-context request.       |
++---------------------------+-----------+---------------------------------------------------------------------------------------------------------------+
+| ``clrtag <id(s)>``        | clrtag    | Removes all tags from the given ids.                                                                          |
++---------------------------+-----------+---------------------------------------------------------------------------------------------------------------+
 
 Request IDs
 -----------
@@ -566,42 +264,13 @@ example if you modified the request or its response with the
 interceptor, you can get the unmangled versions.) Here are the valid
 prefixes:
 
-+-----------+----------------+
-| Prefix    | Description    |
-+===========+================+
-| ``u``     | If the request |
-|           | was mangled,   |
-|           | prefixing the  |
-|           | ID with ``u``  |
-|           | will result in |
-|           | the unmangled  |
-|           | version of the |
-|           | request. The   |
-|           | resulting      |
-|           | request will   |
-|           | not have an    |
-|           | associated     |
-|           | response       |
-|           | because it was |
-|           | never          |
-|           | submitted to   |
-|           | the server.    |
-+-----------+----------------+
-| ``s``     | If the         |
-|           | response was   |
-|           | mangled,       |
-|           | prefixing the  |
-|           | request ID     |
-|           | ``s`` will     |
-|           | result in the  |
-|           | same request   |
-|           | but its        |
-|           | associated     |
-|           | response will  |
-|           | be the         |
-|           | unmangled      |
-|           | version.       |
-+-----------+----------------+
++----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Prefix   | Description                                                                                                                                                                                                             |
++==========+=========================================================================================================================================================================================================================+
+| ``u``    | If the request was mangled, prefixing the ID with ``u`` will result in the unmangled version of the request. The resulting request will not have an associated response because it was never submitted to the server.   |
++----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``s``    | If the response was mangled, prefixing the request ID ``s`` will result in the same request but its associated response will be the unmangled version.                                                                  |
++----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 I know it sounds kind of unintuitive. Here are some example commands
 that will hopefully make things clearer. Suppose request 1 had its
@@ -645,105 +314,19 @@ equal 500" or "the host must contain google.com". Once you apply one or
 more filters, only requests/responses which pass every active filter
 will be a part of the current context.
 
-+------------+----------------+-------+
-| Command    | Aliases        | Descr |
-|            |                | iptio |
-|            |                | n     |
-+============+================+=======+
-| ``f <filte | filter, fl, f  | Add a |
-| r string>` |                | filte |
-| `          |                | r     |
-|            |                | that  |
-|            |                | limit |
-|            |                | s     |
-|            |                | which |
-|            |                | reque |
-|            |                | sts   |
-|            |                | are   |
-|            |                | inclu |
-|            |                | ded   |
-|            |                | in    |
-|            |                | the   |
-|            |                | curre |
-|            |                | nt    |
-|            |                | conte |
-|            |                | xt.   |
-|            |                | See   |
-|            |                | the   |
-|            |                | Filte |
-|            |                | r     |
-|            |                | Strin |
-|            |                | g     |
-|            |                | secti |
-|            |                | on    |
-|            |                | for   |
-|            |                | how   |
-|            |                | to    |
-|            |                | creat |
-|            |                | e     |
-|            |                | a     |
-|            |                | filte |
-|            |                | r     |
-|            |                | strin |
-|            |                | g     |
-+------------+----------------+-------+
-| ``fc``     | filter\_clear, | Clear |
-|            | fc             | s     |
-|            |                | the   |
-|            |                | filte |
-|            |                | rs    |
-|            |                | and   |
-|            |                | reset |
-|            |                | s     |
-|            |                | the   |
-|            |                | conte |
-|            |                | xt    |
-|            |                | to    |
-|            |                | conta |
-|            |                | in    |
-|            |                | all   |
-|            |                | reque |
-|            |                | sts   |
-|            |                | and   |
-|            |                | respo |
-|            |                | nses. |
-|            |                | Ignor |
-|            |                | es    |
-|            |                | scope |
-+------------+----------------+-------+
-| ``fls``    | filter\_list,  | Print |
-|            | fls            | the   |
-|            |                | filte |
-|            |                | rs    |
-|            |                | that  |
-|            |                | make  |
-|            |                | up    |
-|            |                | the   |
-|            |                | curre |
-|            |                | nt    |
-|            |                | conte |
-|            |                | xt    |
-+------------+----------------+-------+
-| ``filter_p | filter\_prune  | Delet |
-| rune``     |                | e     |
-|            |                | all   |
-|            |                | the   |
-|            |                | reque |
-|            |                | sts   |
-|            |                | that  |
-|            |                | aren' |
-|            |                | t     |
-|            |                | in    |
-|            |                | the   |
-|            |                | curre |
-|            |                | nt    |
-|            |                | conte |
-|            |                | xt    |
-|            |                | from  |
-|            |                | the   |
-|            |                | data  |
-|            |                | file  |
-+------------+----------------+-------+
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command                 | Aliases             | Description                                                                                                                                    |
++=========================+=====================+================================================================================================================================================+
+| ``f <filter string>``   | filter, fl, f       | Add a filter that limits which requests are included in the current context. See the Filter String section for how to create a filter string   |
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``fc``                  | filter\_clear, fc   | Clears the filters and resets the context to contain all requests and responses. Ignores scope                                                 |
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``fu``                  | filter\_up, fu      | Removes the most recently applied filter                                                                                                       |
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``fls``                 | filter\_list, fls   | Print the filters that make up the current context                                                                                             |
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``filter_prune``        | filter\_prune       | Delete all the requests that aren't in the current context from the data file                                                                  |
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Filter Strings
 --------------
@@ -814,212 +397,74 @@ example:
 List of fields
 ~~~~~~~~~~~~~~
 
-+------------+----------------+---------+----------+
-| Field Name | Aliases        | Descrip | Format   |
-|            |                | tion    |          |
-+============+================+=========+==========+
-| all        | all            | The     | String   |
-|            |                | entire  |          |
-|            |                | request |          |
-|            |                | represe |          |
-|            |                | nted    |          |
-|            |                | as one  |          |
-|            |                | string  |          |
-+------------+----------------+---------+----------+
-| host       | host, domain,  | The     | String   |
-|            | hs, dm         | target  |          |
-|            |                | host    |          |
-|            |                | (ie     |          |
-|            |                | www.tar |          |
-|            |                | get.com |          |
-|            |                | )       |          |
-+------------+----------------+---------+----------+
-| path       | path, pt       | The     | String   |
-|            |                | path of |          |
-|            |                | the url |          |
-|            |                | (ie     |          |
-|            |                | /path/t |          |
-|            |                | o/secre |          |
-|            |                | ts.php) |          |
-+------------+----------------+---------+----------+
-| body       | body, data,    | The     | String   |
-|            | bd, dt         | body    |          |
-|            |                | (data   |          |
-|            |                | section |          |
-|            |                | )       |          |
-|            |                | of      |          |
-|            |                | either  |          |
-|            |                | the     |          |
-|            |                | request |          |
-|            |                | or the  |          |
-|            |                | respons |          |
-|            |                | e       |          |
-+------------+----------------+---------+----------+
-| verb       | verb, vb       | The     | String   |
-|            |                | HTTP    |          |
-|            |                | verb of |          |
-|            |                | the     |          |
-|            |                | request |          |
-|            |                | (ie     |          |
-|            |                | GET,    |          |
-|            |                | POST)   |          |
-+------------+----------------+---------+----------+
-| param      | param, pm      | Either  | Key/Valu |
-|            |                | the get | e        |
-|            |                | or post |          |
-|            |                | paramet |          |
-|            |                | ers     |          |
-+------------+----------------+---------+----------+
-| header     | header, hd     | An HTTP | Key/Valu |
-|            |                | header  | e        |
-|            |                | (ie     |          |
-|            |                | User-Ag |          |
-|            |                | ent,    |          |
-|            |                | Basic-A |          |
-|            |                | uthoriz |          |
-|            |                | ation)  |          |
-|            |                | in the  |          |
-|            |                | request |          |
-|            |                | or      |          |
-|            |                | respons |          |
-|            |                | e       |          |
-+------------+----------------+---------+----------+
-| rawheaders | rawheaders, rh | The     | String   |
-|            |                | entire  |          |
-|            |                | header  |          |
-|            |                | section |          |
-|            |                | (as one |          |
-|            |                | string) |          |
-|            |                | of      |          |
-|            |                | either  |          |
-|            |                | the     |          |
-|            |                | head or |          |
-|            |                | the     |          |
-|            |                | respons |          |
-|            |                | e       |          |
-+------------+----------------+---------+----------+
-| sentcookie | sentcookie,    | A       | Key/Valu |
-|            | sck            | cookie  | e        |
-|            |                | sent in |          |
-|            |                | a       |          |
-|            |                | request |          |
-+------------+----------------+---------+----------+
-| setcookie  | setcookie,     | A       | Key/Valu |
-|            | stck           | cookie  | e        |
-|            |                | set by  |          |
-|            |                | a       |          |
-|            |                | respons |          |
-|            |                | e       |          |
-+------------+----------------+---------+----------+
-| statuscode | statuscode,    | The     | Numeric  |
-|            | sc,            | respons |          |
-|            | responsecode   | e       |          |
-|            |                | code of |          |
-|            |                | the     |          |
-|            |                | respons |          |
-|            |                | e       |          |
-+------------+----------------+---------+----------+
-| tag        | tag            | Any of  | String   |
-|            |                | the     |          |
-|            |                | tags    |          |
-|            |                | applied |          |
-|            |                | to the  |          |
-|            |                | request |          |
-+------------+----------------+---------+----------+
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| Field Name   | Aliases                        | Description                                                                      | Format      |
++==============+================================+==================================================================================+=============+
+| all          | all                            | The entire request represented as one string                                     | String      |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| host         | host, domain, hs, dm           | The target host (ie www.target.com)                                              | String      |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| path         | path, pt                       | The path of the url (ie /path/to/secrets.php)                                    | String      |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| body         | body, data, bd, dt             | The body (data section) of either the request or the response                    | String      |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| verb         | verb, vb                       | The HTTP verb of the request (ie GET, POST)                                      | String      |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| param        | param, pm                      | Either the get or post parameters                                                | Key/Value   |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| header       | header, hd                     | An HTTP header (ie User-Agent, Basic-Authorization) in the request or response   | Key/Value   |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| rawheaders   | rawheaders, rh                 | The entire header section (as one string) of either the head or the response     | String      |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| sentcookie   | sentcookie, sck                | A cookie sent in a request                                                       | Key/Value   |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| setcookie    | setcookie, stck                | A cookie set by a response                                                       | Key/Value   |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| statuscode   | statuscode, sc, responsecode   | The response code of the response                                                | Numeric     |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
+| tag          | tag                            | Any of the tags applied to the request                                           | String      |
++--------------+--------------------------------+----------------------------------------------------------------------------------+-------------+
 
 List of comparers
 ~~~~~~~~~~~~~~~~~
 
-+------------+----------------+---------+
-| Field Name | Aliases        | Descrip |
-|            |                | tion    |
-+============+================+=========+
-| is         | is             | Exact   |
-|            |                | string  |
-|            |                | match   |
-+------------+----------------+---------+
-| contains   | contains, ct   | A       |
-|            |                | contain |
-|            |                | B is    |
-|            |                | true if |
-|            |                | B is a  |
-|            |                | substri |
-|            |                | ng      |
-|            |                | of A    |
-+------------+----------------+---------+
-| containsr  | containsr, ctr | A       |
-|            |                | contain |
-|            |                | r       |
-|            |                | B is    |
-|            |                | true if |
-|            |                | A       |
-|            |                | matches |
-|            |                | regexp  |
-|            |                | B       |
-+------------+----------------+---------+
-| exists     | exists, ex     | A       |
-|            |                | exists  |
-|            |                | B if A  |
-|            |                | is not  |
-|            |                | an      |
-|            |                | empty   |
-|            |                | string  |
-|            |                | (likely |
-|            |                | buggy)  |
-+------------+----------------+---------+
-| Leq        | Leq            | A Leq B |
-|            |                | if A's  |
-|            |                | length  |
-|            |                | equals  |
-|            |                | B (B    |
-|            |                | must be |
-|            |                | a       |
-|            |                | number) |
-+------------+----------------+---------+
-| Lgt        | Lgt            | A Lgt B |
-|            |                | if A's  |
-|            |                | length  |
-|            |                | is      |
-|            |                | greater |
-|            |                | than B  |
-|            |                | (B must |
-|            |                | be a    |
-|            |                | number  |
-|            |                | )       |
-+------------+----------------+---------+
-| Llt        | Llt            | A Llt B |
-|            |                | if A's  |
-|            |                | length  |
-|            |                | is less |
-|            |                | than B  |
-|            |                | (B must |
-|            |                | be a    |
-|            |                | number) |
-+------------+----------------+---------+
-| eq         | eq             | A eq B  |
-|            |                | if A =  |
-|            |                | B (A    |
-|            |                | and B   |
-|            |                | must be |
-|            |                | a       |
-|            |                | number) |
-+------------+----------------+---------+
-| gt         | gt             | A gt B  |
-|            |                | if A >  |
-|            |                | B (A    |
-|            |                | and B   |
-|            |                | must be |
-|            |                | a       |
-|            |                | number) |
-+------------+----------------+---------+
-| lt         | lt             | A lt B  |
-|            |                | if A <  |
-|            |                | B (A    |
-|            |                | and B   |
-|            |                | must be |
-|            |                | a       |
-|            |                | number) |
-+------------+----------------+---------+
++--------------+------------------+-----------------------------------------------------------------+
+| Field Name   | Aliases          | Description                                                     |
++==============+==================+=================================================================+
+| is           | is               | Exact string match                                              |
++--------------+------------------+-----------------------------------------------------------------+
+| contains     | contains, ct     | A contain B is true if B is a substring of A                    |
++--------------+------------------+-----------------------------------------------------------------+
+| containsr    | containsr, ctr   | A containr B is true if A matches regexp B                      |
++--------------+------------------+-----------------------------------------------------------------+
+| exists       | exists, ex       | A exists B if A is not an empty string (likely buggy)           |
++--------------+------------------+-----------------------------------------------------------------+
+| Leq          | Leq              | A Leq B if A's length equals B (B must be a number)             |
++--------------+------------------+-----------------------------------------------------------------+
+| Lgt          | Lgt              | A Lgt B if A's length is greater than B (B must be a number )   |
++--------------+------------------+-----------------------------------------------------------------+
+| Llt          | Llt              | A Llt B if A's length is less than B (B must be a number)       |
++--------------+------------------+-----------------------------------------------------------------+
+| eq           | eq               | A eq B if A = B (A and B must be a number)                      |
++--------------+------------------+-----------------------------------------------------------------+
+| gt           | gt               | A gt B if A > B (A and B must be a number)                      |
++--------------+------------------+-----------------------------------------------------------------+
+| lt           | lt               | A lt B if A < B (A and B must be a number)                      |
++--------------+------------------+-----------------------------------------------------------------+
+
+Special form filters
+~~~~~~~~~~~~~~~~~~~~
+
+A few filters don't conform to the field, comparer, value format. You
+can still negate these.
+
++-----------+------------------+---------------------------------------------------------------------------------------------------------+
+| Format    | Aliases          | Description                                                                                             |
++===========+==================+=========================================================================================================+
+| before    | before, bf, b4   | Filters out any request that is not before the given request. Filters out any request without a time.   |
++-----------+------------------+---------------------------------------------------------------------------------------------------------+
+| after     | after, af        | Filters out any request that is not before the given request. Filters out any request without a time.   |
++-----------+------------------+---------------------------------------------------------------------------------------------------------+
 
 Scope
 -----
@@ -1036,29 +481,17 @@ or recorded in the data file. This is useful to make sure you don't
 accidentally do something like log in to your email through the proxy
 and have your plaintext username/password stored.
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``scope_sa | ``scope_sa | Set the        |
-| ve``       | ve``       | current        |
-|            |            | context to be  |
-|            |            | the scope      |
-+------------+------------+----------------+
-| ``sr``     | ``scope_re | Set the        |
-|            | set``,     | current        |
-|            | ``sr``     | context to the |
-|            |            | scope          |
-+------------+------------+----------------+
-| ``scope_de | ``scope_de | Clear the      |
-| lete``     | lete``     | scope          |
-|            |            | (everything's  |
-|            |            | in scope!)     |
-+------------+------------+----------------+
-| ``scope_li | ``scope_li | List all the   |
-| st``       | st``,      | filters that   |
-|            | ``sls``    | are applied to |
-|            |            | the scope      |
-+------------+------------+----------------+
++--------------------+---------------------------+------------------------------------------------------+
+| Command            | Aliases                   | Description                                          |
++====================+===========================+======================================================+
+| ``scope_save``     | ``scope_save``            | Set the current context to be the scope              |
++--------------------+---------------------------+------------------------------------------------------+
+| ``sr``             | ``scope_reset``, ``sr``   | Set the current context to the scope                 |
++--------------------+---------------------------+------------------------------------------------------+
+| ``scope_delete``   | ``scope_delete``          | Clear the scope (everything's in scope!)             |
++--------------------+---------------------------+------------------------------------------------------+
+| ``scope_list``     | ``scope_list``, ``sls``   | List all the filters that are applied to the scope   |
++--------------------+---------------------------+------------------------------------------------------+
 
 Built-In Filters
 ~~~~~~~~~~~~~~~~
@@ -1075,15 +508,11 @@ The ``fbi`` command also supports tab completion.
 | ``not_jscss``   | Matches anything that isn't JavaScript or CSS.   |
 +-----------------+--------------------------------------------------+
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``fbi <fil | ``builtin_ | Apply a        |
-| ter>``     | filter``,  | built-in       |
-|            | ``fbi``    | filter to the  |
-|            |            | current        |
-|            |            | context        |
-+------------+------------+----------------+
++--------------------+-------------------------------+--------------------------------------------------+
+| Command            | Aliases                       | Description                                      |
++====================+===============================+==================================================+
+| ``fbi <filter>``   | ``builtin_filter``, ``fbi``   | Apply a built-in filter to the current context   |
++--------------------+-------------------------------+--------------------------------------------------+
 
 Interceptor
 -----------
@@ -1104,28 +533,11 @@ default to ``vi``.
 
 To forward a request, edit it, save the file, then quit.
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``ic <req, | ``intercep | Begins         |
-| rsp>+``    | t``,       | interception   |
-|            | ``ic``     | mode. Press    |
-|            |            | enter to leave |
-|            |            | interception   |
-|            |            | mode and       |
-|            |            | return to the  |
-|            |            | command        |
-|            |            | prompt. Pass   |
-|            |            | in ``request`` |
-|            |            | to intercept   |
-|            |            | requests,      |
-|            |            | ``response``   |
-|            |            | to intercept   |
-|            |            | responses, or  |
-|            |            | both to        |
-|            |            | intercept      |
-|            |            | both.          |
-+------------+------------+----------------+
++---------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command             | Aliases                 | Description                                                                                                                                                                                                     |
++=====================+=========================+=================================================================================================================================================================================================================+
+| ``ic <req,rsp>+``   | ``intercept``, ``ic``   | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in ``request`` to intercept requests, ``response`` to intercept responses, or both to intercept both.   |
++---------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 ::
 
@@ -1163,33 +575,17 @@ buffer.
 When you're done with repeater, run ":qa!" to avoid having to save
 changes to nonexistent files.
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``rp <id>` | repeater,  | Open the       |
-| `          | rp         | specified      |
-|            |            | request in the |
-|            |            | repeater       |
-+------------+------------+----------------+
++---------------+----------------+----------------------------------------------+
+| Command       | Aliases        | Description                                  |
++===============+================+==============================================+
+| ``rp <id>``   | repeater, rp   | Open the specified request in the repeater   |
++---------------+----------------+----------------------------------------------+
 
-+------------+---------------+-----------+
-| Vim        | Keybinding    | Action    |
-| Command    |               |           |
-+============+===============+===========+
-| ``Repeater | f             | Submit    |
-| SubmitBuff |               | the       |
-| er``       |               | current   |
-|            |               | buffer,   |
-|            |               | split the |
-|            |               | windows   |
-|            |               | verticall |
-|            |               | y,        |
-|            |               | and show  |
-|            |               | the       |
-|            |               | result in |
-|            |               | the right |
-|            |               | window    |
-+------------+---------------+-----------+
++----------------------------+--------------+----------------------------------------------------------------------------------------------------+
+| Vim Command                | Keybinding   | Action                                                                                             |
++============================+==============+====================================================================================================+
+| ``RepeaterSubmitBuffer``   | f            | Submit the current buffer, split the windows vertically, and show the result in the right window   |
++----------------------------+--------------+----------------------------------------------------------------------------------------------------+
 
 Macros
 ------
@@ -1217,7 +613,7 @@ a simple macro would be:
 
 ::
 
-    --- macro_print.py
+    ### macro_print.py
 
     MACRO_NAME = 'Print Macro'
 
@@ -1237,19 +633,19 @@ quotes around it.
 
     $ pappy
     Proxy is listening on port 8000
-    itsPappyTime> lma
+    pappy> lma
     Loaded "<Macro Test Macro (tm/test)>"
     Loaded "<Macro Macro 6494496 (testgen)>"
     Loaded "<Macro Print Macro (print)>"
     Loaded "<Macro Hack the NSA (htnsa/hackthensa)>"
     Loaded "<Macro Macro 62449408 (blank)>"
-    itsPappyTime> rma print
+    pappy> rma print
     Hello, Pappy!
-    itsPappyTime> rma print NSA
+    pappy> rma print NSA
     Hello, NSA!
-    itsPappyTime> rma print Idiot Slayer
+    pappy> rma print Idiot Slayer
     Hello, Idiot!
-    itsPappyTime> rma print "Idiot Slayer"
+    pappy> rma print "Idiot Slayer"
     Hello, Idiot Slayer!
 
 You'll need to run ``lma`` every time you make a change to the macro in
@@ -1266,16 +662,16 @@ with the same information as requests you've already made. For example:
 
     $ pappy
     Proxy is listening on port 8000
-    itsPappyTime> ls
+    pappy> ls
     ID  Verb  Host         Path               S-Code  Req Len  Rsp Len  Time  Mngl
     5   GET   vitaly.sexy  /esr1.jpg          200 OK  0        17653    --    --
     4   GET   vitaly.sexy  /netscape.gif      200 OK  0        1135     --    --
     3   GET   vitaly.sexy  /construction.gif  200 OK  0        28366    --    --
     2   GET   vitaly.sexy  /vitaly2.jpg       200 OK  0        2034003  --    --
     1   GET   vitaly.sexy  /                  200 OK  0        1201     --    --
-    itsPappyTime> gma sexy 1
+    pappy> gma sexy 1
     Wrote script to macro_sexy.py
-    itsPappyTime> quit
+    pappy> quit
     $ cat macro_sexy.py
     from pappyproxy.http import Request, get_request, post_request
 
@@ -1310,47 +706,19 @@ with the same information as requests you've already made. For example:
 
 If you enter in a value for ``SHORT_NAME``, you can use it as a shortcut
 to run that macro. So if in a macro you set ``SHORT_NAME='tm'`` you can
-run it by running ``itsPappyTime> rma tm``.
+run it by running ``pappy> rma tm``.
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``lma [dir | ``load_mac | Load macros    |
-| ]``        | ros``,     | from a         |
-|            | ``lma``    | directory. If  |
-|            |            | ``dir`` is not |
-|            |            | given, use the |
-|            |            | current        |
-|            |            | directory (the |
-|            |            | project        |
-|            |            | directory)     |
-+------------+------------+----------------+
-| ``rma <mac | ``run_macr | Run a macro    |
-| ro name>`` | o``,       | with the given |
-|            | ``rma``    | name. You can  |
-|            |            | use the        |
-|            |            | shortname,     |
-|            |            | filename, or   |
-|            |            | long name.     |
-+------------+------------+----------------+
-| ``gma <nam | ``generate | Generate a     |
-| e> [id(s)] | _macro``,  | macro with the |
-| ``         | ``gma``    | given name. If |
-|            |            | request IDs    |
-|            |            | are given, the |
-|            |            | macro will     |
-|            |            | contain        |
-|            |            | request        |
-|            |            | objects that   |
-|            |            | contain each   |
-|            |            | request.       |
-+------------+------------+----------------+
-| ``rpy <id( | ``rpy``    | Print the      |
-| s)>``      |            | Python object  |
-|            |            | definitions    |
-|            |            | for each of    |
-|            |            | the given ids  |
-+------------+------------+----------------+
++--------------------------+-------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| Command                  | Aliases                       | Description                                                                                                                         |
++==========================+===============================+=====================================================================================================================================+
+| ``lma [dir]``            | ``load_macros``, ``lma``      | Load macros from a directory. If ``dir`` is not given, use the current directory (the project directory)                            |
++--------------------------+-------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ``rma <macro name>``     | ``run_macro``, ``rma``        | Run a macro with the given name. You can use the shortname, filename, or long name.                                                 |
++--------------------------+-------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ``gma <name> [id(s)]``   | ``generate_macro``, ``gma``   | Generate a macro with the given name. If request IDs are given, the macro will contain request objects that contain each request.   |
++--------------------------+-------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ``rpy <id(s)>``          | ``rpy``                       | Print the Python object definitions for each of the given ids                                                                       |
++--------------------------+-------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 
 Request Objects
 ~~~~~~~~~~~~~~~
@@ -1358,578 +726,107 @@ Request Objects
 The main method of interacting with the proxy is through ``Request``
 objects. You can submit a request with ``req.sumbit()`` and save it to
 the data file with ``req.save()``. The objects also have attributes
-which can be used to modify the request in a high-level way.
-Unfortunately, I haven't gotten around to writing full docs on the API
-and it's still changing every once in a while so I apologize if I pull
-the carpet out from underneath you.
+which can be used to modify the request in a high-level way. You can see
+the `full
+documentation <https://roglew.github.io/pappy-proxy/pappyproxy.html#module-pappyproxy.http>`__
+for more details on using these objects.
 
 Dict-like objects are represented with a custom class called a
-``RepeatableDict``. I haven't gotten around to writing docs on it yet,
-so just interact with it like a dict and don't be surprised if it's
-missing some methods you would expect a dict to have.
+``RepeatableDict``. Again, look at the docs for details. For the most
+part, you can interact with it like a normal dictionary, but don't be
+surprised if it's missing some methods you would expect.
 
 Here is a quick list of attributes that you can use with ``Request``
 objects:
 
-+------+------+------+------+
-| Attr | Sett | Data | Desc |
-| ibut | able | Type | ript |
-| e    | ?    |      | ion  |
-+======+======+======+======+
-| cook | Yes  | Repe | Cook |
-| ies  |      | atab | ies  |
-|      |      | leDi | sent |
-|      |      | ct   | in   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-+------+------+------+------+
-| frag | Yes  | Stri | The  |
-| ment |      | ng   | url  |
-|      |      |      | frag |
-|      |      |      | ment |
-|      |      |      | (The |
-|      |      |      | text |
-|      |      |      | afte |
-|      |      |      | r    |
-|      |      |      | the  |
-|      |      |      | #)   |
-+------+------+------+------+
-| full | No   | Stri | The  |
-| \_pa |      | ng   | path |
-| th   |      |      | incl |
-|      |      |      | udin |
-|      |      |      | g    |
-|      |      |      | url  |
-|      |      |      | para |
-|      |      |      | ms   |
-|      |      |      | and  |
-|      |      |      | the  |
-|      |      |      | frag |
-|      |      |      | ment |
-+------+------+------+------+
-| full | No   | Stri | The  |
-| \_re |      | ng   | full |
-| ques |      |      | requ |
-| t    |      |      | est  |
-|      |      |      | incl |
-|      |      |      | udin |
-|      |      |      | g    |
-|      |      |      | head |
-|      |      |      | ers  |
-|      |      |      | and  |
-|      |      |      | data |
-+------+------+------+------+
-| head | Yes  | Repe | The  |
-| ers  |      | atab | head |
-|      |      | leDi | ers  |
-|      |      | ct   | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-+------+------+------+------+
-| host | Yes  | Stri | The  |
-|      |      | ng   | host |
-|      |      |      | that |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | is   |
-|      |      |      | sent |
-|      |      |      | to   |
-+------+------+------+------+
-| is\_ | Yes  | Bool | Whet |
-| ssl  |      |      | her  |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | is/w |
-|      |      |      | as   |
-|      |      |      | sent |
-|      |      |      | over |
-|      |      |      | SSL  |
-+------+------+------+------+
-| path | Yes  | Stri | The  |
-|      |      | ng   | docu |
-|      |      |      | ment |
-|      |      |      | path |
-|      |      |      | (ie  |
-|      |      |      | www. |
-|      |      |      | a.co |
-|      |      |      | m/th |
-|      |      |      | is/i |
-|      |      |      | s/th |
-|      |      |      | e/pa |
-|      |      |      | th)  |
-+------+------+------+------+
-| port | Yes  | Inte | The  |
-|      |      | ger  | port |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | is/w |
-|      |      |      | as   |
-|      |      |      | sent |
-|      |      |      | to   |
-+------+------+------+------+
-| post | Yes  | Repe | Post |
-| \_pa |      | atab | para |
-| rams |      | leDi | mete |
-|      |      | ct   | rs   |
-+------+------+------+------+
-| raw\ | Yes  | Stri | The  |
-| _dat |      | ng   | data |
-| a    |      |      | part |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-+------+------+------+------+
-| raw\ | No   | Stri | The  |
-| _hea |      | ng   | text |
-| ders |      |      | of   |
-|      |      |      | the  |
-|      |      |      | head |
-|      |      |      | ers  |
-|      |      |      | sect |
-|      |      |      | ion  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-+------+------+------+------+
-| reqi | Yes  | Inte | The  |
-| d    |      | ger  | ID   |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est. |
-|      |      |      | If   |
-|      |      |      | set  |
-|      |      |      | when |
-|      |      |      | save |
-|      |      |      | ()   |
-|      |      |      | is   |
-|      |      |      | call |
-|      |      |      | ed,  |
-|      |      |      | it   |
-|      |      |      | repl |
-|      |      |      | aces |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | with |
-|      |      |      | the  |
-|      |      |      | same |
-|      |      |      | id   |
-|      |      |      | in   |
-|      |      |      | the  |
-|      |      |      | data |
-|      |      |      | base |
-+------+------+------+------+
-| resp | Yes  | Resp | The  |
-| onse |      | onse | asso |
-|      |      |      | ciat |
-|      |      |      | ed   |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | for  |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-+------+------+------+------+
-| rspt | No   | Date | The  |
-| ime  |      | time | time |
-|      |      | Delt | it   |
-|      |      | a    | took |
-|      |      |      | to   |
-|      |      |      | comp |
-|      |      |      | lete |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est. |
-|      |      |      | Set  |
-|      |      |      | when |
-|      |      |      | subm |
-|      |      |      | it() |
-|      |      |      | is   |
-|      |      |      | call |
-|      |      |      | ed   |
-+------+------+------+------+
-| stat | Yes  | Stri | The  |
-| us\_ |      | ng   | stat |
-| line |      |      | us   |
-|      |      |      | line |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | (ie  |
-|      |      |      | 'GET |
-|      |      |      | /    |
-|      |      |      | HTTP |
-|      |      |      | /1.1 |
-|      |      |      | ')   |
-+------+------+------+------+
-| time | Yes  | Date | The  |
-| \_en |      | time | time |
-| d    |      |      | when |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | was  |
-|      |      |      | comp |
-|      |      |      | lete |
-|      |      |      | d    |
-+------+------+------+------+
-| time | Yes  | Date | The  |
-| \_st |      | time | time |
-| art  |      |      | when |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | was  |
-|      |      |      | star |
-|      |      |      | ted  |
-+------+------+------+------+
-| unma | Yes  | Requ | If   |
-| ngle |      | est  | the  |
-| d    |      |      | requ |
-|      |      |      | est  |
-|      |      |      | was  |
-|      |      |      | mang |
-|      |      |      | led, |
-|      |      |      | the  |
-|      |      |      | unma |
-|      |      |      | ngle |
-|      |      |      | d    |
-|      |      |      | vers |
-|      |      |      | ion  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-+------+------+------+------+
-| url  | Yes  | Stri | The  |
-|      |      | ng   | URL  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | (ie  |
-|      |      |      | 'htt |
-|      |      |      | ps:/ |
-|      |      |      | /www |
-|      |      |      | .goo |
-|      |      |      | gle. |
-|      |      |      | com' |
-|      |      |      | )    |
-+------+------+------+------+
-| url\ | Yes  | Repe | The  |
-| _par |      | atab | URL  |
-| ams  |      | leDi | para |
-|      |      | ct   | mete |
-|      |      |      | rs   |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-+------+------+------+------+
-| verb | Yes  | Stri | The  |
-|      |      | ng   | verb |
-|      |      |      | used |
-|      |      |      | for  |
-|      |      |      | the  |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | (ie  |
-|      |      |      | GET, |
-|      |      |      | POST |
-|      |      |      | ,    |
-|      |      |      | PATC |
-|      |      |      | H,   |
-|      |      |      | HEAD |
-|      |      |      | ,    |
-|      |      |      | etc) |
-|      |      |      | .    |
-|      |      |      | Does |
-|      |      |      | n't  |
-|      |      |      | have |
-|      |      |      | to   |
-|      |      |      | be a |
-|      |      |      | vali |
-|      |      |      | d    |
-|      |      |      | verb |
-|      |      |      | .    |
-+------+------+------+------+
-| vers | Yes  | Stri | The  |
-| ion  |      | ng   | vers |
-|      |      |      | ion  |
-|      |      |      | part |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | stat |
-|      |      |      | us   |
-|      |      |      | line |
-|      |      |      | (ie  |
-|      |      |      | 'HTT |
-|      |      |      | P/1. |
-|      |      |      | 1')  |
-+------+------+------+------+
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| Attribute       | Settable?   | Data Type        | Description                                                                                                     |
++=================+=============+==================+=================================================================================================================+
+| cookies         | Yes         | RepeatableDict   | Cookies sent in the request                                                                                     |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| fragment        | Yes         | String           | The url fragment (The text after the #)                                                                         |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| full\_path      | No          | String           | The path including url params and the fragment                                                                  |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| full\_request   | No          | String           | The full request including headers and data                                                                     |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| headers         | Yes         | RepeatableDict   | The headers of the request                                                                                      |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| host            | Yes         | String           | The host that the request is sent to                                                                            |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| is\_ssl         | Yes         | Bool             | Whether the request is/was sent over SSL                                                                        |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| path            | Yes         | String           | The document path (ie www.a.com/this/is/the/path)                                                               |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| port            | Yes         | Integer          | The port the request is/was sent to                                                                             |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| post\_params    | Yes         | RepeatableDict   | Post parameters                                                                                                 |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| raw\_data       | Yes         | String           | The data part of the request                                                                                    |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| raw\_headers    | No          | String           | The text of the headers section of the request                                                                  |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| reqid           | Yes         | Integer          | The ID of the request. If set when save() is called, it replaces the request with the same id in the database   |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| response        | Yes         | Response         | The associated response for the request                                                                         |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| rsptime         | No          | Datetime Delta   | The time it took to complete the request. Set when submit() is called                                           |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| status\_line    | Yes         | String           | The status line of the request (ie 'GET / HTTP/1.1')                                                            |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| time\_end       | Yes         | Datetime         | The time when the request was completed                                                                         |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| time\_start     | Yes         | Datetime         | The time when the request was started                                                                           |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| unmangled       | Yes         | Request          | If the request was mangled, the unmangled version of the request                                                |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| url             | Yes         | String           | The URL of the request (ie 'https://www.google.com')                                                            |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| url\_params     | Yes         | RepeatableDict   | The URL parameters of the request                                                                               |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| verb            | Yes         | String           | The verb used for the request (ie GET, POST, PATCH, HEAD, etc). Doesn't have to be a valid verb.                |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
+| version         | Yes         | String           | The version part of the status line (ie 'HTTP/1.1')                                                             |
++-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 
 Request methods:
 
-+------+------+
-| Func | Desc |
-| tion | ript |
-|      | ion  |
-+======+======+
-| subm | Subm |
-| it() | it   |
-|      | the  |
-|      | requ |
-|      | est  |
-|      | thro |
-|      | ugh  |
-|      | the  |
-|      | prox |
-|      | y.   |
-|      | Does |
-|      | not  |
-|      | save |
-|      | the  |
-|      | requ |
-|      | est  |
-|      | to   |
-|      | the  |
-|      | data |
-|      | file |
-+------+------+
-| save | Save |
-| ()   | the  |
-|      | requ |
-|      | est, |
-|      | its  |
-|      | unma |
-|      | ngle |
-|      | d    |
-|      | vers |
-|      | ion, |
-|      | its  |
-|      | asso |
-|      | ciat |
-|      | ed   |
-|      | resp |
-|      | onse |
-|      | ,    |
-|      | and  |
-|      | the  |
-|      | unma |
-|      | ngle |
-|      | d    |
-|      | vers |
-|      | ion  |
-|      | of   |
-|      | the  |
-|      | resp |
-|      | onse |
-|      | to   |
-|      | the  |
-|      | data |
-|      | base |
-+------+------+
++------------+-------------------------------------------------------------------------------------------------------------------------------+
+| Function   | Description                                                                                                                   |
++============+===============================================================================================================================+
+| submit()   | Submit the request through the proxy. Does not save the request to the data file                                              |
++------------+-------------------------------------------------------------------------------------------------------------------------------+
+| save()     | Save the request, its unmangled version, its associated response, and the unmangled version of the response to the database   |
++------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 And here is a quick list of attributes that you can use with
 ``Response`` objects:
 
-+------+------+------+------+
-| Attr | Sett | Data | Desc |
-| ibut | able | Type | ript |
-| e    | ?    |      | ion  |
-+======+======+======+======+
-| cook | Yes  | Repe | Cook |
-| ies  |      | atab | ies  |
-|      |      | leDi | set  |
-|      |      | ct   | by   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-+------+------+------+------+
-| head | Yes  | Repe | The  |
-| ers  |      | atab | head |
-|      |      | leDi | ers  |
-|      |      | ct   | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-+------+------+------+------+
-| resp | Yes  | Inte | The  |
-| onse |      | ger  | resp |
-| \_co |      |      | onse |
-| de   |      |      | code |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-+------+------+------+------+
-| resp | Yes  | Stri | The  |
-| onse |      | ng   | text |
-| \_te |      |      | asso |
-| xt   |      |      | ciat |
-|      |      |      | ed   |
-|      |      |      | with |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | code |
-|      |      |      | (ie  |
-|      |      |      | OK,  |
-|      |      |      | NOT  |
-|      |      |      | FOUN |
-|      |      |      | D)   |
-+------+------+------+------+
-| rspi | Yes  | Inte | The  |
-| d    |      | ger  | resp |
-|      |      |      | onse |
-|      |      |      | id   |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | .    |
-|      |      |      | If   |
-|      |      |      | this |
-|      |      |      | is   |
-|      |      |      | the  |
-|      |      |      | same |
-|      |      |      | as   |
-|      |      |      | anot |
-|      |      |      | her  |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | in   |
-|      |      |      | the  |
-|      |      |      | data |
-|      |      |      | base |
-|      |      |      | ,    |
-|      |      |      | call |
-|      |      |      | ing  |
-|      |      |      | save |
-|      |      |      | ()   |
-|      |      |      | on   |
-|      |      |      | the  |
-|      |      |      | asso |
-|      |      |      | ciat |
-|      |      |      | ed   |
-|      |      |      | requ |
-|      |      |      | est  |
-|      |      |      | will |
-|      |      |      | repl |
-|      |      |      | ace  |
-|      |      |      | that |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | in   |
-|      |      |      | the  |
-|      |      |      | data |
-|      |      |      | base |
-+------+------+------+------+
-| unma | Yes  | Resp | If   |
-| ngle |      | onse | the  |
-| d    |      |      | resp |
-|      |      |      | onse |
-|      |      |      | was  |
-|      |      |      | mang |
-|      |      |      | led, |
-|      |      |      | this |
-|      |      |      | will |
-|      |      |      | refe |
-|      |      |      | r    |
-|      |      |      | to   |
-|      |      |      | the  |
-|      |      |      | unma |
-|      |      |      | ngle |
-|      |      |      | d    |
-|      |      |      | vers |
-|      |      |      | ion  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | .    |
-|      |      |      | Othe |
-|      |      |      | rwis |
-|      |      |      | e    |
-|      |      |      | it   |
-|      |      |      | is   |
-|      |      |      | None |
-+------+------+------+------+
-| vers | Yes  | Stri | The  |
-| ion  |      | ng   | vers |
-|      |      |      | ion  |
-|      |      |      | part |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | stat |
-|      |      |      | us   |
-|      |      |      | line |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | (ie  |
-|      |      |      | 'HTT |
-|      |      |      | P/1. |
-|      |      |      | 1')  |
-+------+------+------+------+
-| raw\ | No   | Stri | A    |
-| _hea |      | ng   | text |
-| ders |      |      | vers |
-|      |      |      | ion  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | head |
-|      |      |      | ers  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-+------+------+------+------+
-| stat | Yes  | Stri | The  |
-| us\_ |      | ng   | stat |
-| line |      |      | us   |
-|      |      |      | line |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-+------+------+------+------+
-| raw\ | Yes  | Stri | The  |
-| _dat |      | ng   | data |
-| a    |      |      | port |
-|      |      |      | ion  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-+------+------+------+------+
-| full | No   | Stri | The  |
-| \_re |      | ng   | full |
-| spon |      |      | text |
-| se   |      |      | vers |
-|      |      |      | ion  |
-|      |      |      | of   |
-|      |      |      | the  |
-|      |      |      | resp |
-|      |      |      | onse |
-|      |      |      | incl |
-|      |      |      | udin |
-|      |      |      | g    |
-|      |      |      | head |
-|      |      |      | ers  |
-|      |      |      | and  |
-|      |      |      | data |
-+------+------+------+------+
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Attribute        | Settable?   | Data Type        | Description                                                                                                                                                                     |
++==================+=============+==================+=================================================================================================================================================================================+
+| cookies          | Yes         | RepeatableDict   | Cookies set by the response                                                                                                                                                     |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| headers          | Yes         | RepeatableDict   | The headers of the response                                                                                                                                                     |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| response\_code   | Yes         | Integer          | The response code of the response                                                                                                                                               |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| response\_text   | Yes         | String           | The text associated with the response code (ie OK, NOT FOUND)                                                                                                                   |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| rspid            | Yes         | Integer          | The response id of the response. If this is the same as another response in the database, calling save() on the associated request will replace that response in the database   |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| unmangled        | Yes         | Response         | If the response was mangled, this will refer to the unmangled version of the response. Otherwise it is None                                                                     |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| version          | Yes         | String           | The version part of the status line of the response (ie 'HTTP/1.1')                                                                                                             |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| raw\_headers     | No          | String           | A text version of the headers of the response                                                                                                                                   |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| status\_line     | Yes         | String           | The status line of the response                                                                                                                                                 |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| raw\_data        | Yes         | String           | The data portion of the response                                                                                                                                                |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| full\_response   | No          | String           | The full text version of the response including headers and data                                                                                                                |
++------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Like I said, these interfaces are prone to change and will probably
 crash when you use them. If you get a traceback, send me an email so I
@@ -1939,69 +836,36 @@ Useful Functions
 ~~~~~~~~~~~~~~~~
 
 There are also a few functions which could be useful for creating
-requests in macros.
+requests in macros. It's worth pointing out that ``request_by_id`` is
+useful for passing request objects as arguments. For example, here is a
+macro that lets you resubmit a request with the Google Bot user agent:
 
-+------+------+
-| Func | Desc |
-| tion | ript |
-|      | ion  |
-+======+======+
-| get\ | Retu |
-| _req | rns  |
-| uest | a    |
-| (url | Requ |
-| ,    | est  |
-| url\ | obje |
-| _par | ct   |
-| ams= | that |
-| {})  | cont |
-|      | ains |
-|      | a    |
-|      | GET  |
-|      | requ |
-|      | est  |
-|      | to   |
-|      | the  |
-|      | give |
-|      | n    |
-|      | url  |
-|      | with |
-|      | the  |
-|      | give |
-|      | n    |
-|      | url  |
-|      | para |
-|      | ms   |
-+------+------+
-| post | Retu |
-| \_re | rns  |
-| ques | a    |
-| t(ur | Requ |
-| l,   | est  |
-| post | obje |
-| \_pa | ct   |
-| rams | that |
-| ={}, | cont |
-| url\ | ains |
-| _par | a    |
-| ams= | POST |
-| {})  | requ |
-|      | est  |
-|      | to   |
-|      | the  |
-|      | give |
-|      | n    |
-|      | url  |
-|      | with |
-|      | the  |
-|      | give |
-|      | n    |
-|      | url  |
-|      | and  |
-|      | post |
-|      | para |
-|      | ms   |
-+------+------+
+::
+
+    ## macro_googlebot.py
+
+    from pappyproxy.http import Request, get_request, post_request, request_by_id
+    from pappyproxy.context import set_tag
+    from pappyproxy.iter import *
+
+    MACRO_NAME = 'Submit as Google'
+    SHORT_NAME = ''
+
+    def run_macro(args):
+        req = request_by_id(args[0])
+        req.headers['User-Agent'] = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+        req.submit()
+        req.save()
+
++-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| Function                                              | Description                                                                                                 |
++=======================================================+=============================================================================================================+
+| get\_request(url, url\_params={})                     | Returns a Request object that contains a GET request to the given url with the given url params             |
++-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| post\_request(url, post\_params={}, url\_params={})   | Returns a Request object that contains a POST request to the given url with the given url and post params   |
++-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| request\_by\_id(reqid)                                | Get a request object from its id.                                                                           |
++-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
 
 Intercepting Macros
 -------------------
@@ -2073,50 +937,68 @@ Confusing? Here are some example intercepting macros:
         r.headers['Authorization'] = 'Basic %s' % b64e('Admin:Password123')
         return r
 
+In addition, you can use an ``init(args)`` function to get arguments
+from the command line. If no arguments are passed, args will be an empty
+list. Here is an example macro that does a search and replace:
+
+::
+
+    ## int_replace.py
+
+    MACRO_NAME = 'Find and Replace'
+    SHORT_NAME = ''
+    runargs = []
+
+    def init(args):
+        global runargs
+        runargs = args
+
+    def mangle_request(request):
+        global runargs
+        if len(runargs) < 2:
+            return request
+        request.body = request.body.replace(runargs[0], runargs[1])
+        return request
+
+    def mangle_response(request):
+        global runargs
+        if len(runargs) < 2:
+            return request.response
+        request.response.body = request.response.body.replace(runargs[0], runargs[1])
+        return request.response
+
+You can use this macro to do any search and replace that you want. For
+example, if you wanted to replace "Google" with "Skynet", you can run
+the macro like this:
+
+::
+
+    pappy> lma
+    Loaded "<InterceptingMacro Find and Replace (replace)>"
+    pappy> rim replace Google Skynet
+    "Find and Replace" started
+    pappy> 
+
+Now every site that you visit will be a little bit more accurate.
+
 Enabling/Disabling Intercepting Macros
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can use the following commands to start/stop intercepting macros
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``lma [dir | ``load_mac | Load macros    |
-| ]``        | ros``,     | from a         |
-|            | ``lma``    | directory. If  |
-|            |            | ``dir`` is not |
-|            |            | given, use the |
-|            |            | current        |
-|            |            | directory (the |
-|            |            | project        |
-|            |            | directory)     |
-+------------+------------+----------------+
-| ``rim <mac | ``run_int_ | Run an         |
-| ro name>`` | macro``,   | intercepting   |
-|            | ``rim``    | macro.         |
-|            |            | Similarly to   |
-|            |            | normal macros  |
-|            |            | you can use    |
-|            |            | the name,      |
-|            |            | short name, or |
-|            |            | file name of   |
-|            |            | the macro.     |
-+------------+------------+----------------+
-| ``sim <mac | ``stop_int | Stop an        |
-| ro name>`` | _macro``,  | intercepting   |
-|            | ``sim``    | macro.         |
-+------------+------------+----------------+
-| ``lim``    | ``list_int | List all       |
-|            | _macros``, | enabled/disabl |
-|            | ``lim``    | ed             |
-|            |            | intercepting   |
-|            |            | macros         |
-+------------+------------+----------------+
-| ``gima <na | ``generate | Generate an    |
-| me>``      | _int_macro | intercepting   |
-|            | ``,        | macro with the |
-|            | ``gima``   | given name.    |
-+------------+------------+----------------+
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| Command                       | Aliases                            | Description                                                                                                                    |
++===============================+====================================+================================================================================================================================+
+| ``lma [dir]``                 | ``load_macros``, ``lma``           | Load macros from a directory. If ``dir`` is not given, use the current directory (the project directory)                       |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``rim <macro name>``          | ``run_int_macro``, ``rim``         | Run an intercepting macro. Similarly to normal macros you can use the name, short name, or file name of the macro.             |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``sim <macro name> [args]``   | ``stop_int_macro``, ``sim``        | Stop an intercepting macro. If arguments are given, they will be passed to the macro's ``init(args)`` function if it exists.   |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``lim``                       | ``list_int_macros``, ``lsim``      | List all enabled/disabled intercepting macros                                                                                  |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``gima <name>``               | ``generate_int_macro``, ``gima``   | Generate an intercepting macro with the given name.                                                                            |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
 
 Logging
 -------
@@ -2130,60 +1012,185 @@ decodes it to, etc. Even if you don't run this command, all the
 information is stored in the dubug directory (the directory is cleared
 every start though!)
 
-+------------+----------------+
-| Command    | Description    |
-+============+================+
-| ``log [ver | View the log   |
-| bosity]``  | at the given   |
-|            | verbosity.     |
-|            | Default        |
-|            | verbosity is 1 |
-|            | which just     |
-|            | shows          |
-|            | connections    |
-|            | being          |
-|            | made/lost and  |
-|            | some other     |
-|            | info,          |
-|            | verbosity 3    |
-|            | shows full     |
-|            | requests/respo |
-|            | nses           |
-|            | as they pass   |
-|            | through and    |
-|            | are processed  |
-|            | by the proxy   |
-+------------+----------------+
++-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command               | Description                                                                                                                                                                                                                   |
++=======================+===============================================================================================================================================================================================================================+
+| ``log [verbosity]``   | View the log at the given verbosity. Default verbosity is 1 which just shows connections being made/lost and some other info, verbosity 3 shows full requests/responses as they pass through and are processed by the proxy   |
++-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-Additional Commands
--------------------
+Additional Commands and Features
+--------------------------------
 
 This is a list of other random stuff you can do that isn't categorized
 under anything else. These are mostly commands that I found that I
 needed while doing a test and just added. They likely don't do a ton of
 error checking.
 
-+------------+------------+----------------+
-| Command    | Aliases    | Description    |
-+============+============+================+
-| ``dump_res | ``dump_res | Dumps the data |
-| ponse <req | ponse``    | from the       |
-| id> [filen |            | response to    |
-| ame]``     |            | the given      |
-|            |            | filename       |
-|            |            | (useful for    |
-|            |            | images, .swf,  |
-|            |            | etc). If no    |
-|            |            | filename is    |
-|            |            | given, it uses |
-|            |            | the name given |
-|            |            | in the path.   |
-+------------+------------+----------------+
-| ``export < | ``export`` | Writes either  |
-| req|rsp> < |            | the full       |
-| reqid>``   |            | request or     |
-|            |            | response to a  |
-|            |            | file in the    |
-|            |            | current        |
-|            |            | directory.     |
-+------------+------------+----------------+
++----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command                                | Aliases             | Description                                                                                                                                           |
++========================================+=====================+=======================================================================================================================================================+
+| ``dump_response <reqid> [filename]``   | ``dump_response``   | Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path.   |
++----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``export <req|rsp> <reqid>``           | ``export``          | Writes either the full request or response to a file in the current directory.                                                                        |
++----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Response streaming
+~~~~~~~~~~~~~~~~~~
+
+If you don't have any intercepting macros running, Pappy will forward
+data to the browser as it gets it. However, if you're trying to mangle
+messages/responses, Pappy will need to download the entire message
+first.
+
+Plugins
+-------
+
+Note that this section is a very quick overview of plugins. For a full
+description of how to write them, please see `the official
+docs <https://roglew.github.io/pappy-proxy/pappyplugins.html>`__.
+
+It is also possible to write plugins which are reusable across projects.
+Plugins are simply Python scripts located in ``~/.pappy/plugins``.
+Plugins are able to create new console commands and maintain state
+throughout a Pappy session. They can access the same API as macros, but
+the plugin system is designed to allow you to create general purpose
+commands as compared to macros which are meant to be project-specific
+scripts. Still, it may not be a bad idea to try building a macro to do
+something in a quick and dirty way before writing a plugin since plugins
+are more complicated to write.
+
+A simple hello world plugin could be something like:
+
+::
+
+    ## hello.py
+    import shlex
+
+    def hello_world(line):
+        if line:
+            args = shlex.split(line)
+            print 'Hello, %s!' % (', '.join(args))
+        else:
+            print "Hello, world!"
+
+    ###############
+    ## Plugin hooks
+
+    def load_cmds(cmd):
+        cmd.set_cmds({
+            'hello': (hello_world, None),
+        })
+        cmd.add_aliases([
+            ('hello', 'hlo'),
+            ('hello', 'ho'),
+        ])
+
+You can also create commands which support autocomplete:
+
+::
+
+    import shlex
+
+    _AUTOCOMPLETE_NAMES = ['alice', 'allie', 'sarah', 'mallory', 'slagathor']
+
+    def hello_world(line):
+        if line:
+            args = shlex.split(line)
+            print 'Hello, %s!' % (', '.join(args))
+        else:
+            print "Hello, world!"
+            
+    def complete_hello_world(text, line, begidx, endidx):
+        return [n for n in _AUTOCOMPLETE_NAMES if n.startswith(text)]
+            
+    ###############
+    ## Plugin hooks
+
+    def load_cmds(cmd):
+        cmd.set_cmds({
+            'hello': (hello_world, complete_hello_world),
+        })
+        cmd.add_aliases([
+            ('hello', 'hlo'),
+        ])
+
+Then when you run Pappy you can use the ``hello`` command:
+
+::
+
+    $ pappy -l
+    Temporary datafile is /tmp/tmpBOXyJ3
+    Proxy is listening on port 8000
+    pappy> ho
+    Hello, world!
+    pappy> ho foo bar baz
+    Hello, foo, bar, baz!
+    pappy> ho foo bar "baz lihtyur"
+    Hello, foo, bar, baz lihtyur!
+    pappy>
+
+Should I Write a Plugin or a Macro?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A lot of the time, you can get away with writing a macro. However, you
+may consider writing a plugin if:
+
+-  You find yourself copying one macro to multiple projects
+-  You want to write a general tool that can be applied to any website
+-  You need to maintain state during the Pappy session
+
+My guess is that if you need one quick thing for a project, you're
+better off writing a macro first and seeing if you end up using it in
+future projects. Then if you find yourself needing it a lot, write a
+plugin for it. You may also consider keeping a ``mine.py`` plugin where
+you can write out commands that you use regularly but may not be worth
+creating a dedicated plugin for.
+
+FAQ
+---
+
+I still like Burp, but Pappy looks interesting, can I use both?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes! If you don't want to go completely over to Pappy yet, you can
+configure Burp to use Pappy as an upstream proxy server. That way,
+traffic will go through both Burp and Pappy and you can use whichever
+you want to do your testing.
+
+How to have Burp forward traffic through Pappy:
+
+1. Open Burp
+2. Go to ``Options -> Connections -> Upstream Proxy Servers``
+3. Click ``Add``
+4. Leave ``Destination Host`` blank, but put ``127.0.0.1`` in
+   ``Proxy Host`` and ``8000`` into ``Port`` (assuming you're using the
+   default listener)
+5. Configure your browser to use Burp as a proxy
+
+Why does my request have an id of ``--``?!?!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can't do anything with a request/response until it is decoded and
+saved to disk. In between the time when a request is decoded and when
+it's saved to disk, it will have an ID of ``--``. So just wait a little
+bit and it will get an ID you can use.
+
+Changelog
+---------
+
+The boring part of the readme
+
+-  0.2.0
+
+   -  Lots of refactoring
+   -  Plugins
+   -  Bugfixes probably
+   -  Change prompt to make Pappy look more professional (but it will
+      always be pappy time in your heart, I promise)
+   -  Create changelog
+   -  Add response streaming if no intercepting macros are active
+
+-  0.1.1
+
+   -  Start using sane versioning system
+   -  Did proxy things

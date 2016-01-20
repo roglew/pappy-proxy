@@ -13,6 +13,7 @@ Contents:
 
    overview
    tutorial
+   pappyplugins
 
 
 Indices and tables

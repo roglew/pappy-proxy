@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Pappy Proxy Tutorial &mdash; Pappy Proxy 0.1.1 documentation</title>
+    <title>The Pappy Proxy Tutorial &mdash; Pappy Proxy 0.2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1.1',
+        VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Pappy Proxy 0.1.1 documentation" href="index.html" />
-    <link rel="next" title="The Pappy Proxy Tutorial" href="" />
+    <link rel="top" title="Pappy Proxy 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="Writing Plugins for the Pappy Proxy" href="pappyplugins.html" />
     <link rel="prev" title="The Pappy Proxy" href="overview.html" /> 
   </head>
   <body role="document">
@@ -38,12 +38,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="#" title="The Pappy Proxy Tutorial"
+          <a href="pappyplugins.html" title="Writing Plugins for the Pappy Proxy"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="overview.html" title="The Pappy Proxy"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,62 +54,54 @@
             
   <div class="section" id="the-pappy-proxy-tutorial">
 <h1>The Pappy Proxy Tutorial<a class="headerlink" href="#the-pappy-proxy-tutorial" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="table-of-contents">
-<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="">The Pappy Proxy Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a><ul class="simple">
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#getting-set-up" id="id1">Getting Set Up</a><ul>
+<li><a class="reference internal" href="#introduction" id="id2">Introduction</a></li>
+<li><a class="reference internal" href="#getting-started" id="id3">Getting Started</a></li>
+<li><a class="reference internal" href="#installing-pappy-s-ca-cert" id="id4">Installing Pappy&#8217;s CA Cert</a><ul>
+<li><a class="reference internal" href="#installing-the-cert-in-firefox" id="id5">Installing the Cert in Firefox</a></li>
+<li><a class="reference internal" href="#installing-the-cert-in-chrome" id="id6">Installing the Cert in Chrome</a></li>
+<li><a class="reference internal" href="#installing-the-cert-in-safari" id="id7">Installing the Cert in Safari</a></li>
+<li><a class="reference internal" href="#installing-the-cert-in-internet-explorer" id="id8">Installing the Cert in Internet Explorer</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#getting-set-up">Getting Set Up</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#getting-started">Getting Started</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#installing-pappy-s-ca-cert">Installing Pappy&#8217;s CA Cert</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-firefox">Installing the Cert in Firefox</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-chrome">Installing the Cert in Chrome</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-safari">Installing the Cert in Safari</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#installing-the-cert-in-internet-explorer">Installing the Cert in Internet Explorer</a></li>
+<li><a class="reference internal" href="#configuring-your-browser" id="id9">Configuring Your Browser</a></li>
+<li><a class="reference internal" href="#testing-it-out" id="id10">Testing it Out</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#configuring-your-browser">Configuring Your Browser</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#testing-it-out">Testing it Out</a></li>
+<li><a class="reference internal" href="#the-tutorial" id="id11">The Tutorial</a><ul>
+<li><a class="reference internal" href="#setting-the-scope" id="id12">Setting the Scope</a></li>
+<li><a class="reference internal" href="#natas-0" id="id13">Natas 0</a></li>
+<li><a class="reference internal" href="#natas-1" id="id14">Natas 1</a></li>
+<li><a class="reference internal" href="#natas-2" id="id15">Natas 2</a></li>
+<li><a class="reference internal" href="#natas-3" id="id16">Natas 3</a></li>
+<li><a class="reference internal" href="#finding-your-passwords-later-how-to-use-filters" id="id17">Finding Your Passwords Later (How to Use Filters)</a><ul>
+<li><a class="reference internal" href="#filters" id="id18">Filters</a></li>
+<li><a class="reference internal" href="#finding-passwords" id="id19">Finding Passwords</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#the-tutorial">The Tutorial</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#setting-the-scope">Setting the Scope</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-0">Natas 0</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-1">Natas 1</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-2">Natas 2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-3">Natas 3</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#finding-your-passwords-later-how-to-use-filters">Finding Your Passwords Later (How to Use Filters)</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#filters">Filters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#finding-passwords">Finding Passwords</a></li>
+<li><a class="reference internal" href="#natas-4" id="id20">Natas 4</a></li>
+<li><a class="reference internal" href="#natas-5" id="id21">Natas 5</a></li>
+<li><a class="reference internal" href="#natas-6" id="id22">Natas 6</a></li>
+<li><a class="reference internal" href="#natas-7" id="id23">Natas 7</a></li>
+<li><a class="reference internal" href="#natas-8" id="id24">Natas 8</a></li>
+<li><a class="reference internal" href="#natas-9" id="id25">Natas 9</a></li>
+<li><a class="reference internal" href="#skip-a-few-natas-15" id="id26">Skip a few... Natas 15</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-4">Natas 4</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-5">Natas 5</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-6">Natas 6</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-7">Natas 7</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-8">Natas 8</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#natas-9">Natas 9</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#skip-a-few-natas-15">Skip a few... Natas 15</a></li>
+<li><a class="reference internal" href="#conclusion" id="id27">Conclusion</a></li>
 </ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#conclusion">Conclusion</a></li>
-</ul>
-</li>
-</ul>
-</div>
 </div>
 <div class="section" id="getting-set-up">
-<h2>Getting Set Up<a class="headerlink" href="#getting-set-up" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Getting Set Up</a><a class="headerlink" href="#getting-set-up" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="introduction">
-<h3>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
 <p>This is a quick tutorial to get you started using Pappy like a pro. To do this, we&#8217;ll be going through from <a class="reference external" href="http://overthewire.org/wargames/natas/">Natas</a>. If you haven&#8217;t done it yet and don&#8217;t want it spoiled, I suggest giving it a try with Burp since we&#8217;ll be telling you all the answers right off the bat.</p>
 </div>
 <div class="section" id="getting-started">
-<h3>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id3">Getting Started</a><a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h3>
 <p>The first thing you&#8217;ll need to do is get Pappy installed.</p>
 <p>Install from pypi:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ pip install pappy
@@ -130,7 +122,7 @@ $ pip install .
 $ cd natas
 Copying default config to ./config.json
 Proxy is listening on port 8000
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>If you look at what&#8217;s in the directory, you&#8217;ll notice that there&#8217;s a <code class="docutils literal"><span class="pre">data.db</span></code> file and a <code class="docutils literal"><span class="pre">config.json</span></code> file.</p>
@@ -141,21 +133,21 @@ itsPappyTime&gt;
 <p>You don&#8217;t need to touch either of these right now. Just hop back into Pappy.</p>
 </div>
 <div class="section" id="installing-pappy-s-ca-cert">
-<h3>Installing Pappy&#8217;s CA Cert<a class="headerlink" href="#installing-pappy-s-ca-cert" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id4">Installing Pappy&#8217;s CA Cert</a><a class="headerlink" href="#installing-pappy-s-ca-cert" title="Permalink to this headline">¶</a></h3>
 <p>In order to intercept HTTPS requests, you&#8217;ll need to add a CA cert to your browser. Installing the cert allows Pappy to act like a certificate authority and sign certificates for whatever it wants without your browser complaining.</p>
 <p>To generate certificates, you&#8217;ll use the <code class="docutils literal"><span class="pre">gencerts</span></code> command. This will generate certificates in Pappy&#8217;s directory. By default, all projects will use the certs in this directory, so you should only have to generate/install the certificates once.:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; gencerts
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; gencerts
 This will overwrite any existing certs in /home/anonymouse/pappy/pappyproxy/certs. Are you sure?
 (y/N) y
 Generating certs to /home/anonymouse/pappy/pappyproxy/certs
 Generating private key...  Done!
 Generating client cert...  Done!
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>The directory that the certs get put in may be different for you. Next, you&#8217;ll need to add the generated <code class="docutils literal"><span class="pre">certificate.crt</span></code> file to your browser. This is different for each browser.</p>
 <div class="section" id="installing-the-cert-in-firefox">
-<h4>Installing the Cert in Firefox<a class="headerlink" href="#installing-the-cert-in-firefox" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id5">Installing the Cert in Firefox</a><a class="headerlink" href="#installing-the-cert-in-firefox" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li>Open Firefox</li>
 <li>Go to <code class="docutils literal"><span class="pre">Preferences</span> <span class="pre">-&gt;</span> <span class="pre">Advanced</span> <span class="pre">-&gt;</span> <span class="pre">View</span> <span class="pre">Certificates</span> <span class="pre">-&gt;</span> <span class="pre">Authorities</span></code></li>
@@ -164,7 +156,7 @@ itsPappyTime&gt;
 </ol>
 </div>
 <div class="section" id="installing-the-cert-in-chrome">
-<h4>Installing the Cert in Chrome<a class="headerlink" href="#installing-the-cert-in-chrome" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id6">Installing the Cert in Chrome</a><a class="headerlink" href="#installing-the-cert-in-chrome" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li>Open Chrome</li>
 <li>Go to <code class="docutils literal"><span class="pre">Preferences</span> <span class="pre">-&gt;</span> <span class="pre">Show</span> <span class="pre">advanced</span> <span class="pre">settings</span> <span class="pre">-&gt;</span> <span class="pre">HTTPS/SSL</span> <span class="pre">-&gt;</span> <span class="pre">Manage</span> <span class="pre">Certificates</span> <span class="pre">-&gt;</span> <span class="pre">Authorities</span></code></li>
@@ -173,21 +165,21 @@ itsPappyTime&gt;
 </ol>
 </div>
 <div class="section" id="installing-the-cert-in-safari">
-<h4>Installing the Cert in Safari<a class="headerlink" href="#installing-the-cert-in-safari" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id7">Installing the Cert in Safari</a><a class="headerlink" href="#installing-the-cert-in-safari" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li>Use Finder to navigate to the directory where the certs were generated</li>
 <li>Double click the cert and follow the prompts to add it to your system keychain</li>
 </ol>
 </div>
 <div class="section" id="installing-the-cert-in-internet-explorer">
-<h4>Installing the Cert in Internet Explorer<a class="headerlink" href="#installing-the-cert-in-internet-explorer" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id8">Installing the Cert in Internet Explorer</a><a class="headerlink" href="#installing-the-cert-in-internet-explorer" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li>No.</li>
 </ol>
 </div>
 </div>
 <div class="section" id="configuring-your-browser">
-<h3>Configuring Your Browser<a class="headerlink" href="#configuring-your-browser" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">Configuring Your Browser</a><a class="headerlink" href="#configuring-your-browser" title="Permalink to this headline">¶</a></h3>
 <p>Next, you need to configure your browser to use the proxy. This is generally done using a browser extension. This tutorial won&#8217;t cover how to configure these plugins. Pappy runs on localhost on port 8000. This can be changed in <code class="docutils literal"><span class="pre">config.json</span></code>, but don&#8217;t worry about that right now.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -200,12 +192,12 @@ itsPappyTime&gt;
 </ul>
 </div>
 <div class="section" id="testing-it-out">
-<h3>Testing it Out<a class="headerlink" href="#testing-it-out" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">Testing it Out</a><a class="headerlink" href="#testing-it-out" title="Permalink to this headline">¶</a></h3>
 <p>Start up Pappy in Lite mode by running <code class="docutils literal"><span class="pre">pappy</span> <span class="pre">-l</span></code>, enable the proxy in your browser, then navigate to a website:</p>
 <div class="highlight-python"><div class="highlight"><pre>/pappynatas/ $ pappy -l
 Temporary datafile is /tmp/tmp5AQBrH
 Proxy is listening on port 8000
-itsPappyTime&gt; ls
+pappy&gt; ls
 ID  Verb  Host         Path               S-Code                 Req Len  Rsp Len  Time  Mngl
 8   GET   vitaly.sexy  /favicon.ico       404 Not Found          0        114      0.21  --
 7   GET   vitaly.sexy  /favicon.ico       404 Not Found          0        114      0.22  --
@@ -215,7 +207,7 @@ ID  Verb  Host         Path               S-Code                 Req Len  Rsp Le
 3   GET   vitaly.sexy  /vitaly2.jpg       200 OK                 0        2034003  1.34  --
 2   GET   vitaly.sexy  /                  200 OK                 0        1201     0.21  --
 1   GET   vitaly.sexy  /                  301 Moved Permanently  0        178      0.27  --
-itsPappyTime&gt; quit
+pappy&gt; quit
 Deleting temporary datafile
 </pre></div>
 </div>
@@ -223,12 +215,12 @@ Deleting temporary datafile
 </div>
 </div>
 <div class="section" id="the-tutorial">
-<h2>The Tutorial<a class="headerlink" href="#the-tutorial" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">The Tutorial</a><a class="headerlink" href="#the-tutorial" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="setting-the-scope">
-<h3>Setting the Scope<a class="headerlink" href="#setting-the-scope" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">Setting the Scope</a><a class="headerlink" href="#setting-the-scope" title="Permalink to this headline">¶</a></h3>
 <p>The first thing we&#8217;ll do is set up Pappy so that it only intercepts requests going to <code class="docutils literal"><span class="pre">*.natas.labs.overthewire.org</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; filter host containsr &quot;natas\.labs\.overthewire\.org$&quot;
-itsPappyTime&gt; scope_save
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; filter host containsr &quot;natas\.labs\.overthewire\.org$&quot;
+pappy&gt; scope_save
 </pre></div>
 </div>
 <p>What these commands do:</p>
@@ -240,7 +232,7 @@ itsPappyTime&gt; scope_save
 <p>If this doesn&#8217;t make sense, don&#8217;t worry, we&#8217;ll come back to this.</p>
 </div>
 <div class="section" id="natas-0">
-<h3>Natas 0<a class="headerlink" href="#natas-0" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id13">Natas 0</a><a class="headerlink" href="#natas-0" title="Permalink to this headline">¶</a></h3>
 <p>First, go to <a class="reference external" href="http://natas0.natas.labs.overthewire.org">http://natas0.natas.labs.overthewire.org</a> and log in with the default creds of <code class="docutils literal"><span class="pre">natas0</span></code> / <code class="docutils literal"><span class="pre">natas0</span></code>. You should see a site that says &#8220;You can find the password for the next level on this page&#8221;. You don&#8217;t need Pappy for this one.</p>
 <ol class="arabic simple">
 <li>Right click the page and select &#8220;view source&#8221;</li>
@@ -249,7 +241,7 @@ itsPappyTime&gt; scope_save
 </ol>
 </div>
 <div class="section" id="natas-1">
-<h3>Natas 1<a class="headerlink" href="#natas-1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id14">Natas 1</a><a class="headerlink" href="#natas-1" title="Permalink to this headline">¶</a></h3>
 <p>Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There&#8217;s still ways to view the source in the browser, but we&#8217;ll use Pappy here. The commands we&#8217;ll learn here are <code class="docutils literal"><span class="pre">ls</span></code>, <code class="docutils literal"><span class="pre">vfq</span></code>, and <code class="docutils literal"><span class="pre">vfs</span></code>.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">ls</span></code> lists the most current requests that are in the current context. You&#8217;ll be using this a lot to get the IDs of requests you want to do things with.</li>
@@ -257,7 +249,7 @@ itsPappyTime&gt; scope_save
 <li><code class="docutils literal"><span class="pre">vfs</span> <span class="pre">&lt;reqid&gt;</span></code> prints the full response to a request you specify</li>
 </ul>
 <p>So to solve natas1, we&#8217;ll want to view the full response to our request to the page:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
 ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
 16  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
 15  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
@@ -275,7 +267,7 @@ ID  Verb  Host                               Path                 S-Code        
 3   GET   natas.labs.overthewire.org         /css/level.css       200 OK            0        1332     0.48  --
 2   GET   natas0.natas.labs.overthewire.org  /                    200 OK            0        918      0.26  --
 1   GET   natas0.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
-itsPappyTime&gt; vfs 14
+pappy&gt; vfs 14
 
 HTTP/1.1 200 OK
 Date: Fri, 18 Dec 2015 19:47:21 GMT
@@ -295,15 +287,15 @@ Content-Type: text/html
 
 ... snip ...
 
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>Yay!</p>
 </div>
 <div class="section" id="natas-2">
-<h3>Natas 2<a class="headerlink" href="#natas-2" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id15">Natas 2</a><a class="headerlink" href="#natas-2" title="Permalink to this headline">¶</a></h3>
 <p>When you visit this page, you get a message saying &#8220;There is nothing on this page&#8221;. That is probably a blatant lie. Let&#8217;s see what was in that response.:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
 ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
 30  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
 29  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
@@ -311,7 +303,7 @@ ID  Verb  Host                               Path                 S-Code        
 27  GET   natas2.natas.labs.overthewire.org  /                    200 OK            0        872      0.27  --
 26  GET   natas2.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.27  --
 ... snip ...
-itsPappyTime&gt; vfs 27
+pappy&gt; vfs 27
 
 HTTP/1.1 200 OK
 ... snip ...
@@ -323,20 +315,20 @@ There is nothing on this page
 &lt;/div&gt;
 &lt;/body&gt;&lt;/html&gt;
 
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>So the only suspicious thing is <code class="docutils literal"><span class="pre">&lt;img</span> <span class="pre">src=&quot;files/pixel.png&quot;&gt;</span></code>. I&#8217;ll let you figure out the rest ;)</p>
 </div>
 <div class="section" id="natas-3">
-<h3>Natas 3<a class="headerlink" href="#natas-3" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">Natas 3</a><a class="headerlink" href="#natas-3" title="Permalink to this headline">¶</a></h3>
 <p>This one doesn&#8217;t require Pappy. Just view the <code class="docutils literal"><span class="pre">robots.txt</span></code> file.</p>
 </div>
 <div class="section" id="finding-your-passwords-later-how-to-use-filters">
-<h3>Finding Your Passwords Later (How to Use Filters)<a class="headerlink" href="#finding-your-passwords-later-how-to-use-filters" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id17">Finding Your Passwords Later (How to Use Filters)</a><a class="headerlink" href="#finding-your-passwords-later-how-to-use-filters" title="Permalink to this headline">¶</a></h3>
 <p>This section will explain how to use Pappy&#8217;s filters to find passwords to levels you&#8217;ve already completed. Every in-scope request and response that goes through Pappy is stored in the <code class="docutils literal"><span class="pre">data.db</span></code> file in your project directory. We can use filter commands to search through these requests to find resposes with passwords.</p>
 <div class="section" id="filters">
-<h4>Filters<a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id18">Filters</a><a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h4>
 <p>Here are the commands we&#8217;ll learn:</p>
 <ol class="arabic simple">
 <li><code class="docutils literal"><span class="pre">filter</span> <span class="pre">&lt;filter</span> <span class="pre">string&gt;</span></code> / <code class="docutils literal"><span class="pre">f</span> <span class="pre">&lt;filter</span> <span class="pre">string&gt;</span></code> Add a filter that limits which requests are included in the current context</li>
@@ -372,10 +364,10 @@ itsPappyTime&gt;
 <p>Once you&#8217;ve applied some filters, <code class="docutils literal"><span class="pre">ls</span></code> will only show items that pass all the applied filters. If you want to return to viewing all in-scope items, use <code class="docutils literal"><span class="pre">sr</span></code>. If you want to remove the last applied filter, use <code class="docutils literal"><span class="pre">fu</span></code>.</p>
 </div>
 <div class="section" id="finding-passwords">
-<h4>Finding Passwords<a class="headerlink" href="#finding-passwords" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id19">Finding Passwords</a><a class="headerlink" href="#finding-passwords" title="Permalink to this headline">¶</a></h4>
 <p>While we can&#8217;t find all the passwords with one filter, if we remember how we got the password, we can find it pretty quickly</p>
 <p>For natas0 and natas1, the responses had a phrase like &#8220;the password is abc123&#8221;. So we can filter out anything that doesn&#8217;t have the word &#8220;password&#8221; in it.:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
 ID  Verb  Host                               Path               S-Code                 Req Len  Rsp Len  Time  Mngl
 52  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.26  --
 51  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
@@ -402,8 +394,8 @@ ID  Verb  Host                               Path               S-Code          
 30  GET   natas2.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
 29  GET   natas2.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
 28  GET   natas2.natas.labs.overthewire.org  /files/pixel.png   200 OK                 0        303      0.27  --
-itsPappyTime&gt; f body ct password
-itsPappyTime&gt; ls
+pappy&gt; f body ct password
+pappy&gt; ls
 ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
 49  GET   natas4.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
 38  GET   natas3.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.28  --
@@ -418,7 +410,7 @@ ID  Verb  Host                               Path                 S-Code        
 6   GET   natas.labs.overthewire.org         /js/jquery-1.9.1.js  200 OK            0        268381   1.20  --
 2   GET   natas0.natas.labs.overthewire.org  /                    200 OK            0        918      0.26  --
 1   GET   natas0.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>It looks like requests 2 and 14 are the ones we&#8217;re looking for (we know the password is on the page and those are the requests to / that have a 200 OK response). Use <code class="docutils literal"><span class="pre">vfs</span></code> to look at the response and you&#8217;ll get the passwords again! It looks like we also found the password from natas2 (the request to /s3cr3t/users.txt).</p>
@@ -426,14 +418,14 @@ itsPappyTime&gt;
 </div>
 </div>
 <div class="section" id="natas-4">
-<h3>Natas 4<a class="headerlink" href="#natas-4" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id20">Natas 4</a><a class="headerlink" href="#natas-4" title="Permalink to this headline">¶</a></h3>
 <p>When we visit this page, we get an error saying that they will only display the password if we visit from <code class="docutils literal"><span class="pre">http://natas5.natas.labs.overthewire.org/</span></code>. How does a website track where you came from? The Referer header! Where&#8217;s that defined? In a header! Do we control the headers? Yes! So all we have to do is set the Referer header to be the correct URL and we&#8217;re golden.</p>
 <p>To do this, we&#8217;ll be using Pappy&#8217;s interceptor. The interceptor lets you stop a request from the browser, edit it, then send it to the server. These are the commands we&#8217;re going to learn:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">ic</span> <span class="pre">&lt;req|rsp&gt;+</span></code> Begin interception mode. Intercepts requests and/or responses as decided by the arguments given in the command. <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span></code> will only intercept requests, <code class="docutils literal"><span class="pre">ic</span> <span class="pre">rsp</span></code> will only intercept responses, and <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span> <span class="pre">rsp</span></code> will intercept both.</li>
 </ul>
 <p>In this case, we only want to intercept requests, so we&#8217;ll run <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ic req
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ic req
 </pre></div>
 </div>
 <p>And we&#8217;ll get a screen that says something like:</p>
@@ -466,23 +458,23 @@ Referer: http://natas5.natas.labs.overthewire.org/
 <p>Now if you run ls, you&#8217;ll notice that the request we made has a <code class="docutils literal"><span class="pre">q</span></code> in the <code class="docutils literal"><span class="pre">Mngl</span></code> column. This means that we mangled the request. If there&#8217;s an <code class="docutils literal"><span class="pre">s</span></code> in that column, it means we mangled the response. If we ever want to refer to the unmangled version of the request, just prefix the id with a u. For example, you can get the unmangled version of request <code class="docutils literal"><span class="pre">12</span></code> by using the id <code class="docutils literal"><span class="pre">u12</span></code>.</p>
 </div>
 <div class="section" id="natas-5">
-<h3>Natas 5<a class="headerlink" href="#natas-5" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id21">Natas 5</a><a class="headerlink" href="#natas-5" title="Permalink to this headline">¶</a></h3>
 <p>This one starts with a screen saying you&#8217;re not logged in. This is fine. For this one, you&#8217;ll need to use the interceptor to edit the value of a cookie. I&#8217;ll let you figure that one out.</p>
 </div>
 <div class="section" id="natas-6">
-<h3>Natas 6<a class="headerlink" href="#natas-6" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id22">Natas 6</a><a class="headerlink" href="#natas-6" title="Permalink to this headline">¶</a></h3>
 <p>This one you should be able to get</p>
 </div>
 <div class="section" id="natas-7">
-<h3>Natas 7<a class="headerlink" href="#natas-7" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id23">Natas 7</a><a class="headerlink" href="#natas-7" title="Permalink to this headline">¶</a></h3>
 <p>You should get this one. Note the hint on the <a class="reference external" href="http://overthewire.org/wargames/natas/">overthewire website</a>: All passwords are also stored in /etc/natas_webpass/. E.g. the password for natas5 is stored in the file /etc/natas_webpass/natas5 and only readable by natas4 and natas5.</p>
 </div>
 <div class="section" id="natas-8">
-<h3>Natas 8<a class="headerlink" href="#natas-8" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id24">Natas 8</a><a class="headerlink" href="#natas-8" title="Permalink to this headline">¶</a></h3>
 <p>You should be able to get this one. If it sucks, google it.</p>
 </div>
 <div class="section" id="natas-9">
-<h3>Natas 9<a class="headerlink" href="#natas-9" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id25">Natas 9</a><a class="headerlink" href="#natas-9" title="Permalink to this headline">¶</a></h3>
 <p>For this one, when you view the source you&#8217;ll notice they&#8217;re taking value you entered and inserting it directly into a command line command to grep a file. What we want to do is insert our own arguments to the command. For this one, we will learn how to use the repeater. Here is the command we will learn:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">rp</span> <span class="pre">&lt;reqid&gt;</span></code> Open the vim repeater with the given request</li>
@@ -497,11 +489,11 @@ Referer: http://natas5.natas.labs.overthewire.org/
 <p class="last">You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key <a class="reference external" href="https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file">here</a>. By default &lt;leader&gt; is bound to <code class="docutils literal"><span class="pre">\</span></code>.</p>
 </div>
 <p>Submit a request then open that request in the repeater:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
 196  GET   natas9.natas.labs.overthewire.org  /index.php?needle=ball&amp;submit=Search      200 OK            0        1686     0.27  --
 195  GET   natas9.natas.labs.overthewire.org  /index-source.html                        200 OK            0        1952     0.27  --
 ... snip ...
-itsPappyTime&gt; rp 196
+pappy&gt; rp 196
 </pre></div>
 </div>
 <p>Vim will open up in a vertical split with the request on the left and the response on the right.</p>
@@ -510,7 +502,7 @@ itsPappyTime&gt; rp 196
 <p>Use the repeater to solve this challenge (you may need to url encode some characters by hand, unfortunately).</p>
 </div>
 <div class="section" id="skip-a-few-natas-15">
-<h3>Skip a few... Natas 15<a class="headerlink" href="#skip-a-few-natas-15" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id26">Skip a few... Natas 15</a><a class="headerlink" href="#skip-a-few-natas-15" title="Permalink to this headline">¶</a></h3>
 <p>All the challenges up to this point should be doable with the repeater/interceptor. Natas15 is where things get hairy though. This is a blind SQL injection, and you&#8217;ll have to write a script to do it. Luckily for us, writing scripts using Pappy is easy. If you&#8217;re lazy and don&#8217;t want to actually do the challenges, google the password for natas15 then come back.</p>
 <p>Commands we&#8217;ll learn:</p>
 <ul class="simple">
@@ -519,7 +511,7 @@ itsPappyTime&gt; rp 196
 <li><code class="docutils literal"><span class="pre">rma</span> <span class="pre">&lt;name&gt;</span> <span class="pre">[args]</span></code> Run a macro, optionally with arguments</li>
 </ul>
 <p>So the first thing we&#8217;ll do is submit a request to have a base request that we can modify. Submit a request with any username. You should get a response back saying the user doesn&#8217;t exist. Now we&#8217;ll generate a macro and use that request as a base for our script:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; ls
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
 ID   Verb  Host                                Path                                      S-Code            Req Len  Rsp Len  Time  Mngl
 224  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            14       937      0.27  --
 223  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            12       937      0.27  --
@@ -530,9 +522,9 @@ ID   Verb  Host                                Path                             
 218  GET   natas15.natas.labs.overthewire.org  /                                         401 Unauthorized  0        480      0.27  --
 ... snip ...
 
-itsPappyTime&gt; gma brute 224
+pappy&gt; gma brute 224
 Wrote script to macro_brute.py
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>Now open up <code class="docutils literal"><span class="pre">macro_brute.py</span></code> in your favorite text editor. You should have a script that looks like this:</p>
@@ -597,15 +589,15 @@ itsPappyTime&gt;
 </pre></div>
 </div>
 <p>Then to run it:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; lma
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; lma
 Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
-itsPappyTime&gt; rma brute admin
+pappy&gt; rma brute admin
 admin is not a user
-itsPappyTime&gt; rma brute fooooo
+pappy&gt; rma brute fooooo
 fooooo is not a user
-itsPappyTime&gt; rma brute natas16
+pappy&gt; rma brute natas16
 natas16 is a user!
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>Awesome! Notice how we didn&#8217;t have to deal with authentication either. This is because the authentication is handled by the <code class="docutils literal"><span class="pre">Authorization</span></code> header which was included in the generated request.</p>
@@ -618,11 +610,11 @@ itsPappyTime&gt;
 </pre></div>
 </div>
 <p>In this case, any username that ends in <code class="docutils literal"><span class="pre">&quot;</span> <span class="pre">OR</span> <span class="pre">1=1;</span> <span class="pre">#</span></code> will be considered a valid username. Let&#8217;s try this out:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; rma brute &quot;foo\&quot; OR 1=1;&quot;
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; rma brute &quot;foo\&quot; OR 1=1;&quot;
 foo&quot; OR 1=1; is a user!
-itsPappyTime&gt; rma brute &quot;fooooooo\&quot; OR 1=1;&quot;
+pappy&gt; rma brute &quot;fooooooo\&quot; OR 1=1;&quot;
 fooooooo&quot; OR 1=1; is a user!
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>Great! Now we can check any true/false condition we want. In this case, we want to check if a certain character is at a certain position in the <code class="docutils literal"><span class="pre">password</span></code> column. We do this with the <code class="docutils literal"><span class="pre">ASCII</span></code> and <code class="docutils literal"><span class="pre">SUBSTRING</span></code> functions. So something like this will check if the first character is an <code class="docutils literal"><span class="pre">A</span></code>.:</p>
@@ -681,9 +673,9 @@ itsPappyTime&gt;
 </pre></div>
 </div>
 <p>And when we run it...:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; lma
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; lma
 Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
-itsPappyTime&gt; rma brute
+pappy&gt; rma brute
 Trying a...
 Trying b...
 Trying c...
@@ -693,7 +685,7 @@ Trying U...
 Trying V...
 Trying W...
 W is the first char!
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>We find the first character! Woo! Next we just have to do this for each position. Even through we don&#8217;t know the length of the password, we will know that the password is over when none of the characters are valid. So let&#8217;s update our macro:</p>
@@ -768,9 +760,9 @@ itsPappyTime&gt;
 </pre></div>
 </div>
 <p>Then we run it:</p>
-<div class="highlight-python"><div class="highlight"><pre>itsPappyTime&gt; lma
+<div class="highlight-python"><div class="highlight"><pre>pappy&gt; lma
 Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
-itsPappyTime&gt; rma brute
+pappy&gt; rma brute
 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W
 W is char 1!
 The password so far is W
@@ -796,14 +788,14 @@ h is char 32!
 The password so far is WaIHEacj63wnNIBROHeqi3p9t0m5nhmh
 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 0 1 2 3 4 5 6 7 8 9 0
 Done! The password is &quot;WaIHEacj63wnNIBROHeqi3p9t0m5nhmh&quot;
-itsPappyTime&gt;
+pappy&gt;
 </pre></div>
 </div>
 <p>Boom! There it is!</p>
 </div>
 </div>
 <div class="section" id="conclusion">
-<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id27">Conclusion</a><a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h2>
 <p>That&#8217;s pretty much all you need to get started with Pappy. Make sure to go through the documentation to learn about all the other features that weren&#8217;t covered in this tutorial. Hopefully you didn&#8217;t find Pappy too hard to use and you&#8217;ll consider it for your next engagement.</p>
 </div>
 </div>
@@ -817,7 +809,6 @@ itsPappyTime&gt;
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">The Pappy Proxy Tutorial</a><ul>
-<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
 <li><a class="reference internal" href="#getting-set-up">Getting Set Up</a><ul>
 <li><a class="reference internal" href="#introduction">Introduction</a></li>
 <li><a class="reference internal" href="#getting-started">Getting Started</a></li>
@@ -861,8 +852,8 @@ itsPappyTime&gt;
   <p class="topless"><a href="overview.html"
                         title="previous chapter">The Pappy Proxy</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href=""
-                        title="next chapter">The Pappy Proxy Tutorial</a></p>
+  <p class="topless"><a href="pappyplugins.html"
+                        title="next chapter">Writing Plugins for the Pappy Proxy</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -897,12 +888,12 @@ itsPappyTime&gt;
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="#" title="The Pappy Proxy Tutorial"
+          <a href="pappyplugins.html" title="Writing Plugins for the Pappy Proxy"
              >next</a> |</li>
         <li class="right" >
           <a href="overview.html" title="The Pappy Proxy"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
