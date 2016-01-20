@@ -1,17 +1,19 @@
+import StringIO
 import base64
-import collections
+import bs4
 import crochet
 import datetime
 import gzip
 import json
-import pappyproxy
+import pygments
 import re
-import StringIO
 import urlparse
 import zlib
+
+from .util import PappyException, printable_data
+from pygments.formatters import TerminalFormatter
+from pygments.lexers import get_lexer_for_mimetype, HttpLexer
 from twisted.internet import defer, reactor
-from pappyproxy.util import PappyException
-import bs4
 
 ENCODE_NONE = 0
 ENCODE_DEFLATE = 1
@@ -34,7 +36,7 @@ def init(pool):
 def destruct():
     assert(dbpool)
     dbpool.close()
-
+    
 def _decode_encoded(data, encoding):
     if encoding == ENCODE_NONE:
         return data
@@ -79,7 +81,7 @@ def get_request(url='', url_params={}):
     given url params.
     """
     r = Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     r.url = url
     r.headers['Host'] = r.host
     if url_params:
@@ -94,7 +96,7 @@ def post_request(url, post_params={}, url_params={}):
     given post and url params.
     """
     r = Request()
-    r.status_line = 'POST / HTTP/1.1'
+    r.start_line = 'POST / HTTP/1.1'
     r.url = url
     r.headers['Host'] = r.host
     if url_params:
@@ -113,6 +115,12 @@ def repeatable_parse_qs(s):
         else:
             ret_dict.append(pair, None)
     return ret_dict
+
+@crochet.wait_for(timeout=180.0)
+@defer.inlineCallbacks
+def request_by_id(reqid):
+    req = Request.load_request(str(reqid))
+    defer.returnValue(req)
 
 ##########
 ## Classes
@@ -179,9 +187,16 @@ class RepeatableDict:
         self._keys.remove(self._ef_key(key))
     
     def all_pairs(self):
+        """
+        A list of all the key/value pairs stored in the dictionary
+        """
         return self._pairs[:]
 
     def append(self, key, val, do_callback=True):
+        """
+        append(key, val)
+        Append a pair to the end of the dictionary. Will add a duplicate if the key already exists.
+        """
         # Add a duplicate entry for key
         self._add_key(key)
         self._pairs.append((key, val))
@@ -189,6 +204,16 @@ class RepeatableDict:
             self._mod_callback()
 
     def set_val(self, key, val, do_callback=True):
+        """
+        set_val(key, val)
+        Set a value in the dictionary. Will replace the first instance of the
+        key with the value. If multiple values of the keys are already in the
+        dictionary, the duplicates of the key will be removed and the first instance
+        of the key will be replaced with the value. If the dictionary is case
+        insensitive, it will maintain the original capitalization. This is the same
+        behavior as assigning a value via ``d[key] = val``. If the key is not
+        present, it will be added to the end of the dict.
+        """
         new_pairs = []
         added = False
         self._add_key(key)
@@ -218,27 +243,55 @@ class RepeatableDict:
             self.set_val(key, val, do_callback=do_callback)
 
     def clear(self, do_callback=True):
+        """
+        clear()
+        Remove all key/value pairs from the dictionary
+        """
         self._pairs = []
         if do_callback:
             self._mod_callback()
             
     def all_vals(self, key):
+        """
+        all_vals(key)
+        Return all the values associated with a given key
+        """
         return [p[1] for p in self._pairs if self._ef_key(p[0]) == self._ef_key(key)]
 
     def add_pairs(self, pairs, do_callback=True):
+        """
+        add_pairs(pairs)
+        Add a list of pairs to the dictionary.
+
+        :param pairs: The list of key/value pairs to add
+        :type pairs: List of tuples of length 2
+        """
         for pair in pairs:
             self._add_key(pair[0])
         self._pairs += pairs
         if do_callback:
             self._mod_callback()
 
-    def from_dict(self, d):
+    def from_dict(self, d, do_callback=True):
+        """
+        from_dict(d)
+        Set the RepeatableDict to contain the same items as a normal dictionary.
+
+        :param d: The dictionary to use
+        :type d: dict
+        """
         self._pairs = list(d.items())
-        self._mod_callback()
+        if do_callback:
+            self._mod_callback()
 
     def sort(self):
+        """
+        sort()
+        Sort the dictionary by the key. Requires that all keys can be compared
+        to each other
+        """
         # Sorts pairs by key alphabetaclly
-        pairs = sorted(pairs, key=lambda x: x[0])
+        self._pairs = sorted(self._pairs, key=lambda x: x[0])
 
     def set_modify_callback(self, callback):
         # Add a function to be called whenever an element is added, changed, or
@@ -248,7 +301,7 @@ class RepeatableDict:
 
 class LengthData:
     def __init__(self, length=None):
-        self.raw_data = ''
+        self.body = ''
         self.complete = False
         self.length = length or 0
 
@@ -258,18 +311,18 @@ class LengthData:
     def add_data(self, data):
         if self.complete:
             raise PappyException("Data already complete!")
-        remaining_length = self.length-len(self.raw_data)
+        remaining_length = self.length-len(self.body)
         if len(data) >= remaining_length:
-            self.raw_data += data[:remaining_length]
-            assert(len(self.raw_data) == self.length)
+            self.body += data[:remaining_length]
+            assert(len(self.body) == self.length)
             self.complete = True
         else:
-            self.raw_data += data
+            self.body += data
 
 class ChunkedData:
 
     def __init__(self):
-        self.raw_data = ''
+        self.body = ''
         self._pos = 0
         self._state = 0 # 0=reading length, 1=reading data, 2=going over known string
         self._len_str = ''
@@ -277,12 +330,13 @@ class ChunkedData:
         self._known_str = ''
         self._known_str_pos = 0
         self._next_state = 0
-        self._raw_data = ''
+        self._body = []
         self.complete = False
-        self.unchunked_data = ''
+        self.unchunked_data = []
 
     def add_data(self, data):
-        self._raw_data += data
+        for c in data:
+            self._body.append(c)
         self.scan_forward()
 
     def scan_forward(self):
@@ -290,8 +344,8 @@ class ChunkedData:
         if self.complete:
             return
 
-        while self._pos < len(self._raw_data):
-            curchar = self._raw_data[self._pos]
+        while self._pos < len(self._body):
+            curchar = self._body[self._pos]
             if self._state == 0:
                 if curchar.lower() in '0123456789abcdef':
                     # Read the next char of the length
@@ -306,12 +360,7 @@ class ChunkedData:
                     # If the length is 0, chunked encoding is done!
                     if self._chunk_remaining == 0:
                         self.complete = True
-                        # I should probably just rename raw_data since it's what
-                        # you use to look at unchunked data, but you're not
-                        # supposed to look at it until after it's complete
-                        # anyways
-                        self._raw_data = self.unchunked_data
-                        self.raw_data = self._raw_data # Expose raw_data
+                        self.body = ''.join(self.unchunked_data)
                         return
 
                     # There should be a newline after the \r
@@ -330,7 +379,7 @@ class ChunkedData:
             elif self._state == 1:
                 if self._chunk_remaining > 0:
                     # Read next byte of data
-                    self.unchunked_data += curchar
+                    self.unchunked_data.append(curchar)
                     self._chunk_remaining -= 1
                     self._pos += 1
                 else:
@@ -358,6 +407,23 @@ class ChunkedData:
 class ResponseCookie(object):
     """
     A cookie representing a cookie set by a response
+
+    :ivar key: The key of the cookie
+    :type key: string
+    :ivar val: The value of the cookie
+    :type val: string
+    :ivar expires: The value of the "expires" attribute
+    :type expires: string
+    :ivar max_age: The max age of the cookie
+    :type max_age: int
+    :ivar domain: The domain of the cookie
+    :type domain: string
+    :ivar path: The path of the cookie
+    :type path: string
+    :ivar secure: The secure flag of the cookie
+    :type secure: Bool
+    :ivar http_only: The httponly flag of the cookie
+    :type http_only: Bool
     """
 
     def __init__(self, set_cookie_string=None):
@@ -444,30 +510,401 @@ class ResponseCookie(object):
         else:
             self.key, self.val = set_cookie_string.split('=',1)
 
+class HTTPMessage(object):
+    """
+    A base class which represents an HTTP message. It is used to implement
+    both requests and responses
 
-class Request(object):
+    :ivar complete: When loading data with
+        :func:`~pappyproxy.http.HTTPMessage.add_line` and
+        :func:`~pappyproxy.http.HTTPMessage.add_data`, returns whether the message
+        is complete
+    :vartype complete: bool
+    :ivar headers: Headers of the message
+    :vartype complete: RepeatableDict
+    :ivar headers_complete: When creating the message with
+        :func:`~pappyproxy.http.HTTPMessage.add_line` and
+        :func:`~pappyproxy.http.HTTPMessage.add_data`, returns whether the headers
+        are complete
+    :ivar start_line: The start line of the message
+    :vartype start_line: string
+    """
+    reserved_meta_keys = ['full_message']
+
+    def __init__(self, full_message=None, update_content_length=False):
+        self.complete = False
+        self.headers = RepeatableDict(case_insensitive=True)
+        self.headers_complete = False
+        self.malformed = False
+        self.start_line = ''
+        self.reset_metadata()
+        self._decoded = False
+
+        self._encoding_type = ENCODE_NONE
+        self._first_line = True
+        self._data_obj = None
+        self._end_after_headers = False
+
+        #self._set_dict_callbacks()
+
+        if full_message is not None:
+            self._from_full_message(full_message, update_content_length)
+
+    def __eq__(self, other):
+        # TODO check meta
+        if self.full_message != other.full_message:
+            return False
+        if self.get_metadata() != other.get_metadata():
+            return False
+        return True
+
+    def __copy__(self):
+        if not self.complete:
+            raise PappyException("Cannot copy incomplete http messages")
+        retmsg = self.__class__(self.full_message)
+        retmsg.set_metadata(self.get_metadata())
+        return retmsg
+
+    def __deepcopy__(self):
+        return self.__copy__()
+
+    def copy(self):
+        """
+        Returns a copy of the request
+
+        :rtype: Request
+        """
+        return self.__copy__()
+
+    def _from_full_message(self, full_message, update_content_length=False, meta=None):
+        # Set defaults for metadata
+        self.reset_metadata()
+        # Get rid of leading CRLF. Not in spec, should remove eventually
+        full_message = _strip_leading_newlines(full_message)
+        if full_message == '':
+            return
+
+        remaining = full_message
+        while remaining and not self.headers_complete:
+            line, remaining = _consume_line(remaining)
+            self.add_line(line)
+
+        if not self.headers_complete:
+            self.add_line('')
+
+        if meta:
+            self.set_metadata(meta)
+
+        # We keep track of encoding here since if it's encoded, after
+        # we call add_data it will update content-length automatically
+        # and we won't have to update the content-length manually
+        if not self.complete:
+            # We do add data since just setting the body will keep the
+            # object from decoding chunked/compressed messages
+            self.add_data(remaining)
+        if update_content_length and (not self._decoded):
+            self.body = remaining
+        assert(self.complete)
+
+    ###############################
+    ## Properties/attribute setters
+
+    @property
+    def headers_section(self):
+        """
+        The raw text of the headers including the extra newline at the end.
+
+        :getter: Returns the raw text of the headers including the extra newline at the end.
+        :type: string
+        """
+        ret = ''
+        if self.start_line:
+            ret = self.start_line + '\r\n'
+        for k, v in self.headers.all_pairs():
+            ret = ret + "%s: %s\r\n" % (k, v)
+        if ret:
+            ret = ret + '\r\n'
+        return ret
+
+    @property
+    def headers_section_pretty(self):
+        """
+        Same thing as :func:`pappyproxy.http.HTTPMessage.headers_section` except
+        that the headers are colorized for terminal printing.
+        """
+        to_ret = printable_data(self.headers_section)
+        to_ret = pygments.highlight(to_ret, HttpLexer(), TerminalFormatter())
+        return to_ret
+
+    @property
+    def body(self):
+        """
+        The data portion of the message
+
+        :getter: Returns the data portion of the message
+        :setter: Set the data of the response and update metadata
+        :type: string
+        """
+        if self._data_obj:
+            return self._data_obj.body
+        else:
+            return ''
+        
+    @body.setter
+    def body(self, val):
+        self._data_obj = LengthData(len(val))
+        if len(val) > 0:
+            self._data_obj.add_data(val)
+        self._encoding_type = ENCODE_NONE
+        self.complete = True
+        self.update_from_body()
+
+    @property
+    def body_pretty(self):
+        """
+        Same thing as :func:`pappy.http.HTTPMessage.body` but the output is
+        colorized for the terminal.
+        """
+        to_ret = printable_data(self.body)
+        if 'content-type' in self.headers:
+            try:
+                lexer = get_lexer_for_mimetype(self.headers['content-type'].split(';')[0])
+                to_ret = pygments.highlight(to_ret, lexer, TerminalFormatter())
+            except:
+                pass
+        return to_ret
+
+    @property
+    def full_message(self):
+        """
+        The full message including the start line, headers, and body
+        """
+        if self.headers_section == '':
+            return self.body
+        else:
+            return (self.headers_section + self.body)
+
+    @property
+    def full_message_pretty(self):
+        """
+        Same as :func:`pappyproxy.http.HTTPMessage.full_message` except the
+        output is colorized
+        """
+        return (self.headers_section_pretty + '\r\n' + self.body_pretty)
+
+    ###############
+    ## Data loading
+
+    def add_line(self, line):
+        """
+        Used for building a message from a Twisted protocol.
+        Add a line (for status line and headers). Lines must be added in order
+        and the first line must be the status line. The line should not contain
+        the trailing carriage return/newline. I do not suggest you use this for
+        anything.
+
+        :param line: The line to add
+        :type line: string
+        """
+        assert(not self.headers_complete)
+        if not line and self._first_line:
+            return
+        if not line:
+            self.headers_complete = True
+
+            if self._end_after_headers:
+                self.complete = True
+                return
+
+            if not self._data_obj:
+                self._data_obj = LengthData(0)
+            self.complete = self._data_obj.complete
+            self.headers_end()
+            return
+
+        if self._first_line:
+            self.handle_start_line(line)
+            self._first_line = False
+        else:
+            key, val = line.split(':', 1)
+            val = val.strip()
+            if self.handle_header(key, val):
+                self.headers.append(key, val, do_callback=False)
+
+    def add_data(self, data):
+        """
+        Used for building a message from a Twisted protocol.
+        Add data to the message. The data must conform to the content encoding
+        and transfer encoding given in the headers passed in to
+        :func:`~pappyproxy.http.HTTPMessage.add_line`. Can be any fragment of the data.
+        I do not suggest that you use this function ever.
+
+        :param data: The data to add
+        :type data: string
+        """
+        assert(self._data_obj)
+        assert(not self._data_obj.complete)
+        assert not self.complete
+        self._data_obj.add_data(data)
+        if self._data_obj.complete:
+            self.complete = True
+            self.body_complete()
+
+    ###############
+    ## Data parsing
+
+    def handle_header(self, key, val):
+        """
+        Called when a header is loaded into the message. Should not be called
+        outside of implementation.
+
+        :param key: Header key
+        :type line: string
+        :param key: Header value
+        :type line: string
+        """
+        stripped = False
+        if key.lower() == 'content-encoding':
+            if val in ('gzip', 'x-gzip'):
+                self._encoding_type = ENCODE_GZIP
+            elif val in ('deflate'):
+                self._encoding_type = ENCODE_DEFLATE
+
+            # We send our requests already decoded, so we don't want a header
+            # saying it's encoded
+            if self._encoding_type != ENCODE_NONE:
+                self._decoded = True
+                stripped = True
+        elif key.lower() == 'transfer-encoding' and val.lower() == 'chunked':
+            self._data_obj = ChunkedData()
+            self.complete = self._data_obj.complete
+            self._decoded = True
+            stripped = True
+        elif key.lower() == 'content-length':
+            # We use our own content length
+            self._data_obj = LengthData(int(val))
+
+        return (not stripped)
+
+    def handle_start_line(self, start_line):
+        """
+        A handler function for the status line.
+        """
+        self.start_line = start_line
+
+    def headers_end(self):
+        """
+        Called when the headers are complete.
+        """
+        pass
+
+    def body_complete(self):
+        """
+        Called when the body of the message is complete
+        """
+        self.body = _decode_encoded(self._data_obj.body,
+                                    self._encoding_type)
+
+    def update_from_body(self):
+        """
+        Called when the body of the message is modified directly. Should be used
+        to update metadata that depends on the body of the message.
+        """
+        if len(self.body) > 0 or 'Content-Length' in self.headers:
+            self.headers.update('Content-Length', str(len(self.body)), do_callback=False)
+
+    def update_from_headers(self):
+        """
+        Called when a header is modified. Should be used to update metadata that
+        depends on the values of headers.
+        """
+        pass
+
+    ###########
+    ## Metadata
+
+    # The metadata functions are used so that we only have to make changes in a
+    # few similar functions which will update all copying, serialization, etc
+    # functions at the same time.
+
+    def get_metadata(self):
+        """
+        Get all the metadata of the message in dictionary form.
+        Should be implemented in child class.
+        Should not be invoked outside of implementation!
+        """
+        pass
+
+    def set_metadata(self, data):
+        """
+        Set metadata values based off of a data dictionary.
+        Should be implemented in child class.
+        Should not be invoked outside of implementation!
+
+        :param data: Metadata to apply
+        :type line: dict
+        """
+        pass
+
+    def reset_metadata(self):
+        """
+        Reset meta values to default values. Overridden by child class.
+        Should not be invoked outside of implementation!
+        """
+        pass
+
+    ##############
+    ## Serializing
+
+    def to_json(self):
+        """
+        Return a JSON encoding of the message that can be used by
+        :func:`~pappyproxy.http.Message.from_json` to recreate the message.
+        The ``full_message`` portion is base64 encoded because json doesn't play
+        nice with binary blobs.
+        """
+        data = {
+            'full_message': base64.b64encode(self.full_message),
+        }
+
+        metadata = self.get_metadata()
+        for k, v in metadata.iteritems():
+            if k in HTTPMessage.reserved_meta_keys:
+                raise PappyException('A message with %s as a key for a metavalue cannot be encoded into JSON')
+            data[k] = v
+
+        return json.dumps(data)
+            
+
+    def from_json(self, json_string):
+        """
+        Update the metadata of the message to match data from
+        :func:`~pappyproxy.http.Message.to_json`
+
+        :param json_string: The JSON data to use
+        :type json_string: JSON data in a string
+        """
+        data = json.loads(json_string)
+        full_message = base64.b64decode(data['full_message'])
+        for k in HTTPMessage.reserved_meta_keys:
+            if k in data:
+                del data[k]
+        self._from_full_message(full_message, meta=data)
+        # self.update_from_headers()
+        # self.update_from_body()
+
+class Request(HTTPMessage):
     """
     :ivar time_end: The datetime that the request ended.
     :vartype time_end: datetime.datetime
     :ivar time_start: The datetime that the request was made
     :vartype time_start: datetime.datetime
-    :ivar complete: When creating the request with :func:`~pappyproxy.http.Request.add_line`
-        and :func:`~pappyproxy.http.Request.add_data`, returns whether
-        the request is complete.
-    :vartype complete: Bool
     :ivar cookies: Cookies sent with the request
     :vartype cookies: RepeatableDict
     :ivar fragment: The fragment part of the url (The part that comes after the #)
     :vartype fragment: String
     :ivar url_params: The url parameters of the request (aka the get parameters)
     :vartype url_params: RepeatableDict
-    :ivar headers: The headers of the request
-    :vartype headers: RepeatableDict
-    :ivar headers_complete: When creating the request with
-        :func:`~pappyproxy.http.Request.add_line` and
-        :func:`~pappyproxy.http.Request.add_data`, returns whether the headers
-        are complete
-    :vartype headers_complete: Bool
     :ivar path: The path of the request
     :vartype path: String
     :ivar port: The port that the request was sent to (or will be sent to)
@@ -489,25 +926,22 @@ class Request(object):
     :vartype version: String
     :ivar tags: Tags associated with the request
     :vartype tags: List of Strings
+    :ivar plugin_data: Data about the request created by plugins. If you modify this, please add your own key to it for your plugin and store all your plugin's data under that key (probably as another dict). For example if you have a plugin called ``foo``, try and store all your data under ``req.plugin_data['foo']``.
+    :vartype plugin_data: Dict
     """
 
-
     def __init__(self, full_request=None, update_content_length=True,
-                 port=None, is_ssl=None):
+                 port=None, is_ssl=None, host=None):
         self.time_end = None
         self.time_start = None
-        self.complete = False
         self.cookies = RepeatableDict()
         self.fragment = None
         self.url_params = RepeatableDict()
-        self.headers = RepeatableDict(case_insensitive=True)
-        self.headers_complete = False
         self._host = None
         self._is_ssl = False
         self.path = ''
         self.port = None
         self.post_params = RepeatableDict()
-        self._raw_data = ''
         self.reqid = None
         self.response = None
         self.submitted = False
@@ -515,11 +949,13 @@ class Request(object):
         self.verb = ''
         self.version = ''
         self.tags = []
+        self.plugin_data = {}
 
-        self._first_line = True
-        self._data_length = 0
-        self._partial_data = ''
+        # Called after instance vars since some callbacks depend on
+        # instance vars
+        HTTPMessage.__init__(self, full_request, update_content_length)
 
+        # After message init so that other instance vars are initialized
         self._set_dict_callbacks()
 
         # Set values from init
@@ -527,45 +963,9 @@ class Request(object):
             self.is_ssl = True
         if port:
             self.port = port
-
-        # Get values from the raw request
-        if full_request is not None:
-            self._from_full_request(full_request, update_content_length)
+        if host:
+            self._host = host
             
-    def __copy__(self):
-        if not self.complete:
-            raise PappyException("Cannot copy incomplete requests")
-        newreq = Request(self.full_request)
-        newreq.is_ssl = self.is_ssl
-        newreq.port = self.port
-        newreq._host = self._host
-        newreq.time_start = self.time_start
-        newreq.time_end = self.time_end
-        if self.unmangled:
-            newreq.unmangled = self.unmangled.copy()
-        if self.response:
-            newreq.response = self.response.copy()
-        return newreq
-
-    def __eq__(self, other):
-        if self.full_request != other.full_request:
-            return False
-        if self.port != other.port:
-            return False
-        if self.is_ssl != other.is_ssl:
-            return False
-        if self._host != other._host:
-            return False
-        return True
-    
-    def copy(self):
-        """
-        Returns a copy of the request
-
-        :rtype: Request
-        """
-        return self.__copy__()
-
     @property
     def rsptime(self):
         """
@@ -580,7 +980,7 @@ class Request(object):
             return None
 
     @property
-    def status_line(self):
+    def start_line(self):
         """
         The status line of the request. ie `GET / HTTP/1.1`
 
@@ -588,13 +988,28 @@ class Request(object):
         :setter: Sets the status line of the request
         :type: string
         """
-        if not self.verb and not self.path and not self.version:
+        if not self.verb and not self.full_path and not self.version:
             return ''
         return '%s %s %s' % (self.verb, self.full_path, self.version)
 
+    @start_line.setter
+    def start_line(self, val):
+        self.handle_start_line(val)
+
+    @property
+    def status_line(self):
+        """
+        Alias for `pappyproxy.http.Request.start_line`.
+
+        :getter: Returns the status line of the request
+        :setter: Sets the status line of the request
+        :type: string
+        """
+        return self.start_line
+
     @status_line.setter
     def status_line(self, val):
-        self._handle_statusline(val)
+        self.start_line = val
 
     @property
     def full_path(self):
@@ -624,47 +1039,37 @@ class Request(object):
     @property
     def raw_headers(self):
         """
-        The raw text of the headers including the extra newline at the end.
+        Alias for Request.headers_section
 
         :getter: Returns the raw text of the headers including the extra newline at the end.
         :type: string
         """
-        ret = self.status_line + '\r\n'
-        for k, v in self.headers.all_pairs():
-            ret = ret + "%s: %s\r\n" % (k, v)
-        ret = ret + '\r\n'
-        return ret
+        return self.headers_section
 
     @property
     def full_request(self):
         """
-        The full text of the request including the headers and data.
+        Alias for Request.full_message
 
         :getter: Returns the full text of the request
         :type: string
         """
-        if not self.status_line:
-            return ''
-        ret = self.raw_headers
-        ret = ret + self.raw_data
-        return ret
+        return self.full_message
 
     @property
     def raw_data(self):
         """
-        The data portion of the request
+        Alias for Request.body
 
         :getter: Returns the data portion of the request
         :setter: Set the data of the request and update metadata
         :type: string
         """
-        return self._raw_data
+        return self.body
 
     @raw_data.setter
     def raw_data(self, val):
-        self._raw_data = val
-        self._update_from_data()
-        self.complete = True
+        self.body = val
 
     @property
     def url(self):
@@ -773,44 +1178,60 @@ class Request(object):
             ret = ret[:-1]
         return tuple(ret)
 
-    def _from_full_request(self, full_request, update_content_length=False):
-        # Get rid of leading CRLF. Not in spec, should remove eventually
-        # technically doesn't treat \r\n same as \n, but whatever.
-        full_request = _strip_leading_newlines(full_request)
-        if full_request == '':
-            return
+    ###########
+    ## Metadata
 
-        remaining = full_request
-        while remaining and not self.headers_complete:
-            line, remaining = _consume_line(remaining)
-            self.add_line(line)
+    def get_metadata(self):
+        data = {}
+        if self.port is not None:
+            data['port'] = self.port
+        data['is_ssl'] = self.is_ssl
+        data['host'] = self.host
+        data['reqid'] = self.reqid
+        if self.response:
+            data['response_id'] = self.response.rspid
+        data['tags'] = self.tags
+        return data
 
-        if not self.headers_complete:
-            self.add_line('')
+    def set_metadata(self, data):
+        if 'reqid' in data:
+            self.reqid = data['reqid']
+        if 'is_ssl' in data:
+            self.is_ssl = data['is_ssl']
+        if 'host' in data:
+            self._host = data['host']
+        if 'port' in data:
+            self.port = data['port']
+        if 'tags' in data:
+            self.tags = data['tags']
 
-        if not self.complete:
-            if update_content_length:
-                self.raw_data = remaining
-            else:
-                self.add_data(remaining)
-        assert(self.complete)
-        self._handle_data_end()
+    def reset_metadata(self):
+        self.port = 80
+        self.is_ssl = False
+        self.reqid = None
+        self._host = ''
+        self.tags = []
+
+    def get_plugin_dict(self, name):
+        if not name in self.plugin_data:
+            self.plugin_data[name] = {}
+        return self.plugin_data[name]
 
     ############################
     ## Internal update functions
 
     def _set_dict_callbacks(self):
         # Add callbacks to dicts
-        self.headers.set_modify_callback(self._update_from_text)
+        self.headers.set_modify_callback(self.update_from_headers)
         self.cookies.set_modify_callback(self._update_from_objects)
         self.post_params.set_modify_callback(self._update_from_objects)
         
-    def _update_from_data(self):
+    def update_from_body(self):
         # Updates metadata that's based off of data
-        self.headers.update('Content-Length', str(len(self.raw_data)), do_callback=False)
+        HTTPMessage.update_from_body(self)
         if 'content-type' in self.headers:
             if self.headers['content-type'] == 'application/x-www-form-urlencoded':
-                self.post_params = repeatable_parse_qs(self.raw_data)
+                self.post_params = repeatable_parse_qs(self.body)
                 self._set_dict_callbacks()
 
     def _update_from_objects(self):
@@ -827,67 +1248,14 @@ class Request(object):
             pairs = []
             for k, v in self.post_params.all_pairs():
                 pairs.append('%s=%s' % (k, v))
-            self.raw_data = '&'.join(pairs)
+            self.body = '&'.join(pairs)
 
-    def _update_from_text(self):
+    def update_from_headers(self):
         # Updates metadata that depends on header/status line values
         self.cookies = RepeatableDict()
         self._set_dict_callbacks()
         for k, v in self.headers.all_pairs():
-            self._handle_header(k, v)
-
-    ###############
-    ## Data loading
-            
-    def add_line(self, line):
-        """
-        Used for building a request from a Twisted protocol.
-        Add a line (for status line and headers). Lines must be added in order
-        and the first line must be the status line. The line should not contain
-        the trailing carriage return/newline. I do not suggest you use this for
-        anything.
-
-        :param line: The line to add
-        :type line: string
-        """
-
-        if self._first_line and line == '':
-            # Ignore leading newlines because fuck the spec
-            return
-
-        if self._first_line:
-            self._handle_statusline(line)
-            self._first_line = False
-        else:
-            # Either header or newline (end of headers)
-            if line == '':
-                self.headers_complete = True
-                if self._data_length == 0:
-                    self.complete = True
-            else:
-                key, val = line.split(':', 1)
-                val = val.strip()
-                if self._handle_header(key, val):
-                    self.headers.append(key, val, do_callback=False)
-
-    def add_data(self, data):
-        """
-        Used for building a request from a Twisted protocol.
-        Add data to the request.
-        I do not suggest that you use this function ever.
-
-        :param data: The data to add
-        :type data: string
-        """
-        # Add data (headers must be complete)
-        len_remaining = self._data_length - len(self._partial_data)
-        if len(data) >= len_remaining:
-            self._partial_data += data[:len_remaining]
-            self._raw_data = self._partial_data
-            self.complete = True
-            self._handle_data_end()
-        else:
-            self._partial_data += data
+            self.handle_header(k, v)
 
     ###############
     ## Data parsing
@@ -895,6 +1263,7 @@ class Request(object):
     def _process_host(self, hostline):
         # Get address and port
         # Returns true if port was explicitly stated
+        # Used only for processing host header
         port_given = False
         if ':' in hostline:
             self._host, self.port = hostline.split(':')
@@ -946,8 +1315,14 @@ class Request(object):
             reqpath += parsed_path.fragment
             self.fragment = parsed_path.fragment
         
-    def _handle_statusline(self, status_line):
-        parts = status_line.split()
+    def handle_start_line(self, start_line):
+        #HTTPMessage.handle_start_line(self, start_line)
+        if start_line == '':
+            self.verb = ''
+            self.path = ''
+            self.version = ''
+            return
+        parts = start_line.split()
         uri = None
         if len(parts) == 3:
             self.verb, uri, self.version = parts
@@ -960,13 +1335,14 @@ class Request(object):
         if uri is not None:
             self._handle_statusline_uri(uri)
                 
-    def _handle_header(self, key, val):
+    def handle_header(self, key, val):
         # We may have duplicate headers
-        stripped = False
+        keep = HTTPMessage.handle_header(self, key, val)
+        if not keep:
+            return False
 
-        if key.lower() == 'content-length':
-            self._data_length = int(val)
-        elif key.lower() == 'cookie':
+        stripped = False
+        if key.lower() == 'cookie':
             # We still want the raw key/val for the cookies header
             # because it's still a header
             cookie_strs = val.split('; ')
@@ -992,68 +1368,13 @@ class Request(object):
 
         return (not stripped)
     
-    def _handle_data_end(self):
+    def body_complete(self):
+        HTTPMessage.body_complete(self)
         if 'content-type' in self.headers:
             if self.headers['content-type'] == 'application/x-www-form-urlencoded':
-                self.post_params = repeatable_parse_qs(self.raw_data)
+                self.post_params = repeatable_parse_qs(self.body)
                 self._set_dict_callbacks()
                 
-    ##############
-    ## Serializing
-
-    def to_json(self):
-        """
-        Return a JSON encoding of the request that can be used by
-        :func:`~pappyproxy.http.Request.from_json` to recreate the request.
-        The `full_request` portion is base64 encoded because json doesn't play
-        nice with binary blobs.
-        """
-        # We base64 encode the full response because json doesn't paly nice with
-        # binary blobs
-        data = {
-            'full_request': base64.b64encode(self.full_request),
-            'reqid': self.reqid,
-        }
-        if self.response:
-            data['response_id'] = self.response.rspid
-        else:
-            data['response_id'] = None
-
-        if self.unmangled:
-            data['unmangled_id'] = self.unmangled.reqid
-
-        if self.time_start:
-            data['start'] = self.time_start.isoformat()
-        if self.time_end:
-            data['end'] = self.time_end.isoformat()
-        data['tags'] = self.tags
-        data['port'] = self.port
-        data['is_ssl'] = self.is_ssl
-
-        return json.dumps(data)
-
-    def from_json(self, json_string):
-        """
-        Update the metadata of the request to match data from
-        :func:`~pappyproxy.http.Request.to_json`
-
-        :param json_string: The JSON data to use
-        :type json_string: JSON data in a string
-        """
-
-        data = json.loads(json_string)
-        self._from_full_request(base64.b64decode(data['full_request']))
-        self.port = data['port']
-        self._is_ssl = data['is_ssl']
-        if 'tags' in data:
-            self.tags = data['tags']
-        else:
-            self.tags = []
-        self._update_from_text()
-        self._update_from_data()
-        if data['reqid']:
-            self.reqid = data['reqid']
-            
     #######################
     ## Data store functions
                 
@@ -1066,8 +1387,13 @@ class Request(object):
 
         :rtype: twisted.internet.defer.Deferred
         """
+        from .context import add_request_to_contexts, Context
+        from .pappy import main_context
 
         assert(dbpool)
+        if not self.reqid:
+            self.reqid = '--'
+        add_request_to_contexts(self)
         try:
             # Check for intyness
             _ = int(self.reqid)
@@ -1076,13 +1402,14 @@ class Request(object):
             yield dbpool.runInteraction(self._update)
             assert(self.reqid is not None)
             yield dbpool.runInteraction(self._update_tags)
-            pappyproxy.context.add_request(self)
         except (ValueError, TypeError):
             # Either no id or in-memory
             yield dbpool.runInteraction(self._insert)
             assert(self.reqid is not None)
             yield dbpool.runInteraction(self._update_tags)
-            pappyproxy.context.add_request(self)
+        if self.unmangled:
+            Context.remove_request(self.unmangled)
+        main_context.filter_recheck()
 
     @crochet.wait_for(timeout=180.0)
     @defer.inlineCallbacks
@@ -1190,6 +1517,18 @@ class Request(object):
         else:
             queryargs.append('0')
 
+        setnames.append('host=?')
+        if self.host:
+            queryargs.append(self.host)
+        else:
+            queryargs.append('')
+        
+        setnames.append('plugin_data=?')
+        if self.plugin_data:
+            queryargs.append(json.dumps(self.plugin_data))
+        else:
+            queryargs.append('{}')
+
         queryargs.append(self.reqid)
         txn.execute(
             """
@@ -1202,13 +1541,11 @@ class Request(object):
         # If we don't have an reqid, we're creating a new reuqest row
         colnames = ["full_request", "port"]
         colvals = [self.full_request, self.port]
-        if self.response:
+        if self.response and self.response.rspid:
             colnames.append('response_id')
-            assert(self.response.rspid is not None) # should be saved first
             colvals.append(self.response.rspid)
-        if self.unmangled:
+        if self.unmangled and self.unmangled.reqid:
             colnames.append('unmangled_id')
-            assert(self.unmangled.reqid is not None) # should be saved first
             colvals.append(self.unmangled.reqid)
         if self.time_start:
             colnames.append('start_datetime')
@@ -1228,6 +1565,18 @@ class Request(object):
         else:
             colvals.append('0')
 
+        colnames.append('host')
+        if self.host:
+            colvals.append(self.host)
+        else:
+            colvals.append('')
+
+        colnames.append('plugin_data')
+        if self.plugin_data:
+            colvals.append(json.dumps(self.plugin_data))
+        else:
+            colvals.append('{}')
+
         txn.execute(
             """
             INSERT INTO requests (%s) VALUES (%s);
@@ -1240,7 +1589,10 @@ class Request(object):
             
     @defer.inlineCallbacks
     def delete(self):
+        from .context import Context
+
         assert(self.reqid is not None)
+        Context.remove_request(self)
         yield dbpool.runQuery(
             """
             DELETE FROM requests WHERE id=?;
@@ -1257,6 +1609,14 @@ class Request(object):
 
     @defer.inlineCallbacks
     def deep_delete(self):
+        """
+        deep_delete()
+        Delete a request, its unmangled version, its response, and its response's
+        unmangled version from history. Also removes the request from all contexts.
+        Returns a Twisted deferred.
+
+        :rtype: Deferred
+        """
         if self.unmangled:
             yield self.unmangled.delete()
         if self.response:
@@ -1267,7 +1627,7 @@ class Request(object):
 
     @staticmethod
     def _gen_sql_row(tablename=None):
-        template = "{pre}full_request, {pre}response_id, {pre}id, {pre}unmangled_id, {pre}start_datetime, {pre}end_datetime, {pre}port, {pre}is_ssl"
+        template = "{pre}full_request, {pre}response_id, {pre}id, {pre}unmangled_id, {pre}start_datetime, {pre}end_datetime, {pre}port, {pre}is_ssl, {pre}host, {pre}plugin_data"
         if tablename:
             return template.format(pre=('%s.'%tablename))
         else:
@@ -1277,6 +1637,8 @@ class Request(object):
     @staticmethod
     @defer.inlineCallbacks
     def _from_sql_row(row):
+        from .http import Request
+
         req = Request(row[0])
         if row[1]:
             rsp = yield Response.load_response(str(row[1]))
@@ -1292,6 +1654,10 @@ class Request(object):
             req.port = int(row[6])
         if row[7] == 1:
             req._is_ssl = True
+        if row[8]:
+            req._host = row[8]
+        if row[9]:
+            req.plugin_data = json.loads(row[9])
         req.reqid = str(row[2])
 
         # tags
@@ -1318,9 +1684,11 @@ class Request(object):
 
         :rtype: twisted.internet.defer.Deferred
         """
-        
+        from .context import Context
+        from .http import Request
+
         reqs = []
-        reqs += list(pappyproxy.context.in_memory_requests)
+        reqs += list(Context.in_memory_requests)
         rows = yield dbpool.runQuery(
             """
             SELECT %s
@@ -1342,6 +1710,7 @@ class Request(object):
 
         :rtype: twisted.internet.defer.Deferred
         """
+        from .http import Request
         # tags
         rows = yield dbpool.runQuery(
             """
@@ -1367,9 +1736,13 @@ class Request(object):
 
         :rtype: twisted.internet.defer.Deferred
         """
+        from .context import Context
 
         assert(dbpool)
 
+        if to_load == '--':
+            raise PappyException('Invalid request ID. Wait for it to save first.')
+        
         if not allow_special:
             try:
                 int(to_load)
@@ -1402,13 +1775,10 @@ class Request(object):
             else:
                 return r
 
-        for r in pappyproxy.context.in_memory_requests:
+        for r in Context.in_memory_requests:
             if r.reqid == to_load:
                 defer.returnValue(retreq(r))
-        for r in pappyproxy.context.all_reqs:
-            if r.reqid == to_load:
-                defer.returnValue(retreq(r))
-        for r in pappyproxy.context.active_requests:
+        for r in Context.all_reqs:
             if r.reqid == to_load:
                 defer.returnValue(retreq(r))
         if to_load[0] == 'm':
@@ -1434,6 +1804,8 @@ class Request(object):
     def load_from_filters(filters):
         # Not efficient in any way
         # But it stays this way until we hit performance issues
+        from .context import Context, filter_reqs
+
         assert(dbpool)
         rows = yield dbpool.runQuery(
             """
@@ -1446,8 +1818,8 @@ class Request(object):
         for row in rows:
             req = yield Request._from_sql_row(row)
             reqs.append(req)
-        reqs += list(pappyproxy.context.in_memory_requests)
-        (reqs, _) = pappyproxy.context.filter_reqs(reqs, filters)
+        reqs += list(Context.in_memory_requests)
+        (reqs, _) = filter_reqs(reqs, filters)
 
         defer.returnValue(reqs)
     
@@ -1471,12 +1843,13 @@ class Request(object):
         :type full_request: string
         :rtype: Twisted deferred that calls back with a Request
         """
-        
+        from .proxy import ProxyClientFactory, get_next_connection_id, ClientTLSContext
+
         new_obj = Request(full_request)
-        factory = pappyproxy.proxy.ProxyClientFactory(new_obj, save_all=False)
-        factory.connection_id = pappyproxy.proxy.get_next_connection_id()
+        factory = ProxyClientFactory(new_obj, save_all=False)
+        factory.connection_id = get_next_connection_id()
         if is_ssl:
-            reactor.connectSSL(host, port, factory, pappyproxy.proxy.ClientTLSContext())
+            reactor.connectSSL(host, port, factory, ClientTLSContext())
         else:
             reactor.connectTCP(host, port, factory)
         new_req = yield factory.data_defer
@@ -1494,6 +1867,8 @@ class Request(object):
         """
         new_req = yield Request.submit_new(self.host, self.port, self.is_ssl,
                                            self.full_request)
+        self.set_metadata(new_req.get_metadata())
+        self.unmangled = new_req.unmangled
         self.response = new_req.response
         self.time_start = new_req.time_start
         self.time_end = new_req.time_end
@@ -1508,28 +1883,13 @@ class Request(object):
         Cannot be called in async functions.
         This is what you should use to submit your requests in macros.
         """
-        new_req = yield Request.submit_new(self.host, self.port, self.is_ssl,
-                                           self.full_request)
-        self.response = new_req.response
-        self.time_start = new_req.time_start
-        self.time_end = new_req.time_end
+        yield self.async_submit()
 
 
-class Response(object):
+class Response(HTTPMessage):
     """
-    :ivar complete: When creating the response with :func:`~pappyproxy.http.Response.add_line`
-        and :func:`~pappyproxy.http.Response.add_data`, returns whether
-        the request is complete.
-    :vartype complete: Bool
     :ivar cookies: Cookies set by the response
     :vartype cookies: RepeatableDict of ResponseCookie objects
-    :ivar headers: The headers of the response
-    :vartype headers: RepeatableDict
-    :ivar headers_complete: When creating the response with
-        :func:`~pappyproxy.http.Response.add_line` and
-        :func:`~pappyproxy.http.Response.add_data`, returns whether the headers
-        are complete
-    :vartype headers_complete: Bool
     :ivar response_code: The response code of the response
     :vartype response_code: Integer
     :ivar response_text: The text associated with the response code (ie OK, NOT FOUND, etc)
@@ -1542,60 +1902,35 @@ class Response(object):
     :vartype version: String
     """
 
-    def __init__(self, full_response=None, update_content_length=False):
+    def __init__(self, full_response=None, update_content_length=True):
         self.complete = False
         self.cookies = RepeatableDict()
-        self.headers = RepeatableDict(case_insensitive=True)
-        self.headers_complete = False
-        self._raw_data = ''
         self.response_code = 0
         self.response_text = ''
         self.rspid = None
         self.unmangled = None
         self.version = ''
+        self._saving = False
         
-        self._encoding_type = ENCODE_NONE
-        self._first_line = True
-        self._data_obj = None
-        self._end_after_headers = False
+        # Called after instance vars since some callbacks depend on
+        # instance vars
+        HTTPMessage.__init__(self, full_response, update_content_length)
 
+        # After message init so that other instance vars are initialized
         self._set_dict_callbacks()
 
-        if full_response is not None:
-            self._from_full_response(full_response, update_content_length)
-
-    def __copy__(self):
-        if not self.complete:
-            raise PappyException("Cannot copy incomplete responses")
-        retrsp = Response(self.full_response)
-        if self.unmangled:
-            retrsp.unmangled = self.unmangled.copy()
-        return retrsp
-
-    def copy(self):
-        return self.__copy__()
-
-    def __eq__(self, other):
-        if self.full_response != other.full_response:
-            return False
-        return True
-            
     @property
     def raw_headers(self):
         """
-        The raw text of the headers including the extra newline at the end.
+        Alias for Response.headers_section
 
         :getter: Returns the raw text of the headers including the extra newline at the end.
         :type: string
         """
-        ret = self.status_line + '\r\n'
-        for k, v in self.headers.all_pairs():
-            ret = ret + "%s: %s\r\n" % (k, v)
-        ret = ret + '\r\n'
-        return ret
+        return self.headers_section
 
     @property
-    def status_line(self):
+    def start_line(self):
         """
         The status line of the response. ie `HTTP/1.1 200 OK`
 
@@ -1607,46 +1942,43 @@ class Response(object):
             return ''
         return '%s %d %s' % (self.version, self.response_code, self.response_text)
 
+    @start_line.setter
+    def start_line(self, val):
+        self.handle_start_line(val)
+
+    @property
+    def status_line(self):
+        return self.start_line
+        
     @status_line.setter
     def status_line(self, val):
-        self._handle_statusline(val)
+        self.start_line = val
 
     @property
     def raw_data(self):
         """
-        The data portion of the response
+        Alias for Response.body
 
         :getter: Returns the data portion of the response
         :setter: Set the data of the response and update metadata
         :type: string
         """
-        return self._raw_data
+        return self.body
         
     @raw_data.setter
     def raw_data(self, val):
-        self._raw_data = val
-        self._data_obj = LengthData(len(val))
-        if len(val) > 0:
-            self._data_obj.add_data(val)
-        self._encoding_type = ENCODE_NONE
-        self.complete = True
-        self._update_from_data()
+        self.body = val
 
     @property
     def full_response(self):
         """
         The full text of the response including the headers and data.
-        Response is automatically converted from compressed/chunked into an
-        uncompressed response with a Content-Length header.
+        Alias for Response.full_message
 
         :getter: Returns the full text of the response
         :type: string
         """
-        if not self.status_line:
-            return ''
-        ret = self.raw_headers
-        ret = ret + self.raw_data
-        return ret
+        return self.full_message
 
     @property
     def soup(self):
@@ -1655,38 +1987,33 @@ class Response(object):
 
         :getter: Returns a BeautifulSoup object representing the html of the response
         """
-        return bs4.BeautifulSoup(self.raw_data, 'lxml')
+        return bs4.BeautifulSoup(self.body, 'lxml')
     
-    def _from_full_response(self, full_response, update_content_length=False):
-        # Get rid of leading CRLF. Not in spec, should remove eventually
-        full_response = _strip_leading_newlines(full_response)
-        if full_response == '':
-            return
+    ###########
+    ## Metadata
 
-        remaining = full_response
-        while remaining and not self.headers_complete:
-            line, remaining = _consume_line(remaining)
-            self.add_line(line)
+    def get_metadata(self):
+        data = {}
+        data['rspid'] = self.rspid
+        return data
 
-        if not self.headers_complete:
-            self.add_line('')
+    def set_metadata(self, data):
+        if 'rspid' in data:
+            self.rspid = data['rspid']
 
-        if update_content_length:
-            self.raw_data = remaining
-        if not self.complete:
-            self.add_data(remaining)
-        assert(self.complete)
-
+    def reset_metadata(self):
+        self.rspid = None
+    
     ############################
     ## Internal update functions
     
     def _set_dict_callbacks(self):
         # Add callbacks to dicts
-        self.headers.set_modify_callback(self._update_from_text)
+        self.headers.set_modify_callback(self.update_from_headers)
         self.cookies.set_modify_callback(self._update_from_objects)
 
-    def _update_from_data(self):
-        self.headers.update('Content-Length', str(len(self.raw_data)), do_callback=False)
+    def update_from_body(self):
+        HTTPMessage.update_from_body(self)
 
     def _update_from_objects(self):
         # Updates headers from objects
@@ -1715,7 +2042,7 @@ class Response(object):
         self.headers = new_headers
         self._set_dict_callbacks()
                 
-    def _update_from_text(self):
+    def update_from_headers(self):
         self.cookies = RepeatableDict()
         self._set_dict_callbacks()
         for k, v in self.headers.all_pairs():
@@ -1727,17 +2054,26 @@ class Response(object):
     ###############
     ## Data parsing
         
-    def _handle_statusline(self, status_line):
+    def handle_start_line(self, start_line):
+        if start_line == '':
+            self.response_code = 0
+            self.version = ''
+            self.response_text = ''
+            return
         self._first_line = False
         self.version, self.response_code, self.response_text = \
-                                            status_line.split(' ', 2)
+                                            start_line.split(' ', 2)
         self.response_code = int(self.response_code)
 
         if self.response_code == 304 or self.response_code == 204 or \
             self.response_code/100 == 1:
             self._end_after_headers = True
 
-    def _handle_header(self, key, val):
+    def handle_header(self, key, val):
+        keep = HTTPMessage.handle_header(self, key, val)
+        if not keep:
+            return False
+
         stripped = False
         if key.lower() == 'content-encoding':
             if val in ('gzip', 'x-gzip'):
@@ -1763,66 +2099,7 @@ class Response(object):
         if stripped:
             return False
         else:
-            self.headers.append(key, val, do_callback=False)
             return True
-
-    ###############
-    ## Data loading
-                
-    def add_line(self, line):
-        """
-        Used for building a response from a Twisted protocol.
-        Add a line (for status line and headers). Lines must be added in order
-        and the first line must be the status line. The line should not contain
-        the trailing carriage return/newline. I do not suggest you use this for
-        anything.
-
-        :param line: The line to add
-        :type line: string
-        """
-        assert(not self.headers_complete)
-        if not line and self._first_line:
-            return
-        if not line:
-            self.headers_complete = True
-
-            if self._end_after_headers:
-                self.complete = True
-                return
-
-            if not self._data_obj:
-                self._data_obj = LengthData(0)
-            self.complete = self._data_obj.complete
-            return
-
-        if self._first_line:
-            self._handle_statusline(line)
-            self._first_line = False
-        else:
-            key, val = line.split(':', 1)
-            val = val.strip()
-            self._handle_header(key, val)
-
-    def add_data(self, data):
-        """
-        Used for building a response from a Twisted protocol.
-        Add data to the response. The data must conform to the content encoding
-        and transfer encoding given in the headers passed in to
-        :func:`~pappyproxy.http.Response.add_line`. Can be any fragment of the data.
-        I do not suggest that you use this function ever.
-
-        :param data: The data to add
-        :type data: string
-        """
-        assert(self._data_obj)
-        assert(not self._data_obj.complete)
-        assert not self.complete
-        self._data_obj.add_data(data)
-        if self._data_obj.complete:
-            self._raw_data = _decode_encoded(self._data_obj.raw_data,
-                                             self._encoding_type)
-            self.complete = True
-            self._update_from_data()
 
     ####################
     ## Cookie management
@@ -1858,41 +2135,6 @@ class Response(object):
         """
         del self.cookies[key]
 
-    ##############
-    ## Serializing
-
-    def to_json(self):
-        """
-        Return a JSON encoding of the response that can be used by
-        :func:`~pappyproxy.http.Response.from_json` to recreate the response.
-        The ``full_response`` portion is base64 encoded because json doesn't play
-        nice with binary blobs.
-        """
-        data = {
-            'rspid': self.rspid,
-            'full_response': base64.b64encode(self.full_response),
-        }
-        if self.unmangled:
-            data['unmangled_id'] = self.unmangled.rspid
-
-        return json.dumps(data)
-            
-
-    def from_json(self, json_string):
-        """
-        Update the metadata of the response to match data from
-        :func:`~pappyproxy.http.Response.to_json`
-
-        :param json_string: The JSON data to use
-        :type json_string: JSON data in a string
-        """
-        data = json.loads(json_string)
-        self._from_full_response(base64.b64decode(data['full_response']))
-        self._update_from_text()
-        self._update_from_data()
-        if data['rspid']:
-            self.rspid = str(data['rspid'])
-
     #######################
     ## Database interaction
         
@@ -1907,15 +2149,19 @@ class Response(object):
         :rtype: twisted.internet.defer.Deferred
         """
         assert(dbpool)
-        try:
-            # Check for intyness
-            _ = int(self.rspid)
+        if not self._saving:
+            # Not thread safe... I know, but YOLO
+            self._saving = True
+            try:
+                # Check for intyness
+                _ = int(self.rspid)
 
-            # If we have rspid, we're updating
-            yield dbpool.runInteraction(self._update)
-        except (ValueError, TypeError):
-            yield dbpool.runInteraction(self._insert)
-        assert(self.rspid is not None)
+                # If we have rspid, we're updating
+                yield dbpool.runInteraction(self._update)
+            except (ValueError, TypeError):
+                yield dbpool.runInteraction(self._insert)
+            self._saving = False
+            assert(self.rspid is not None)
 
     # Right now responses without requests are unviewable
     # @crochet.wait_for(timeout=180.0)

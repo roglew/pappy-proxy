@@ -1,10 +1,10 @@
 import base64
 import json
-import pappyproxy
 
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import defer
 from util import PappyException
+from .http import Request, Response
 
 """
 comm.py
@@ -31,6 +31,8 @@ class CommServer(LineReceiver):
         }
 
     def lineReceived(self, line):
+        from .http import Request, Response
+
         if line == '':
             return
         try:
@@ -71,7 +73,7 @@ class CommServer(LineReceiver):
     def action_get_request(self, data):
         try:
             reqid = data['reqid']
-            req = yield pappyproxy.http.Request.load_request(reqid)
+            req = yield Request.load_request(reqid)
         except KeyError:
             raise PappyException("Request with given ID does not exist")
 
@@ -82,12 +84,12 @@ class CommServer(LineReceiver):
     def action_get_response(self, data):
         try:
             reqid = data['reqid']
-            req = yield pappyproxy.http.Request.load_request(reqid)
+            req = yield Request.load_request(reqid)
         except KeyError:
             raise PappyException("Request with given ID does not exist, cannot fetch associated response.")
 
         if req.response:
-            rsp = yield pappyproxy.http.Response.load_response(req.response.rspid)
+            rsp = yield Response.load_response(req.response.rspid)
             dat = json.loads(rsp.to_json())
         else:
             dat = {}
@@ -95,13 +97,8 @@ class CommServer(LineReceiver):
 
     @defer.inlineCallbacks
     def action_submit_request(self, data):
-        try:
-            req = pappyproxy.http.Request(base64.b64decode(data['full_request']))
-            req.port = data['port']
-            req.is_ssl = data['is_ssl']
-        except:
-            raise PappyException("Error parsing request")
-        yield req.async_submit()
+        message = base64.b64decode(data['full_message'])
+        req = yield Request.submit_new(data['host'], data['port'], data['is_ssl'], message)
         yield req.async_deep_save()
 
         retdata = {}

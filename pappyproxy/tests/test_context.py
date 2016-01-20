@@ -11,8 +11,8 @@ def test_filter_reqs():
     pass
 
 def test_gen_filter_by_all_request():
-    f = context.gen_filter_by_all(context.cmp_contains, 'hello')
-    fn = context.gen_filter_by_all(context.cmp_contains, 'hello', negate=True)
+    f = context.gen_filter_by_all(['ct', 'hello'])
+    fn = context.gen_filter_by_all(['nct', 'hello'])
 
     # Nowhere
     r = Request('GET / HTTP/1.1\r\n')
@@ -31,7 +31,7 @@ def test_gen_filter_by_all_request():
 
     # Data
     r = Request('GET / HTTP/1.1\r\n')
-    r.raw_data = 'hello'
+    r.body = 'hello'
     assert f(r)
     assert not fn(r)
 
@@ -73,8 +73,8 @@ def test_gen_filter_by_all_request():
 
 
 def test_gen_filter_by_all_response(http_request):
-    f = context.gen_filter_by_all(context.cmp_contains, 'hello')
-    fn = context.gen_filter_by_all(context.cmp_contains, 'hello', negate=True)
+    f = context.gen_filter_by_all(['ct', 'hello'])
+    fn = context.gen_filter_by_all(['nct', 'hello'])
 
     # Nowhere
     r = Response('HTTP/1.1 200 OK\r\n')
@@ -91,7 +91,7 @@ def test_gen_filter_by_all_response(http_request):
     # Data
     r = Response('HTTP/1.1 200 OK\r\n')
     http_request.response = r
-    r.raw_data = 'hello'
+    r.body = 'hello'
     assert f(http_request)
     assert not fn(http_request)
 
@@ -138,8 +138,8 @@ def test_gen_filter_by_all_response(http_request):
     assert fn(http_request)
 
 def test_filter_by_host(http_request):
-    f = context.gen_filter_by_host(context.cmp_contains, 'sexy')
-    fn = context.gen_filter_by_host(context.cmp_contains, 'sexy', negate=True)
+    f = context.gen_filter_by_host(['ct', 'sexy'])
+    fn = context.gen_filter_by_host(['nct', 'sexy'])
     
     http_request.headers['Host'] = 'google.com'
     http_request.headers['MiscHeader'] = 'vim.sexy'
@@ -152,55 +152,55 @@ def test_filter_by_host(http_request):
     assert not fn(http_request)
     
 def test_filter_by_body():
-    f = context.gen_filter_by_body(context.cmp_contains, 'sexy')
-    fn = context.gen_filter_by_body(context.cmp_contains, 'sexy', negate=True)
+    f = context.gen_filter_by_body(['ct', 'sexy'])
+    fn = context.gen_filter_by_body(['nct', 'sexy'])
     
     # Test request bodies
     r = Request()
-    r.status_line = 'GET /sexy HTTP/1.1'
+    r.start_line = 'GET /sexy HTTP/1.1'
     r.headers['Header'] = 'sexy'
-    r.raw_data = 'foo'
+    r.body = 'foo'
     assert not f(r)
     assert fn(r)
 
-    r.raw_data = 'sexy'
+    r.body = 'sexy'
     assert f(r)
     assert not fn(r)
 
     # Test response bodies
     r = Request()
     rsp = Response()
-    rsp.status_line = 'HTTP/1.1 200 OK'
+    rsp.start_line = 'HTTP/1.1 200 OK'
     rsp.headers['sexy'] = 'sexy'
-    r.status_line = 'GET /sexy HTTP/1.1'
+    r.start_line = 'GET /sexy HTTP/1.1'
     r.headers['Header'] = 'sexy'
     r.response = rsp
     assert not f(r)
     assert fn(r)
 
-    rsp.raw_data = 'sexy'
+    rsp.body = 'sexy'
     assert f(r)
     assert not fn(r)
 
 def test_filter_by_response_code(http_request):
-    f = context.gen_filter_by_response_code(context.cmp_eq, 200)
-    fn = context.gen_filter_by_response_code(context.cmp_eq, 200, negate=True)
+    f = context.gen_filter_by_response_code(['eq', '200'])
+    fn = context.gen_filter_by_response_code(['neq', '200'])
 
     r = Response()
     http_request.response = r
-    r.status_line = 'HTTP/1.1 404 Not Found'
+    r.start_line = 'HTTP/1.1 404 Not Found'
     assert not f(http_request)
     assert fn(http_request)
 
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     assert f(http_request)
     assert not fn(http_request)
     
 def test_filter_by_raw_headers_request():
-    f1 = context.gen_filter_by_raw_headers(context.cmp_contains, 'Sexy:')
-    fn1 = context.gen_filter_by_raw_headers(context.cmp_contains, 'Sexy:', negate=True)
-    f2 = context.gen_filter_by_raw_headers(context.cmp_contains, 'sexy\r\nHeader')
-    fn2 = context.gen_filter_by_raw_headers(context.cmp_contains, 'sexy\r\nHeader', negate=True)
+    f1 = context.gen_filter_by_raw_headers(['ct', 'Sexy:'])
+    fn1 = context.gen_filter_by_raw_headers(['nct', 'Sexy:'])
+    f2 = context.gen_filter_by_raw_headers(['ct', 'sexy\r\nHeader'])
+    fn2 = context.gen_filter_by_raw_headers(['nct', 'sexy\r\nHeader'])
 
     r = Request('GET / HTTP/1.1\r\n')
     rsp = Response('HTTP/1.1 200 OK\r\n')
@@ -228,10 +228,10 @@ def test_filter_by_raw_headers_request():
     assert not fn2(r)
     
 def test_filter_by_raw_headers_response():
-    f1 = context.gen_filter_by_raw_headers(context.cmp_contains, 'Sexy:')
-    fn1 = context.gen_filter_by_raw_headers(context.cmp_contains, 'Sexy:', negate=True)
-    f2 = context.gen_filter_by_raw_headers(context.cmp_contains, 'sexy\r\nHeader')
-    fn2 = context.gen_filter_by_raw_headers(context.cmp_contains, 'sexy\r\nHeader', negate=True)
+    f1 = context.gen_filter_by_raw_headers(['ct', 'Sexy:'])
+    fn1 = context.gen_filter_by_raw_headers(['nct', 'Sexy:'])
+    f2 = context.gen_filter_by_raw_headers(['ct', 'sexy\r\nHeader'])
+    fn2 = context.gen_filter_by_raw_headers(['nct', 'sexy\r\nHeader'])
 
     r = Request('GET / HTTP/1.1\r\n')
     rsp = Response('HTTP/1.1 200 OK\r\n')
@@ -259,25 +259,24 @@ def test_filter_by_raw_headers_response():
     assert not fn2(r)
 
 def test_filter_by_path(http_request):
-    f = context.gen_filter_by_path(context.cmp_contains, 'porn') # find the fun websites
-    fn = context.gen_filter_by_path(context.cmp_contains, 'porn', negate=True) # find the boring websites
+    f = context.gen_filter_by_path(['ct', 'porn']) # find the fun websites
+    fn = context.gen_filter_by_path(['nct', 'porn']) # find the boring websites
     
-    http_request.status_line = 'GET / HTTP/1.1'
+    http_request.start_line = 'GET / HTTP/1.1'
     assert not f(http_request)
     assert fn(http_request)
 
-    http_request.status_line = 'GET /path/to/great/porn HTTP/1.1'
+    http_request.start_line = 'GET /path/to/great/porn HTTP/1.1'
     assert f(http_request)
     assert not fn(http_request)
 
-    http_request.status_line = 'GET /path/to/porn/great HTTP/1.1'
+    http_request.start_line = 'GET /path/to/porn/great HTTP/1.1'
     assert f(http_request)
     assert not fn(http_request)
 
 def test_gen_filter_by_submitted_cookies():
-    f1 = context.gen_filter_by_submitted_cookies(context.cmp_contains, 'Session')
-    f2 = context.gen_filter_by_submitted_cookies(context.cmp_contains, 'Cookie',
-                                                 context.cmp_contains, 'CookieVal')
+    f1 = context.gen_filter_by_submitted_cookies(['ct', 'Session'])
+    f2 = context.gen_filter_by_submitted_cookies(['ct', 'Cookie', 'nct', 'CookieVal'])
     r = Request(('GET / HTTP/1.1\r\n'
                  'Cookie: foo=bar\r\n'
                  '\r\n'))
@@ -294,18 +293,17 @@ def test_gen_filter_by_submitted_cookies():
                  'Cookie: Session=bar; CookieThing=NoMatch\r\n'
                  '\r\n'))
     assert f1(r)
-    assert not f2(r)
+    assert f2(r)
 
     r = Request(('GET / HTTP/1.1\r\n'
                  'Cookie: Session=bar; CookieThing=CookieValue\r\n'
                  '\r\n'))
     assert f1(r)
-    assert f2(r)
+    assert not f2(r)
 
 def test_gen_filter_by_set_cookies():
-    f1 = context.gen_filter_by_set_cookies(context.cmp_contains, 'Session')
-    f2 = context.gen_filter_by_set_cookies(context.cmp_contains, 'Cookie',
-                                           context.cmp_contains, 'CookieVal')
+    f1 = context.gen_filter_by_set_cookies(['ct', 'Session'])
+    f2 = context.gen_filter_by_set_cookies(['ct', 'Cookie', 'ct', 'CookieVal'])
 
     r = Request('GET / HTTP/1.1\r\n\r\n')
     rsp = Response(('HTTP/1.1 200 OK\r\n'
@@ -345,9 +343,8 @@ def test_gen_filter_by_set_cookies():
     assert f2(r)
 
 def test_filter_by_params_get():
-    f1 = context.gen_filter_by_params(context.cmp_contains, 'Session')
-    f2 = context.gen_filter_by_params(context.cmp_contains, 'Cookie',
-                                      context.cmp_contains, 'CookieVal')
+    f1 = context.gen_filter_by_params(['ct', 'Session'])
+    f2 = context.gen_filter_by_params(['ct', 'Cookie', 'ct', 'CookieVal'])
 
     r = Request('GET / HTTP/1.1\r\n\r\n')
     assert not f1(r)
@@ -366,30 +363,29 @@ def test_filter_by_params_get():
     assert f2(r)
 
 def test_filter_by_params_post():
-    f1 = context.gen_filter_by_params(context.cmp_contains, 'Session')
-    f2 = context.gen_filter_by_params(context.cmp_contains, 'Cookie',
-                                      context.cmp_contains, 'CookieVal')
+    f1 = context.gen_filter_by_params(['ct', 'Session'])
+    f2 = context.gen_filter_by_params(['ct', 'Cookie', 'ct', 'CookieVal'])
 
     r = Request(('GET / HTTP/1.1\r\n'
                  'Content-Type: application/x-www-form-urlencoded\r\n\r\n'))
-    r.raw_data = 'foo=bar'
+    r.body = 'foo=bar'
     assert not f1(r)
     assert not f2(r)
 
     r = Request(('GET / HTTP/1.1\r\n'
                  'Content-Type: application/x-www-form-urlencoded\r\n\r\n'))
-    r.raw_data = 'Session=bar'
+    r.body = 'Session=bar'
     assert f1(r)
     assert not f2(r)
 
     r = Request(('GET / HTTP/1.1\r\n'
                  'Content-Type: application/x-www-form-urlencoded\r\n\r\n'))
-    r.raw_data = 'Session=bar&Cookie=foo'
+    r.body = 'Session=bar&Cookie=foo'
     assert f1(r)
     assert not f2(r)
 
     r = Request(('GET / HTTP/1.1\r\n'
                  'Content-Type: application/x-www-form-urlencoded\r\n\r\n'))
-    r.raw_data = 'Session=bar&CookieThing=CookieValue'
+    r.body = 'Session=bar&CookieThing=CookieValue'
     assert f1(r)
     assert f2(r)

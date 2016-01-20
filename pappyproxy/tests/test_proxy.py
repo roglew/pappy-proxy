@@ -6,7 +6,6 @@ import twisted.test
 
 from pappyproxy import http
 from pappyproxy import macros
-from pappyproxy import mangle
 from pappyproxy import config
 from pappyproxy.proxy import ProxyClient, ProxyClientFactory, ProxyServerFactory
 from testutil import mock_deferred, func_deleted, func_ignored_deferred, func_ignored, no_tcp
@@ -18,7 +17,7 @@ from twisted.internet import defer, reactor
 ## Fixtures
 
 MANGLED_REQ = 'GET /mangled HTTP/1.1\r\n\r\n'
-MANGLED_RSP = 'HTTP/1.1 500 MANGLED\r\n\r\n'
+MANGLED_RSP = 'HTTP/1.1 500 MANGLED\r\nContent-Length: 0\r\n\r\n'
 
 @pytest.fixture
 def unconnected_proxyserver(mocker):
@@ -140,25 +139,25 @@ def gen_mangle_macro(modified_req=None, modified_rsp=None,
     macro = mock.MagicMock()
     if modified_req or drop_req:
         macro.async_req = True
-        macro.do_req = True
+        macro.intercept_requests = True
         if drop_req:
             newreq = None
         else:
             newreq = http.Request(modified_req)
         macro.async_mangle_request.return_value = mock_deferred(newreq)
     else:
-        macro.do_req = False
+        macro.intercept_requests = False
 
     if modified_rsp or drop_rsp:
         macro.async_rsp = True
-        macro.do_rsp = True
+        macro.intercept_responses = True
         if drop_rsp:
             newrsp = None
         else:
             newrsp = http.Response(modified_rsp)
         macro.async_mangle_response.return_value = mock_deferred(newrsp)
     else:
-        macro.do_rsp = False
+        macro.intercept_responses = False
     return macro
 
 def notouch_mangle_req(request):
@@ -255,7 +254,7 @@ def test_proxy_client_mangle_rsp(mocker, proxy_connection, in_scope_true):
     prot.lineReceived('')
     req = yield retreq_deferred
     response = req.response.full_response
-    assert response == 'HTTP/1.1 500 MANGLED\r\n\r\n'
+    assert response == 'HTTP/1.1 500 MANGLED\r\nContent-Length: 0\r\n\r\n'
 
 @pytest.inlineCallbacks
 def test_proxy_drop_req(mocker, proxy_connection, in_scope_true):

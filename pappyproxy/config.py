@@ -1,19 +1,88 @@
-import imp
+"""
+The configuration settings for the proxy.
+
+.. data:: CERT_DIR
+
+    The location of the CA certs that Pappy will use. This can be configured in the
+    ``config.json`` file for a project.
+    
+    :Default: ``{DATADIR}/certs``
+
+.. data:: PAPPY_DIR
+
+    The file where pappy's scripts are located. Don't write anything here, and you
+    probably don't need to write anything here. Use DATA_DIR instead.
+    
+    :Default: Wherever the scripts are installed
+
+.. data:: DATA_DIR
+
+    The data directory. This is where files that have to be read by Pappy every time
+    it's run are put. For example, plugins are stored in ``{DATADIR}/plugins`` and
+    certs are by default stored in ``{DATADIR}/certs``. This defaults to ``~/.pappy``
+    and isn't configurable right now.
+    
+    :Default: ``~/.pappy``
+
+.. data:: DATAFILE
+
+    The location of the CA certs that Pappy will use. This can be configured in the
+    ``config.json`` file for a project.
+    
+    :Default: ``data.db``
+
+.. data:: DEBUG_DIR
+
+    The directory to write debug output to. Don't put this outside the project folder
+    since it writes all the request data to this directory. You probably won't need
+    to use this. Configured in the ``config.json`` file for the project.
+    
+    :Default: None
+
+.. data: LISTENERS
+
+    The list of active listeners. It is a list of tuples of the format (port, interface)
+    Not modifiable after startup. Configured in the ``config.json`` file for the project.
+    
+    :Default: ``[(8000, '127.0.0.1')]``
+
+.. data: PLUGIN_DIRS
+
+    List of directories that plugins are loaded from. Not modifiable.
+    
+    :Default: ``['{DATA_DIR}/plugins', '{PAPPY_DIR}/plugins']``
+
+.. data: CONFIG_DICT
+
+    The dictionary read from config.json. When writing plugins, use this to load
+    configuration options for your plugin.
+
+"""
+
 import json
 import os
 import shutil
 
 PAPPY_DIR = os.path.dirname(os.path.realpath(__file__))
 DATA_DIR = os.path.join(os.path.expanduser('~'), '.pappy')
+DATA_DIR
 
 CERT_DIR = os.path.join(DATA_DIR, 'certs')
+
 DATAFILE = 'data.db'
+
 DEBUG_DIR = None
 DEBUG_TO_FILE = False
 DEBUG_VERBOSITY = 0
+
 LISTENERS = [(8000, '127.0.0.1')]
+
 SSL_CA_FILE  = 'certificate.crt'
 SSL_PKEY_FILE = 'private.key'
+
+PLUGIN_DIRS = [os.path.join(DATA_DIR, 'plugins'), os.path.join(PAPPY_DIR, 'plugins')]
+
+CONFIG_DICT = {}
 
 def get_default_config():
     default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -61,6 +130,7 @@ def load_settings(proj_config):
 
 
 def load_from_file(fname):
+    global CONFIG_DICT
     # Make sure we have a config file
     if not os.path.isfile(fname):
         print "Copying default config to %s" % fname
@@ -70,5 +140,5 @@ def load_from_file(fname):
 
     # Load local project config
     with open(fname, 'r') as f:
-        proj_config = json.load(f)
-    load_settings(proj_config)
+        CONFIG_DICT = json.load(f)
+    load_settings(CONFIG_DICT)

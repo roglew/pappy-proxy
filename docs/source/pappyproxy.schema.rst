@@ -28,6 +28,22 @@ pappyproxy.schema.schema_3 module
     :undoc-members:
     :show-inheritance:
 
+pappyproxy.schema.schema_4 module
+---------------------------------
+
+.. automodule:: pappyproxy.schema.schema_4
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pappyproxy.schema.schema_5 module
+---------------------------------
+
+.. automodule:: pappyproxy.schema.schema_5
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pappyproxy.schema.update module
 -------------------------------
 

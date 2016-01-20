@@ -1,45 +1,43 @@
 pappyproxy package
 ==================
 
-..
-   Subpackages
-   -----------
+Subpackages
+-----------
 
-   .. toctree::
+.. toctree::
 
-       pappyproxy.schema
-       pappyproxy.templates
-       pappyproxy.tests
-       pappyproxy.vim_repeater
+    pappyproxy.plugins
+    pappyproxy.schema
+    pappyproxy.templates
+    pappyproxy.tests
+    pappyproxy.vim_repeater
 
-    Submodules
-    ----------
+Submodules
+----------
 
-..
-   pappyproxy.comm module
-   ----------------------
+pappyproxy.comm module
+----------------------
 
-   .. automodule:: pappyproxy.comm
-       :members:
-       :noindex:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.comm
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.config module
-   ------------------------
+pappyproxy.config module
+------------------------
 
-   .. automodule:: pappyproxy.config
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.config
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.console module
-   -------------------------
+pappyproxy.console module
+-------------------------
 
-   .. automodule:: pappyproxy.console
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.console
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 pappyproxy.context module
 -------------------------
@@ -65,69 +63,67 @@ pappyproxy.iter module
     :undoc-members:
     :show-inheritance:
 
-..
-   pappyproxy.macros module
-   ------------------------
+pappyproxy.macros module
+------------------------
 
-   .. automodule:: pappyproxy.macros
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.macros
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.mangle module
-   ------------------------
+pappyproxy.pappy module
+-----------------------
 
-   .. automodule:: pappyproxy.mangle
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.pappy
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.pappy module
-   -----------------------
+pappyproxy.plugin module
+------------------------
 
-   .. automodule:: pappyproxy.pappy
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.plugin
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.proxy module
-   -----------------------
+pappyproxy.proxy module
+-----------------------
 
-   .. automodule:: pappyproxy.proxy
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.proxy
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.repeater module
-   --------------------------
+pappyproxy.repeater module
+--------------------------
 
-   .. automodule:: pappyproxy.repeater
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.repeater
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.session module
-   -------------------------
+pappyproxy.session module
+-------------------------
 
-   .. automodule:: pappyproxy.session
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.session
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   pappyproxy.util module
-   ----------------------
+pappyproxy.util module
+----------------------
 
-   .. automodule:: pappyproxy.util
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 
-..
-   Module contents
-   ---------------
+Module contents
+---------------
 
-   .. automodule:: pappyproxy
-       :members:
-       :undoc-members:
-       :show-inheritance:
+.. automodule:: pappyproxy
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,4 +1,4 @@
-from pappyproxy.http import Request, get_request, post_request
+from pappyproxy.http import Request, get_request, post_request, request_by_id
 from pappyproxy.context import set_tag
 from pappyproxy.iter import *
 

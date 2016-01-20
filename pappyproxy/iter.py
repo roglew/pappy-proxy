@@ -1,5 +1,5 @@
 import os
-import itertools
+
 from .config import PAPPY_DIR
 
 def from_file(fname, intro=False):

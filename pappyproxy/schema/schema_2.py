@@ -19,9 +19,6 @@ update_queries = [
     ALTER TABLE requests ADD COLUMN is_ssl INTEGER;
     """,
 
-    """
-    UPDATE schema_meta SET version=2;
-    """,
 ]
 
 @defer.inlineCallbacks
@@ -29,9 +26,30 @@ def update(dbpool):
     for query in update_queries:
         yield dbpool.runQuery(query)
 
-    # Load each request and save them again for any request that specified a port
-    # or protocol in the host header.
-    http.init(dbpool)
-    reqs = yield http.Request.load_from_filters([])
-    for req in reqs:
-        yield req.deep_save()
+    # Update metadata for each request
+    reqrows = yield dbpool.runQuery(
+        """
+        SELECT id, full_request
+        FROM requests;
+        """,
+        )
+
+    # Create an object and get its port/is_ssl
+    for reqrow in reqrows:
+        reqid = reqrow[0]
+        fullreq = reqrow[1]
+        r = http.Request(fullreq)
+        port = r.port
+        is_ssl = r.is_ssl
+        yield dbpool.runQuery(
+            """
+            UPDATE requests SET port=?,is_ssl=? WHERE id=?;
+            """,
+            (port, is_ssl, reqid)
+        )
+
+    yield dbpool.runQuery(
+        """
+        UPDATE schema_meta SET version=2;
+        """
+    )

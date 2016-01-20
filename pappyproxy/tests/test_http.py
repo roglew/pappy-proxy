@@ -86,7 +86,7 @@ def test_chunked_simple():
     full_data += '0\r\n\r\n'
     c.add_data(full_data)
     assert c.complete
-    assert c.raw_data == 'A'*5
+    assert c.body == 'A'*5
 
 def test_chunked_hex():
     # Test hex lengths
@@ -97,7 +97,7 @@ def test_chunked_hex():
     full_data += '0\r\n\r\n'
     c.add_data(full_data)
     assert c.complete
-    assert c.raw_data == 'A'*0xAF
+    assert c.body == 'A'*0xAF
 
     c = http.ChunkedData()
     full_data = 'AF\r\n'
@@ -106,7 +106,7 @@ def test_chunked_hex():
     full_data += '0\r\n\r\n'
     c.add_data(full_data)
     assert c.complete
-    assert c.raw_data == 'A'*0xAF
+    assert c.body == 'A'*0xAF
 
     c = http.ChunkedData()
     full_data = 'aF\r\n'
@@ -115,7 +115,7 @@ def test_chunked_hex():
     full_data += '0\r\n\r\n'
     c.add_data(full_data)
     assert c.complete
-    assert c.raw_data == 'A'*0xAF
+    assert c.body == 'A'*0xAF
 
 def test_chunked_leading_zeros():
     # Test leading zeros
@@ -126,7 +126,7 @@ def test_chunked_leading_zeros():
     full_data += '0\r\n\r\n'
     c.add_data(full_data)
     assert c.complete
-    assert c.raw_data == 'A'*0xAF
+    assert c.body == 'A'*0xAF
 
 def test_chunked_one_char_add():
     # Test adding one character at a time
@@ -138,7 +138,7 @@ def test_chunked_one_char_add():
     for ch in full_data:
         c.add_data(ch)
     assert c.complete
-    assert c.raw_data == 'A'*0xAF
+    assert c.body == 'A'*0xAF
 
 def test_chunked_incomplete():
     # Tests that complete isn't true until the data is received
@@ -168,11 +168,11 @@ def test_length_data_simple():
     assert not l.complete
     l.add_data('A'*100)
     assert l.complete
-    assert l.raw_data == 'A'*100
+    assert l.body == 'A'*100
 
     l = http.LengthData(0)
     assert l.complete
-    assert l.raw_data == ''
+    assert l.body == ''
 
     # Test incomplete
     l = http.LengthData(100)
@@ -185,7 +185,7 @@ def test_length_one_character():
     for i in range(100):
         l.add_data('A')
     assert l.complete
-    assert l.raw_data == 'A'*100
+    assert l.body == 'A'*100
 
     # Test adding one character at a time (incomplete)
     l = http.LengthData(100)
@@ -198,7 +198,7 @@ def test_length_overflow():
     l = http.LengthData(100)
     l.add_data('A'*400)
     assert l.complete
-    assert l.raw_data == 'A'*100
+    assert l.body == 'A'*100
 
     # Test throwing an exception when adding data after complete
     l = http.LengthData(100)
@@ -369,7 +369,80 @@ def test_response_cookie_blank():
     assert c.val == ''
     assert c.path == '/'
     assert c.secure
+    
+####################
+## HTTPMessage tests
 
+def test_message_simple():
+    raw = ('foobar\r\n'
+           'a: b\r\n'
+           'Content-Length: 100\r\n\r\n')
+    raw += 'A'*100
+    m = http.HTTPMessage(raw)
+    assert m.complete
+    assert m.malformed == False
+    assert m.start_line == 'foobar'
+    assert m.body == 'A'*100
+    assert m.headers.all_pairs() == [('a', 'b'), ('Content-Length', '100')]
+    assert m.headers['A'] == 'b'
+    assert m.headers_section == ('foobar\r\n'
+                                 'a: b\r\n'
+                                 'Content-Length: 100\r\n\r\n')
+    assert m.full_message == raw
+    
+def test_message_build():
+    raw = ('foobar\r\n'
+           'a: b\r\n'
+           'Content-Length: 100\r\n\r\n')
+    raw += 'A'*100
+    m = http.HTTPMessage()
+    m.add_line('foobar')
+    m.add_line('a: b')
+    m.add_line('Content-Length: 100')
+    m.add_line('')
+    assert not m.complete
+    m.add_data('A'*50)
+    assert not m.complete
+    m.add_data('A'*50)
+    assert m.complete
+    assert m.malformed == False
+    assert m.start_line == 'foobar'
+    assert m.body == 'A'*100
+    assert m.headers.all_pairs() == [('a', 'b'), ('Content-Length', '100')]
+    assert m.headers['A'] == 'b'
+    assert m.headers_section == ('foobar\r\n'
+                                 'a: b\r\n'
+                                 'Content-Length: 100\r\n\r\n')
+    assert m.full_message == raw
+    
+def test_message_build_chunked():
+    raw = ('foobar\r\n'
+           'a: b\r\n'
+           'Content-Length: 100\r\n\r\n')
+    raw += 'A'*100
+    m = http.HTTPMessage()
+    m.add_line('foobar')
+    m.add_line('a: b')
+    m.add_line('Transfer-Encoding: chunked')
+    m.add_line('')
+    assert not m.complete
+    m.add_data('%x\r\n' % 50)
+    m.add_data('A'*50)
+    m.add_data('\r\n')
+    m.add_data('%x\r\n' % 50)
+    m.add_data('A'*50)
+    m.add_data('\r\n')
+    m.add_data('0\r\n')
+    assert m.complete
+    assert m.malformed == False
+    assert m.start_line == 'foobar'
+    assert m.body == 'A'*100
+    assert m.headers.all_pairs() == [('a', 'b'), ('Content-Length', '100')]
+    assert m.headers['A'] == 'b'
+    assert m.headers_section == ('foobar\r\n'
+                                 'a: b\r\n'
+                                 'Content-Length: 100\r\n\r\n')
+    assert m.full_message == raw
 
 ####################
 ## Request tests
@@ -398,7 +471,7 @@ def test_request_simple():
         assert r.is_ssl == False
         assert r.path == '/'
         assert r.port == 80
-        assert r.status_line == 'GET / HTTP/1.1'
+        assert r.start_line == 'GET / HTTP/1.1'
         assert r.verb == 'GET'
         assert r.version == 'HTTP/1.1'
         assert r.headers['Content-Length'] == '100'
@@ -409,7 +482,7 @@ def test_request_simple():
         assert r.headers['Host'] == 'www.test.com'
         assert r.headers['Connection'] == 'Keep-Alive'
         assert r.headers['Cache-Control'] == 'no-cache'
-        assert r.raw_data == 'A'*100
+        assert r.body == 'A'*100
     test(rf)
     test(rl)
     test(ru)
@@ -536,6 +609,7 @@ def test_request_parse_host():
     rf, rl, ru, rj = req_by_lines_and_full(header_lines)
     def test(r):
         assert r.complete
+        assert r.port == 443
         assert r.host == 'www.test.com'
         assert r.is_ssl
     test(rf)
@@ -574,7 +648,7 @@ def test_repeated_request_headers():
 
 def test_request_update_statusline():
     r = http.Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     assert r.verb == 'GET'
     assert r.path == '/'
     assert r.version == 'HTTP/1.1'
@@ -584,7 +658,7 @@ def test_request_update_statusline():
 
 def test_request_update_cookies():
     r = http.Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
 
     # Check new cookies
     r.cookies['foo'] = 'bar'
@@ -607,7 +681,7 @@ def test_request_update_cookies():
 
 def test_request_update_headers(): 
     r = http.Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     r.headers['Content-Length'] = '0'
     r.headers['Test-Header'] = 'Test Value'
     r.headers['Other-Header'] = 'Other Value'
@@ -624,11 +698,11 @@ def test_request_update_headers():
 
 def test_request_modified_headers():
     r = http.Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     r.headers['content-length'] = '100'
     r.headers['cookie'] = 'abc=123'
     r.cookies['abc'] = '456'
-    r.raw_data = 'AAAA'
+    r.body = 'AAAA'
     assert r.full_request == ('GET / HTTP/1.1\r\n'
                               'content-length: 4\r\n'
                               'cookie: abc=456\r\n\r\n'
@@ -638,33 +712,34 @@ def test_request_modified_headers():
 
 def test_request_update_data():
     r = http.Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     r.headers['content-length'] = 500
-    r.raw_data = 'AAAA'
+    r.body = 'AAAA'
     assert r.full_request == ('GET / HTTP/1.1\r\n'
                               'content-length: 4\r\n'
                               '\r\n'
                               'AAAA')
 def test_request_to_json():
     r = http.Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     r.headers['content-length'] = 500
     r.tags = ['foo', 'bar']
-    r.raw_data = 'AAAA'
+    r.body = 'AAAA'
     r.reqid = '1'
 
     rsp = http.Response()
-    rsp.status_line = 'HTTP/1.1 200 OK'
+    rsp.start_line = 'HTTP/1.1 200 OK'
     rsp.rspid = '2'
 
     r.response = rsp
 
-    expected_reqdata = {u'full_request': unicode(base64.b64encode(r.full_request)),
+    expected_reqdata = {u'full_message': unicode(base64.b64encode(r.full_request)),
                         u'response_id': str(rsp.rspid),
                         u'port': 80,
                         u'is_ssl': False,
                         u'tags': ['foo', 'bar'],
                         u'reqid': str(r.reqid),
+                        u'host': '',
                        }
 
     assert json.loads(r.to_json()) == expected_reqdata
@@ -764,7 +839,7 @@ def test_request_copy():
     
 def test_request_url_blankpath():
     r = http.Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     r.url = 'https://www.google.com'
     r.headers['Host'] = r.host
     r.url_params.from_dict({'foo': 'bar'})
@@ -789,10 +864,10 @@ def test_response_simple():
     rf, rl, ru, rj = rsp_by_lines_and_full(header_lines, data)
     def test(r):
         assert r.complete
-        assert r.raw_data == data
+        assert r.body == data
         assert r.response_code == 200
         assert r.response_text == 'OK'
-        assert r.status_line == 'HTTP/1.1 200 OK'
+        assert r.start_line == 'HTTP/1.1 200 OK'
         assert r.version == 'HTTP/1.1'
 
         assert r.headers['Date'] == 'Thu, 22 Oct 2015 00:37:17 GMT'
@@ -826,7 +901,7 @@ def test_response_chunked():
     rf, rl, ru, rj = rsp_by_lines_and_full(header_lines, data)
     def test(r):
         assert r.complete
-        assert r.raw_data == 'A'*0xAF + 'B'*0xBF
+        assert r.body == 'A'*0xAF + 'B'*0xBF
 
     test(rf)
     test(rl)
@@ -851,7 +926,7 @@ def test_response_gzip():
     rf, rl, ru, rj = rsp_by_lines_and_full(header_lines, data_comp)
     def test(r):
         assert r.complete
-        assert r.raw_data == data_decomp
+        assert r.body == data_decomp
 
     test(rf)
     test(rl)
@@ -876,7 +951,7 @@ def test_response_deflate():
     rf, rl, ru, rj = rsp_by_lines_and_full(header_lines, data_comp)
     def test(r):
         assert r.complete
-        assert r.raw_data == data_decomp
+        assert r.body == data_decomp
 
     test(rf)
     test(rl)
@@ -907,7 +982,7 @@ def test_response_chunked_gzip():
     rf, rl, ru, rj = rsp_by_lines_and_full(header_lines, data_chunked)
     def test(r):
         assert r.complete
-        assert r.raw_data == data_decomp
+        assert r.body == data_decomp
         assert r.headers['Content-Length'] == str(len(data_decomp))
         assert r.full_response == ('HTTP/1.1 200 OK\r\n'
                                    'Date: Thu, 22 Oct 2015 00:37:17 GMT\r\n'
@@ -924,7 +999,7 @@ def test_response_chunked_gzip():
 
 def test_response_early_completion():
     r = http.Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     r.add_line('Content-Length: 0')
     assert not r.complete
     r.add_line('')
@@ -992,7 +1067,7 @@ def test_repeated_response_headers():
 
 def test_response_update_statusline():
     r = http.Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     assert r.version == 'HTTP/1.1'
     assert r.response_code == 200
     assert r.response_text == 'OK'
@@ -1002,7 +1077,7 @@ def test_response_update_statusline():
 
 def test_response_update_headers():
     r = http.Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     r.headers['Test-Header'] = 'Test Value'
     r.headers['Other-Header'] = 'Other Value'
 
@@ -1018,9 +1093,9 @@ def test_response_update_headers():
 
 def test_response_update_modified_headers():
     r = http.Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     r.headers['content-length'] = '500'
-    r.raw_data = 'AAAA'
+    r.body = 'AAAA'
     assert r.full_response == ('HTTP/1.1 200 OK\r\n'
                                'content-length: 4\r\n\r\n'
                                'AAAA')
@@ -1028,7 +1103,7 @@ def test_response_update_modified_headers():
 
 def test_response_update_cookies():
     r = http.Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     # Test by adding headers
     r.headers['Set-Cookie'] = 'abc=123'
     assert r.full_response == ('HTTP/1.1 200 OK\r\n'
@@ -1042,7 +1117,7 @@ def test_response_update_cookies():
     assert r.cookies['abc'].val == '456'
 
     r = http.Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     # Test by adding cookie objects
     c = http.ResponseCookie('abc=123; secure')
     r.cookies['abc'] = c
@@ -1060,10 +1135,10 @@ def test_response_update_content_length():
 
 def test_response_to_json():
     rsp = http.Response()
-    rsp.status_line = 'HTTP/1.1 200 OK'
+    rsp.start_line = 'HTTP/1.1 200 OK'
     rsp.rspid = 2
 
-    expected_reqdata = {'full_response': base64.b64encode(rsp.full_response),
+    expected_reqdata = {'full_message': base64.b64encode(rsp.full_response),
                         'rspid': rsp.rspid,
                         #'tag': r.tag,
                        }

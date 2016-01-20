@@ -3,11 +3,12 @@ import imp
 import os
 import random
 import re
+import stat
 
-from pappyproxy import http
-from pappyproxy import config
-from twisted.internet import defer
 from jinja2 import Environment, FileSystemLoader
+from pappyproxy import config
+from pappyproxy.util import PappyException
+from twisted.internet import defer
 
 class Macro(object):
     """
@@ -39,6 +40,9 @@ class Macro(object):
         if self.filename:
             match = re.findall('.*macro_(.*).py$', self.filename)
             self.file_name = match[0]
+            st = os.stat(self.filename)
+            if (st.st_mode & stat.S_IWOTH):
+                raise PappyException("Refusing to load world-writable macro: %s" % self.filename)
             module_name = os.path.basename(os.path.splitext(self.filename)[0])
             self.source = imp.load_source('%s'%module_name, self.filename)
             if not hasattr(self.source, 'MACRO_NAME'):
@@ -57,17 +61,49 @@ class Macro(object):
         # Execute the macro
         if self.source:
             self.source.run_macro(args)
-            
+
 class InterceptMacro(object):
     """
     A class representing a macro that modifies requests as they pass through the
     proxy
     """
-    def __init__(self, filename=''):
+    def __init__(self):
         self.name = ''
         self.short_name = None
-        self.intercept_requests = True
-        self.intercept_responses = True
+        self.intercept_requests = False
+        self.intercept_responses = False
+
+        self.do_req = False
+        self.do_rsp = False
+        self.do_async_req = False
+        self.do_async_rsp = False
+
+    def __repr__(self):
+        return "<InterceptingMacro (%s)>" % self.name
+
+    def init(self, args):
+        pass
+
+    def mangle_request(self, request):
+        return request
+
+    def mangle_response(self, request):
+        return request.response
+
+    @defer.inlineCallbacks
+    def async_mangle_request(self, request):
+        defer.returnValue(request)
+
+    @defer.inlineCallbacks
+    def async_mangle_response(self, request):
+        defer.returnValue(request.response)
+            
+class FileInterceptMacro(InterceptMacro):
+    """
+    An intercepting macro that loads a macro from a file.
+    """
+    def __init__(self, filename=''):
+        InterceptMacro.__init__(self)
         self.file_name = '' # name from the file
         self.filename = filename or '' # filename we load from
         self.source = None
@@ -85,36 +121,6 @@ class InterceptMacro(object):
         s += ' (%s)' % ('/'.join(names))
         return "<InterceptingMacro %s>" % s
 
-    @property
-    def do_req(self):
-        if (self.source and hasattr(self.source, 'async_mangle_request') or \
-           self.source and hasattr(self.source, 'mangle_request')) and \
-           self.intercept_requests:
-           return True
-        return False
-
-    @property
-    def do_rsp(self):
-        if (self.source and hasattr(self.source, 'async_mangle_response') or \
-           self.source and hasattr(self.source, 'mangle_response')) and \
-           self.intercept_responses:
-           return True
-        return False
-    
-    @property
-    def async_req(self):
-        if self.source and hasattr(self.source, 'async_mangle_request'):
-            return True
-        else:
-            return False
-
-    @property
-    def async_rsp(self):
-        if self.source and hasattr(self.source, 'async_mangle_response'):
-            return True
-        else:
-            return False
-        
     def load(self):
         if self.filename:
             match = re.findall('.*int_(.*).py$', self.filename)
@@ -122,6 +128,9 @@ class InterceptMacro(object):
                 self.file_name = match[0]
             else:
                 self.file_name = self.filename
+            st = os.stat(self.filename)
+            if (st.st_mode & stat.S_IWOTH):
+                raise PappyException("Refusing to load world-writable macro: %s" % self.filename)
             module_name = os.path.basename(os.path.splitext(self.filename)[0])
             self.source = imp.load_source('%s'%module_name, self.filename)
             self.name = self.source.MACRO_NAME
@@ -141,9 +150,28 @@ class InterceptMacro(object):
         else:
             self.source = None
 
-    def init(self, line):
+        # Update what we can do
+        if self.source and hasattr(self.source, 'mangle_request'):
+           self.intercept_requests = True
+           self.async_req = False
+        elif self.source and hasattr(self.source, 'async_mangle_request'):
+           self.intercept_requests = True
+           self.async_req = True
+        else:
+           self.intercept_requests = True
+
+        if self.source and hasattr(self.source, 'mangle_response'):
+            self.intercept_responses = True
+            self.async_rsp = False
+        elif self.source and hasattr(self.source, 'async_mangle_response'):
+            self.intercept_responses = True
+            self.async_rsp = True
+        else:
+            self.intercept_responses = False
+
+    def init(self, args):
         if hasattr(self.source, 'init'):
-            self.source.init(line)
+            self.source.init(args)
 
     def mangle_request(self, request):
         if hasattr(self.source, 'mangle_request'):
@@ -178,12 +206,18 @@ def load_macros(loc):
     macro_files = glob.glob(loc + "/macro_*.py")
     macro_objs = []
     for f in macro_files:
-        macro_objs.append(Macro(f))
+        try:
+            macro_objs.append(Macro(f))
+        except PappyException as e:
+            print str(e)
 
     int_macro_files = glob.glob(loc + "/int_*.py")
     int_macro_objs = []
     for f in int_macro_files:
-        int_macro_objs.append(InterceptMacro(f))
+        try:
+            int_macro_objs.append(FileInterceptMacro(f))
+        except PappyException as e:
+            print str(e)
     return (macro_objs, int_macro_objs)
 
 def req_obj_def(req):
@@ -198,6 +232,8 @@ def req_obj_def(req):
     else:
         if req.port != 80:
             params.append('port=%d'%req.port)
+    if 'host' in req.headers and req.host != req.headers['host']:
+        params.append('host=%d'%req.host)
     if params:
         req_params = ', '+', '.join(params)
     else:
@@ -223,7 +259,6 @@ def macro_from_requests(reqs, short_name='', long_name=''):
 
     subs['short_name'] = short_name
 
-    n = 0
     req_lines = []
     req_params = []
     for req in reqs:

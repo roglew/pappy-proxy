@@ -5,13 +5,13 @@ from pappyproxy.http import Request, Response, ResponseCookie
 @pytest.fixture
 def req():
     r = Request()
-    r.status_line = 'GET / HTTP/1.1'
+    r.start_line = 'GET / HTTP/1.1'
     return r
 
 @pytest.fixture
 def rsp():
     r = Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     return r
 
 def test_session_basic(req, rsp):
@@ -96,7 +96,7 @@ def test_session_mixed(req, rsp):
     assert 'auth' not in rsp.headers
 
     r = Response()
-    r.status_line = 'HTTP/1.1 200 OK'
+    r.start_line = 'HTTP/1.1 200 OK'
     r.set_cookie(ResponseCookie('state=bazzers'))
     r.set_cookie(ResponseCookie('session=buzzers'))
     s.get_rsp(r)

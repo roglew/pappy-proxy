@@ -11,7 +11,7 @@ testing. Its features are often similar, or straight up rippoffs from
 neither open source nor a command line tool, thus making a proxy like
 Pappy inevitable. The project is still in its early stages, so there are
 bugs and only the bare minimum features, but it should be able to do
-some cool stuff soon (I'm already using it for realtm work).
+some cool stuff soon (I'm already using it for real work).
 
 Contributing
 ------------
@@ -24,9 +24,9 @@ know so that I can [STRIKEOUT:use it to stomp them into the dust]
 improve my project.
 
 If you're brave and want to try and contribute code, please let me know.
-Right now the codebase is a giant clusterfun which I have refactored a
-few times already, but I would be more than happy to find a stable part
-of the codebase that you can contribute to.
+Right now the codebase is kind of rough and I have refactored it a few
+times already, but I would be more than happy to find a stable part of
+the codebase that you can contribute to.
 
 How to Use It
 =============
@@ -48,11 +48,10 @@ installed correctly by running ``pappy -l`` to start the proxy.
 Quickstart
 ----------
 
-Pappy projects take up an entire directory. While a full directory may
-seem like a dumb idea compared to storing everything in a zip file, but
-when it comes to generating attack strips and things, it's easier to
-just keep everything in a directory so you can view/edit files with
-other programs. To start a project, do something like:
+Pappy projects take up an entire directory. Any generated scripts,
+exported responses, etc. will be placed in the current directory so it's
+good to give your project a directory of its own. To start a project, do
+something like:
 
 ::
 
@@ -61,7 +60,7 @@ other programs. To start a project, do something like:
     $ pappy
     Copying default config to directory
     Proxy is listening on port 8000
-    itsPappyTime> exit
+    pappy> exit
     $ ls
     data.db      project_config.json
     $ 
@@ -70,16 +69,18 @@ And that's it! The proxy will by default be running on port 8000 and
 bound to localhost (to keep the hackers out). You can modify the
 port/interface in ``config.json``. You can list all your intercepted
 requests with ``ls``, view a full request with ``vfq <reqid>`` or view a
-full response with ``vfs <reqid>``. No you can't delete them yet. I'm
-working on it.
+full response with ``vfs <reqid>``. Right now, the only command to
+delete requests is ``filter_prune`` which deletes all the requests that
+aren't in the current context (look at the sections on the
+context/filter strings for more information on that).
 
 Lite Mode
 ---------
 
 If you don't want to dirty up a directory, you can run Pappy in "lite"
 mode. Pappy will use the default configuration settings and will create
-a temporary datafile in ``/tmp`` to use. When you quit, the file will be
-deleted. If you want to run Pappy in line mode, run Pappy with either
+a temporary data file in ``/tmp`` to use. When you quit, the file will
+be deleted. If you want to run Pappy in lite mode, run Pappy with either
 ``-l`` or ``--lite``.
 
 Example:
@@ -89,7 +90,7 @@ Example:
     $ pappy -l
     Temporary datafile is /tmp/tmpw4mGv2
     Proxy is listening on port 8000
-    itsPappyTime> quit
+    pappy> quit
     Deleting temporary datafile
     $ 
 
@@ -99,11 +100,10 @@ Adding The CA Cert to Your Browser
 In order for Pappy to view data sent using HTTPS, you need to add a
 generated CA cert (``certificate.crt``) to your browser. Certificates
 are generated using the ``gencerts`` command and are by default stored
-in the same directory as ``pappy.py``. This allows Pappy to act as a CA
-and MITM HTTPS connections. I believe that Firefox and Chrome ignore
-keychain/system certs, so you will have to install the CA cert to the
-browsers instead of (or in addition to) adding the cert to your
-keychain.
+in ``~/.pappy/certs``. This allows Pappy to act as a CA and sign any
+HTTPS certificate it wants without the browser complaining. This allows
+Pappy to decrypt and modify HTTPS requests. The certificate installation
+instructions are different for each browser.
 
 Firefox
 ~~~~~~~
@@ -156,11 +156,13 @@ proxy. The following fields can be used to configure the proxy:
 
 The following tokens will also be replaced with values:
 
-+------------------+------------------------------------------------+
-| Token            | Replaced with                                  |
-+==================+================================================+
-| ``{PAPPYDIR}``   | The directory where Pappy's files are stored   |
-+------------------+------------------------------------------------+
++-----------------+-----------------------------------------------------+
+| Token           | Replaced with                                       |
++=================+=====================================================+
+| ``{DATADIR}``   | The directory where Pappy's data files are stored   |
++-----------------+-----------------------------------------------------+
+
+See the default ``config.json`` for examples.
 
 Generating Pappy's CA Cert
 --------------------------
@@ -168,16 +170,16 @@ Generating Pappy's CA Cert
 In order to intercept and modify requests to sites that use HTTPS, you
 have to generate and install CA certs to your browser. You can do this
 by running the ``gencerts`` command in Pappy. By default, certs are
-stored in the same directory as Pappy's script files. However, you can
-change where Pappy will look for the private key file in the config
-file. In addition, you can give the ``gencerts`` command an argument to
-have it put the generated certs in a different directory.
+stored ``~/.pappy/certs``. This is also the default location that Pappy
+will look for certificates (unless you specify otherwise in
+``config.json``.) In addition, you can give the ``gencerts`` command an
+argument to have it put the generated certs in a different directory.
 
-+----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Command                                | Description                                                                                                                                                    |
-+========================================+================================================================================================================================================================+
-| ``gencerts [/path/to/put/certs/in]``   | Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory.   |
-+----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
++----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command                                | Description                                                                                                                                                                                                                                                                      |
++========================================+==================================================================================================================================================================================================================================================================================+
+| ``gencerts [/path/to/put/certs/in]``   | Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory. If no path is given, the certs will be placed in the default certificate location. Overwrites any existing certs.   |
++----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Browsing Recorded Requests/Responses
 ------------------------------------
@@ -202,7 +204,7 @@ The following commands can be used to view requests and responses
 | ``vhs <id(s)>``    | view\_response\_headers, vhs   | [V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request.                                                                                                                                                                                                                                                                                                                                 |
 +--------------------+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-The table shown will have the following columns:
+The table shown by ``ls`` will have the following columns:
 
 +-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Label     | Description                                                                                                                                                                                                            |
@@ -230,7 +232,7 @@ Tags
 ----
 
 You can apply tags to a request and use filters to view specific tags.
-The following commands can be used to apply tags to requests:
+The following commands can be used to apply and remove tags to requests:
 
 +---------------------------+-----------+---------------------------------------------------------------------------------------------------------------+
 | Command                   | Aliases   | Description                                                                                                   |
@@ -245,10 +247,13 @@ The following commands can be used to apply tags to requests:
 Request IDs
 -----------
 
-Request IDs are how you identify a request. You can see it when you run
-``ls``. In addition, you can prepend an ID with prefixes to get requests
-or responses associated with the request (for example its unmangled
-request or response) Here are the valid prefixes:
+Request IDs are how you identify a request and every command that
+involves specifying a request will take one or more request IDs. You can
+see it when you run ``ls``. In addition, you can prepend an ID with
+prefixes to get requests or responses associated with the request (for
+example if you modified the request or its response with the
+interceptor, you can get the unmangled versions.) Here are the valid
+prefixes:
 
 +----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Prefix   | Description                                                                                                                                                                                                             |
@@ -258,9 +263,9 @@ request or response) Here are the valid prefixes:
 | ``s``    | If the response was mangled, prefixing the request ID ``s`` will result in the same request but its associated response will be the unmangled version.                                                                  |
 +----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-I know it sounds kind of weird, but here are some example commands that
-will hopefully make things clearer. Suppose request 1 had its request
-mangled, and request 2 had its response mangled.
+I know it sounds kind of unintuitive. Here are some example commands
+that will hopefully make things clearer. Suppose request 1 had its
+request mangled, and request 2 had its response mangled.
 
 -  ``vfq 1`` Prints the mangled version of request 1
 -  ``vfq u1`` Prints the unmangled version of request 1
@@ -280,7 +285,7 @@ Passing Multiple Request IDs to a Command
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Some arguments can take multiple IDs for an argument. To pass multiple
-IDs to a command, separate the IDs with commas (no spaces!). A few
+IDs to a command, separate the IDs with commas **(no spaces!)**. A few
 examples:
 
 -  ``viq 1,2,u3`` View information about requests 1, 2, and the
@@ -293,13 +298,12 @@ Context
 
 The context is a set of filters that define which requests are
 considered "active". Only requests in the current context are displayed
-with ``ls``, and eventually contexts will be how Pappy will manage
-requests for group operations. By default, the context includes every
-single request that passes through the proxy. You can limit down the
-current context by applying filters. Filters apply rules such as "the
-response code must equal 500" or "the host must contain google.com".
-Once you apply one or more filters, only requests/responses which pass
-every active filter will be a part of the current context.
+with ``ls``. By default, the context includes every single request that
+passes through the proxy. You can limit down the current context by
+applying filters. Filters apply rules such as "the response code must
+equal 500" or "the host must contain google.com". Once you apply one or
+more filters, only requests/responses which pass every active filter
+will be a part of the current context.
 
 +-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Command                 | Aliases             | Description                                                                                                                                    |
@@ -308,24 +312,28 @@ every active filter will be a part of the current context.
 +-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | ``fc``                  | filter\_clear, fc   | Clears the filters and resets the context to contain all requests and responses. Ignores scope                                                 |
 +-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``fu``                  | filter\_up, fu      | Removes the most recently applied filter                                                                                                       |
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | ``fls``                 | filter\_list, fls   | Print the filters that make up the current context                                                                                             |
++-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``filter_prune``        | filter\_prune       | Delete all the requests that aren't in the current context from the data file                                                                  |
 +-------------------------+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Filter Strings
 --------------
 
 Filter strings define a condition that a request/response pair must pass
-to be part of a context. Most filter strings have the following format:
+to be part of the context. Most filter strings have the following
+format:
 
 ::
 
     <field> <comparer> <value>
 
 Where ``<field>`` is some part of the request/response, ``<comparer>``
-is some comparison to ``<value>``. Also **if you prefix a comparer with
-'n' it turns it into a negation.** For example, if you wanted a filter
-that only matches requests to target.org, you could use the following
-filter string:
+is some comparison to ``<value>``. For example, if you wanted a filter
+that only matches requests to ``target.org``, you could use the
+following filter string:
 
 ::
 
@@ -333,6 +341,18 @@ filter string:
 
     field = "host"
     comparer = "is"
+    value = "target.org"
+
+Also **if you prefix a comparer with 'n' it turns it into a negation.**
+Using the previous example, the following will match any request except
+for ones where the host contains ``target.org``:
+
+::
+
+    host nis target.org
+
+    field = "host"
+    comparer = "nis"
     value = "target.org"
 
 For fields that are a list of key/value pairs (headers, get params, post
@@ -423,21 +443,34 @@ List of comparers
 | lt           | lt               | A lt B if A < B (A and B must be a number)                      |
 +--------------+------------------+-----------------------------------------------------------------+
 
+Special form filters
+~~~~~~~~~~~~~~~~~~~~
+
+A few filters don't conform to the field, comparer, value format. You
+can still negate these.
+
++-----------+------------------+---------------------------------------------------------------------------------------------------------+
+| Format    | Aliases          | Description                                                                                             |
++===========+==================+=========================================================================================================+
+| before    | before, bf, b4   | Filters out any request that is not before the given request. Filters out any request without a time.   |
++-----------+------------------+---------------------------------------------------------------------------------------------------------+
+| after     | after, af        | Filters out any request that is not before the given request. Filters out any request without a time.   |
++-----------+------------------+---------------------------------------------------------------------------------------------------------+
+
 Scope
 -----
 
 Scope is a set of rules to define whether Pappy should mess with a
 request. You define the scope by setting the context to what you want
-the scope to be and running ``scope_save``. The scope is saved in
-data.db and is automatically restored when using the same project
+the scope to be and running ``scope_save``. The scope is saved in the
+data file and is automatically restored when using the same project
 directory.
 
 Any requests which don't match all the filters in the scope will be
 passed straight to the browser and will not be caught by the interceptor
-or recorded in the database. This is useful to make sure you don't
+or recorded in the data file. This is useful to make sure you don't
 accidentally do something like log in to your email through the proxy
-and have your plaintext username/password stored and accidentally shown
-to your coworkers.
+and have your plaintext username/password stored.
 
 +--------------------+---------------------------+------------------------------------------------------+
 | Command            | Aliases                   | Description                                          |
@@ -458,11 +491,13 @@ Pappy also includes some built in filters that you can apply. These are
 things that you may want to filter by but may be too tedius to type out.
 The ``fbi`` command also supports tab completion.
 
-+-----------------+-----------------------------------------+
-| Filter          | Description                             |
-+=================+=========================================+
-| ``not_image``   | Matches anything that isn't an image.   |
-+-----------------+-----------------------------------------+
++-----------------+--------------------------------------------------+
+| Filter          | Description                                      |
++=================+==================================================+
+| ``not_image``   | Matches anything that isn't an image.            |
++-----------------+--------------------------------------------------+
+| ``not_jscss``   | Matches anything that isn't JavaScript or CSS.   |
++-----------------+--------------------------------------------------+
 
 +--------------------+-------------------------------+--------------------------------------------------+
 | Command            | Aliases                       | Description                                      |
@@ -476,12 +511,12 @@ Interceptor
 This feature is like Burp's proxy with "Intercept Mode" turned on,
 except it's not turned on unless you explicitly turn it on. When the
 proxy gets a request while in intercept mode, it lets you edit it before
-it forwards it to the server. In addition, it can stop responses from
-the server and let you edit them before they get forwarded to the
-browser. When you run the command, you can pass ``request`` and/or
-``response`` as arguments to say whether you would like to intercept
-requests and/or responses. Only in-scope requests/responses will be
-intercepted (see Scope section).
+forwarding it to the server. In addition, it can stop responses from the
+server and let you edit them before they get forwarded to the browser.
+When you run the command, you can pass ``req`` and/or ``rsp`` as
+arguments to say whether you would like to intercept requests and/or
+responses. Only in-scope requests/responses will be intercepted (see
+Scope section).
 
 The interceptor will use your EDITOR variable to decide which editor to
 edit the request/response with. If no editor variable is set, it will
@@ -512,6 +547,8 @@ To forward a request, edit it, save the file, then quit.
     Be totally useless:
     > ic
 
+To drop a request, delete everything, save and quit.
+
 Repeater
 --------
 
@@ -520,12 +557,11 @@ and Pappy will open vim in a split window with your request on the left
 and the original response on the right. You can make changes to the
 request and then run ":RepeaterSubmitBuffer" to submit the modified
 request. The response will be displayed on the right. This command is
-bound to ``<leader>f`` by default, but you can rebind it in your vimrc
-(I think, dunno if vim will complain if it's undefined). This command
-will submit whatever buffer your cursor is in, so make sure it's in the
-request buffer.
-
-To drop a request, delete everything, save and quit (``ggdG:wq``).
+bound to ``<leader>f`` by default, but you can bind it to something else
+too in your vimrc (I think, dunno if vim will complain if the function
+undefined which it will be for regular files). This command will submit
+whatever buffer your cursor is in, so make sure it's in the request
+buffer.
 
 When you're done with repeater, run ":qa!" to avoid having to save
 changes to nonexistent files.
@@ -588,19 +624,19 @@ quotes around it.
 
     $ pappy
     Proxy is listening on port 8000
-    itsPappyTime> lma
+    pappy> lma
     Loaded "<Macro Test Macro (tm/test)>"
     Loaded "<Macro Macro 6494496 (testgen)>"
     Loaded "<Macro Print Macro (print)>"
     Loaded "<Macro Hack the NSA (htnsa/hackthensa)>"
     Loaded "<Macro Macro 62449408 (blank)>"
-    itsPappyTime> rma print
+    pappy> rma print
     Hello, Pappy!
-    itsPappyTime> rma print NSA
+    pappy> rma print NSA
     Hello, NSA!
-    itsPappyTime> rma print Idiot Slayer
+    pappy> rma print Idiot Slayer
     Hello, Idiot!
-    itsPappyTime> rma print "Idiot Slayer"
+    pappy> rma print "Idiot Slayer"
     Hello, Idiot Slayer!
 
 You'll need to run ``lma`` every time you make a change to the macro in
@@ -617,16 +653,16 @@ with the same information as requests you've already made. For example:
 
     $ pappy
     Proxy is listening on port 8000
-    itsPappyTime> ls
+    pappy> ls
     ID  Verb  Host         Path               S-Code  Req Len  Rsp Len  Time  Mngl
     5   GET   vitaly.sexy  /esr1.jpg          200 OK  0        17653    --    --
     4   GET   vitaly.sexy  /netscape.gif      200 OK  0        1135     --    --
     3   GET   vitaly.sexy  /construction.gif  200 OK  0        28366    --    --
     2   GET   vitaly.sexy  /vitaly2.jpg       200 OK  0        2034003  --    --
     1   GET   vitaly.sexy  /                  200 OK  0        1201     --    --
-    itsPappyTime> gma sexy 1
+    pappy> gma sexy 1
     Wrote script to macro_sexy.py
-    itsPappyTime> quit
+    pappy> quit
     $ cat macro_sexy.py
     from pappyproxy.http import Request, get_request, post_request
 
@@ -658,11 +694,10 @@ with the same information as requests you've already made. For example:
         # req.save() # save the request to the data file
         # or copy req0 into a loop and use string substitution to automate requests
         pass
-    $
 
 If you enter in a value for ``SHORT_NAME``, you can use it as a shortcut
 to run that macro. So if in a macro you set ``SHORT_NAME='tm'`` you can
-run it by running ``itsPappyTime> rma tm``.
+run it by running ``pappy> rma tm``.
 
 +--------------------------+-------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | Command                  | Aliases                       | Description                                                                                                                         |
@@ -692,8 +727,8 @@ Dict-like objects are represented with a custom class called a
 so just interact with it like a dict and don't be surprised if it's
 missing some methods you would expect a dict to have.
 
-Here is a quick (non-comprehensive) list of attributes that you can use
-with ``Request`` objects:
+Here is a quick list of attributes that you can use with ``Request``
+objects:
 
 +-----------------+-------------+------------------+-----------------------------------------------------------------------------------------------------------------+
 | Attribute       | Settable?   | Data Type        | Description                                                                                                     |
@@ -755,8 +790,8 @@ Request methods:
 | save()     | Save the request, its unmangled version, its associated response, and the unmangled version of the response to the database   |
 +------------+-------------------------------------------------------------------------------------------------------------------------------+
 
-And here is a quick (non-comprehensive) list of attributes that you can
-use with ``Response`` objects:
+And here is a quick list of attributes that you can use with
+``Response`` objects:
 
 +------------------+-------------+------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Attribute        | Settable?   | Data Type        | Description                                                                                                                                                                     |
@@ -791,8 +826,27 @@ can fix it.
 Useful Functions
 ~~~~~~~~~~~~~~~~
 
-There are also a few functions which could be useful for making
-requests.
+There are also a few functions which could be useful for creating
+requests in macros. It's worth pointing out that ``request_by_id`` is
+useful for passing request objects as arguments. For example, here is a
+macro that lets you resubmit a request with the Google Bot user agent:
+
+::
+
+    ## macro_googlebot.py
+
+    from pappyproxy.http import Request, get_request, post_request, request_by_id
+    from pappyproxy.context import set_tag
+    from pappyproxy.iter import *
+
+    MACRO_NAME = 'Submit as Google'
+    SHORT_NAME = ''
+
+    def run_macro(args):
+        req = request_by_id(args[0])
+        req.headers['User-Agent'] = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+        req.submit()
+        req.save()
 
 +-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
 | Function                                              | Description                                                                                                 |
@@ -800,6 +854,8 @@ requests.
 | get\_request(url, url\_params={})                     | Returns a Request object that contains a GET request to the given url with the given url params             |
 +-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
 | post\_request(url, post\_params={}, url\_params={})   | Returns a Request object that contains a POST request to the given url with the given url and post params   |
++-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| request\_by\_id(reqid)                                | Get a request object from its id.                                                                           |
 +-------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
 
 Intercepting Macros
@@ -824,9 +880,10 @@ Note, that due to twisted funkyness, *you cannot save requests from
 intercepting macros*. Technically you **can**, but to do that you'll
 have to define ``async_mangle_request`` (or response) instead of
 ``mangle_request`` (or response) then use ``Request.async_deep_save``
-which returns a deferred, then return a deferred from
+which generates a deferred, then generate a deferred from
 ``async_mangle_requests`` (inline callbacks work too). If you've never
-used twisted before, please don't try. Twisted is hard.
+used twisted before, please don't try. Twisted is hard. Plus the mangled
+request will be saved before it is submitted anyways.
 
 Confusing? Here are some example intercepting macros:
 
@@ -862,9 +919,7 @@ Confusing? Here are some example intercepting macros:
 
     ## int_adminplz.py
 
-    from pappyproxy.http import ResponseCookie
     from base64 import base64encode as b64e
-    import string
 
     MACRO_NAME = 'Admin Session'
 
@@ -873,40 +928,68 @@ Confusing? Here are some example intercepting macros:
         r.headers['Authorization'] = 'Basic %s' % b64e('Admin:Password123')
         return r
 
+In addition, you can use an ``init(args)`` function to get arguments
+from the command line. If no arguments are passed, args will be an empty
+list. Here is an example macro that does a search and replace:
+
+::
+
+    ## int_replace.py
+
+    MACRO_NAME = 'Find and Replace'
+    SHORT_NAME = ''
+    runargs = []
+
+    def init(args):
+        global runargs
+        runargs = args
+
+    def mangle_request(request):
+        global runargs
+        if len(runargs) < 2:
+            return request
+        request.body = request.body.replace(runargs[0], runargs[1])
+        return request
+
+    def mangle_response(request):
+        global runargs
+        if len(runargs) < 2:
+            return request.response
+        request.response.body = request.response.body.replace(runargs[0], runargs[1])
+        return request.response
+
+You can use this macro to do any search and replace that you want. For
+example, if you wanted to replace "Google" with "Skynet", you can run
+the macro like this:
+
+::
+
+    pappy> lma
+    Loaded "<InterceptingMacro Find and Replace (replace)>"
+    pappy> rim replace Google Skynet
+    "Find and Replace" started
+    pappy> 
+
+Now every site that you visit will be a little bit more accurate.
+
 Enabling/Disabling Intercepting Macros
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can use the following commands to start/stop intercepting macros
 
-+------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------+
-| Command                | Aliases                            | Description                                                                                                          |
-+========================+====================================+======================================================================================================================+
-| ``lma [dir]``          | ``load_macros``, ``lma``           | Load macros from a directory. If ``dir`` is not given, use the current directory (the project directory)             |
-+------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``rim <macro name>``   | ``run_int_macro``, ``rim``         | Run an intercepting macro. Similarly to normal macros you can use the name, short name, or file name of the macro.   |
-+------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``sim <macro name>``   | ``stop_int_macro``, ``sim``        | Stop an intercepting macro.                                                                                          |
-+------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``lim``                | ``list_int_macros``, ``lim``       | List all enabled/disabled intercepting macros                                                                        |
-+------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``gima <name>``        | ``generate_int_macro``, ``gima``   | Generate an intercepting macro with the given name.                                                                  |
-+------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------+
-
-Additional Commands
--------------------
-
-This is a list of other random stuff you can do that isn't categorized
-under anything else. These are mostly commands that I found that I
-needed while doing a test and just added. They likely don't do a ton of
-error checking and are likely not super full-featured.
-
-+----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Command                                | Aliases             | Description                                                                                                                                           |
-+========================================+=====================+=======================================================================================================================================================+
-| ``dump_response <reqid> [filename]``   | ``dump_response``   | Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path.   |
-+----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``export <req|rsp> <reqid>``           | ``export``          | Writes either the full request or response to a file in the current directory.                                                                        |
-+----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| Command                       | Aliases                            | Description                                                                                                                    |
++===============================+====================================+================================================================================================================================+
+| ``lma [dir]``                 | ``load_macros``, ``lma``           | Load macros from a directory. If ``dir`` is not given, use the current directory (the project directory)                       |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``rim <macro name>``          | ``run_int_macro``, ``rim``         | Run an intercepting macro. Similarly to normal macros you can use the name, short name, or file name of the macro.             |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``sim <macro name> [args]``   | ``stop_int_macro``, ``sim``        | Stop an intercepting macro. If arguments are given, they will be passed to the macro's ``init(args)`` function if it exists.   |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``lim``                       | ``list_int_macros``, ``lsim``      | List all enabled/disabled intercepting macros                                                                                  |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``gima <name>``               | ``generate_int_macro``, ``gima``   | Generate an intercepting macro with the given name.                                                                            |
++-------------------------------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
 
 Logging
 -------
@@ -925,3 +1008,53 @@ every start though!)
 +=======================+===============================================================================================================================================================================================================================+
 | ``log [verbosity]``   | View the log at the given verbosity. Default verbosity is 1 which just shows connections being made/lost and some other info, verbosity 3 shows full requests/responses as they pass through and are processed by the proxy   |
 +-----------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Additional Commands and Features
+--------------------------------
+
+This is a list of other random stuff you can do that isn't categorized
+under anything else. These are mostly commands that I found that I
+needed while doing a test and just added. They likely don't do a ton of
+error checking.
+
++----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Command                                | Aliases             | Description                                                                                                                                           |
++========================================+=====================+=======================================================================================================================================================+
+| ``dump_response <reqid> [filename]``   | ``dump_response``   | Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path.   |
++----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``export <req|rsp> <reqid>``           | ``export``          | Writes either the full request or response to a file in the current directory.                                                                        |
++----------------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Response streaming
+~~~~~~~~~~~~~~~~~~
+
+If you don't have any intercepting macros running, Pappy will forward
+data to the browser as it gets it. However, if you're trying to mangle
+messages/responses, Pappy will need to download the entire message
+first.
+
+FAQ
+---
+
+Why does my request have an id of ``--``?!?!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can't do anything with a request/response until it is decoded and
+saved to disk. In between the time when a request is decoded and when
+it's saved to disk, it will have an ID of ``--``. So just wait a little
+bit and it will get an ID you can use.
+
+Changelog
+---------
+
+The boring part of the readme
+
+-  0.1.2
+-  Refactor almost every part of proxy
+-  Basic framework for plugins
+-  Bugfixes probably
+-  Create changelog
+-  0.1.1
+-  Start using sane versioning system
+-  No idea what I added
+

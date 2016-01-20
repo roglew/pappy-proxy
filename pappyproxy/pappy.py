@@ -1,31 +1,54 @@
 #!/usr/bin/env python2
 
 import argparse
-import cmd2
 import crochet
 import datetime
-import imp
 import os
 import schema.update
 import shutil
 import sys
-import sqlite3
 import tempfile
-from pappyproxy import console
-from pappyproxy import config
-from pappyproxy import comm
-from pappyproxy import http
-from pappyproxy import context
-from pappyproxy import proxy
+
+from . import comm
+from . import config
+from . import context
+from . import http
+from . import plugin
+from . import proxy
+from .console import ProxyCmd
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, defer
-from twisted.internet.threads import deferToThread
-from twisted.internet.protocol import ServerFactory
 from twisted.internet.error import CannotListenError
-
+from twisted.internet.protocol import ServerFactory
+from twisted.internet.threads import deferToThread
 
 crochet.no_setup()
+server_factory = None
+main_context = context.Context()
+all_contexts = [main_context]
+plugin_loader = None
+cons = None
 
+@defer.inlineCallbacks
+def wait_for_saves(ignored):
+    reset = True
+    printed = False
+    lastprint = 0
+    while reset:
+        reset = False
+        togo = 0
+        for c in all_contexts:
+            for r in c.all_reqs:
+                if r.reqid == '--':
+                    reset = True
+                    togo += 1
+                    d = defer.Deferred()
+                    d.callback(None)
+                    yield d
+        if togo % 10 == 0 and lastprint != togo:
+            lastprint = togo
+            print '%d requests left to be saved (probably won\'t work)' % togo
+            
 def parse_args():
     # parses sys.argv and returns a settings dictionary
 
@@ -51,6 +74,9 @@ def delete_datafile():
     
 @defer.inlineCallbacks
 def main():
+    global server_factory
+    global plugin_loader
+    global cons
     settings = parse_args()
     load_start = datetime.datetime.now()
 
@@ -77,7 +103,12 @@ def main():
                                    check_same_thread=False,
                                    cp_openfun=set_text_factory,
                                    cp_max=1)
-    yield schema.update.update_schema(dbpool)
+    try:
+        yield schema.update.update_schema(dbpool, config.DATAFILE)
+    except Exception as e:
+        print 'Error updating schema: %s' % e
+        print 'Exiting...'
+        reactor.stop()
     http.init(dbpool)
     yield context.init()
 
@@ -85,17 +116,17 @@ def main():
     if config.DEBUG_DIR and os.path.exists(config.DEBUG_DIR):
         shutil.rmtree(config.DEBUG_DIR)
         print 'Removing old debugging output'
-    serv_factory = proxy.ProxyServerFactory(save_all=True)
+    server_factory = proxy.ProxyServerFactory(save_all=True)
     listen_strs = []
-    listening = False
+    ports = []
     for listener in config.LISTENERS:
         try:
-            reactor.listenTCP(listener[0], serv_factory, interface=listener[1])
-            listening = True
+            port = reactor.listenTCP(listener[0], server_factory, interface=listener[1])
             listener_str = 'port %d' % listener[0]
             if listener[1] not in ('127.0.0.1', 'localhost'):
                 listener_str += ' (bound to %s)' % listener[1]
             listen_strs.append(listener_str)
+            ports.append(port)
         except CannotListenError as e:
             print repr(e)
     if listen_strs:
@@ -112,19 +143,31 @@ def main():
 
     # Load the scope
     yield context.load_scope(http.dbpool)
-    context.reset_to_scope()
+    context.reset_to_scope(main_context)
 
     # Apologize for slow start times
     load_end = datetime.datetime.now()
     load_time = (load_end - load_start)
     if load_time.total_seconds() > 20:
         print 'Startup was slow (%s)! Sorry!' % load_time
-        print 'Database has {0} requests (~{1:.2f}ms per request)'.format(len(context.active_requests), ((load_time.total_seconds()/len(context.active_requests))*1000))
+        print 'Database has {0} requests (~{1:.2f}ms per request)'.format(len(main_context.active_requests), ((load_time.total_seconds()/len(main_context.active_requests))*1000))
 
     sys.argv = [sys.argv[0]] # cmd2 tries to parse args
-    cons = console.ProxyCmd()
-    console.set_proxy_server_factory(serv_factory)
+    cons = ProxyCmd()
+    plugin_loader = plugin.PluginLoader(cons)
+    for d in config.PLUGIN_DIRS:
+        if not os.path.exists(d):
+            os.makedirs(d)
+        plugin_loader.load_directory(d)
+
+    @defer.inlineCallbacks
+    def close_listeners(ignored):
+        for port in ports:
+            yield port.stopListening()
+
     d = deferToThread(cons.cmdloop)
+    d.addCallback(close_listeners)
+    d.addCallback(wait_for_saves)
     d.addCallback(lambda ignored: reactor.stop())
     if delete_data_on_quit:
         d.addCallback(lambda ignored: delete_datafile())

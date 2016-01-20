@@ -1,30 +1,18 @@
 import copy
 import datetime
-import gzip
 import os
 import random
-import re
-import schema.update
-import shutil
-import string
-import StringIO
-import sys
-import urlparse
-import zlib
+
 from OpenSSL import SSL
+from OpenSSL import crypto
 from pappyproxy import config
-from pappyproxy import console
 from pappyproxy import context
 from pappyproxy import http
-from pappyproxy import mangle
-from pappyproxy.util import PappyException
-from twisted.enterprise import adbapi
+from pappyproxy.util import PappyException, printable_data
+from twisted.internet import defer
 from twisted.internet import reactor, ssl
 from twisted.internet.protocol import ClientFactory, ServerFactory
 from twisted.protocols.basic import LineReceiver
-from twisted.internet import defer
-
-from OpenSSL import crypto
 
 next_connection_id = 1
 
@@ -43,7 +31,7 @@ def add_intercepting_macro(key, macro, int_macro_dict):
 
 def remove_intercepting_macro(key, int_macro_dict):
     if not key in int_macro_dict:
-        raise PappyException('Macro with key %s not loaded' % key)
+        raise PappyException('Macro with key %s not currently running' % key)
     del int_macro_dict[key]
 
 def log(message, id=None, symbol='*', verbosity_level=1):
@@ -94,6 +82,12 @@ class ProxyClient(LineReceiver):
             line = ''
         self._response_obj.add_line(line)
         self.log(line, symbol='r<', verbosity_level=3)
+        if self.factory.stream_response:
+            self.log('Returning line back through stream')
+            self.factory.return_transport.write(line+'\r\n')
+        else:
+            self.log('Not streaming, not returning')
+            self.log(self.factory.stream_response)
         if self._response_obj.headers_complete:
             if self._response_obj.complete:
                 self.handle_response_end()
@@ -103,9 +97,12 @@ class ProxyClient(LineReceiver):
 
     def rawDataReceived(self, *args, **kwargs):
         data = args[0]
+        self.log('Returning data back through stream')
+        if self.factory.stream_response:
+            self.factory.return_transport.write(data)
         if not self._response_obj.complete:
             if data:
-                s = console.printable_data(data)
+                s = printable_data(data)
                 dlines = s.split('\n')
                 for l in dlines:
                     self.log(l, symbol='<rd', verbosity_level=3)
@@ -127,23 +124,29 @@ class ProxyClient(LineReceiver):
 
         sendreq = self.request
         if context.in_scope(sendreq):
-
+            to_mangle = copy.copy(self.factory.intercepting_macros).iteritems()
             if self.factory.save_all:
-                yield sendreq.async_deep_save()
+                # It isn't the actual time, but this should work in case
+                # we do an 'ls' before it gets a real time saved
+                sendreq.time_start = datetime.datetime.now()
+                if self.factory.stream_response and not to_mangle:
+                    self.request.async_deep_save()
+                else:
+                    yield self.request.async_deep_save()
 
             ## Run intercepting macros
             # if we don't copy it, when we delete a macro from the console,
             # we get a crash. We do a shallow copy to keep the macro
             # instances the same.
-            to_mangle = copy.copy(self.factory.intercepting_macros).iteritems()
             for k, macro in to_mangle:
-                if macro.do_req:
+                if macro.intercept_requests:
                     if macro.async_req:
                         sendreq = yield macro.async_mangle_request(sendreq)
                     else:
                         sendreq = macro.mangle_request(sendreq)
 
                     if sendreq is None:
+                        self.log('Request dropped, losing connection')
                         self.transport.loseConnection()
                         self.request = None
                         self.data_defer.callback(None)
@@ -153,9 +156,8 @@ class ProxyClient(LineReceiver):
 
             if sendreq != self.request:
                 sendreq.unmangled = self.request
-
-            if self.factory.save_all:
-                yield sendreq.async_deep_save()
+                if self.factory.save_all:
+                    yield sendreq.async_deep_save()
         else:
             self.log("Request out of scope, passing along unmangled")
                 
@@ -174,6 +176,7 @@ class ProxyClient(LineReceiver):
     def handle_response_end(self, *args, **kwargs):
         self.log("Remote response finished, returning data to original stream")
         self.request.response = self._response_obj
+        self.log('Response ended, losing connection')
         self.transport.loseConnection()
         assert self._response_obj.full_response
         self.factory.return_request_pair(self.request)
@@ -181,15 +184,17 @@ class ProxyClient(LineReceiver):
 
 class ProxyClientFactory(ClientFactory):
 
-    def __init__(self, request, save_all=False):
+    def __init__(self, request, save_all=False, stream_response=False,
+                 return_transport=None):
         self.request = request
-        #self.proxy_server = None
-        self.intercepting_macros = {}
         self.connection_id = -1
         self.data_defer = defer.Deferred()
         self.start_time = datetime.datetime.now()
         self.end_time = None
         self.save_all = save_all
+        self.stream_response = stream_response
+        self.return_transport = return_transport
+        self.intercepting_macros = {}
 
     def log(self, message, symbol='*', verbosity_level=1):
         log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
@@ -208,22 +213,24 @@ class ProxyClientFactory(ClientFactory):
     @defer.inlineCallbacks
     def return_request_pair(self, request):
         self.end_time = datetime.datetime.now()
-        log_request(console.printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
+        log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
 
         request.time_start = self.start_time
         request.time_end = self.end_time
         if context.in_scope(request):
-
+            to_mangle = copy.copy(self.intercepting_macros).iteritems()
             if self.save_all:
-                yield request.async_deep_save()
+                if self.stream_response and not to_mangle:
+                    request.async_deep_save()
+                else:
+                    yield request.async_deep_save()
 
             # if we don't copy it, when we delete a macro from the console,
             # we get a crash. We do a shallow copy to keep the macro
             # instances the same.
-            to_mangle = copy.copy(self.intercepting_macros).iteritems()
             old_rsp = request.response
             for k, macro in to_mangle:
-                if macro.do_rsp:
+                if macro.intercept_responses:
                     if macro.async_rsp:
                         mangled_rsp = yield macro.async_mangle_response(request)
                     else:
@@ -234,6 +241,7 @@ class ProxyClientFactory(ClientFactory):
                         self.data_defer.callback(request)
                         if self.save_all:
                             yield request.async_deep_save()
+                        self.log("Response dropped, losing connection")
                         self.transport.loseConnection()
                         defer.returnValue(None)
 
@@ -241,15 +249,11 @@ class ProxyClientFactory(ClientFactory):
 
             if request.response != old_rsp:
                 request.response.unmangled = old_rsp
-
-            if self.save_all:
-                yield request.async_deep_save()
-
-            # re-check after all the mangling
-            context.filter_recheck()
+                if self.save_all:
+                    yield request.async_deep_save()
 
             if request.response:
-                log_request(console.printable_data(request.response.full_response),
+                log_request(printable_data(request.response.full_response),
                             id=self.connection_id, symbol='<', verbosity_level=3)
         else:
             self.log("Response out of scope, passing along unmangled")
@@ -340,11 +344,20 @@ class ProxyServer(LineReceiver):
 
         if self._forward:
             self.log("Forwarding to %s on %d" % (self._request_obj.host, self._request_obj.port))
+            if not self.factory.intercepting_macros:
+                stream = True
+            else:
+                # We only want to call send_response_back if we're not streaming
+                stream = False
+            self.log('Creating client factory, stream=%s' % stream)
             factory = ProxyClientFactory(self._request_obj,
-                                         save_all=self.factory.save_all)
+                                         save_all=self.factory.save_all,
+                                         stream_response=stream,
+                                         return_transport=self.transport)
             factory.intercepting_macros = self.factory.intercepting_macros
             factory.connection_id = self.connection_id
-            factory.data_defer.addCallback(self.send_response_back)
+            if not stream:
+                factory.data_defer.addCallback(self.send_response_back)
             if self._request_obj.is_ssl:
                 self.log("Accessing over SSL...", verbosity_level=3)
                 reactor.connectSSL(self._request_obj.host, self._request_obj.port, factory, ClientTLSContext())
@@ -364,6 +377,7 @@ class ProxyServer(LineReceiver):
     def send_response_back(self, response):
         if response is not None:
             self.transport.write(response.response.full_response)
+        self.log("Response sent back, losing connection")
         self.transport.loseConnection()
                 
     def connectionLost(self, reason):

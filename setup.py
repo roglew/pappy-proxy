@@ -4,12 +4,12 @@ import pkgutil
 from setuptools import setup, find_packages
 
 setup(name='pappyproxy',
-      version='0.1.1',
+      version='0.2.0',
       description='The Pappy Intercepting Proxy',
       author='Rob Glew',
       author_email='rglew56@gmail.com',
       url='https://www.github.com/roglew/pappy-proxy',
-      packages=['pappyproxy', 'pappyproxy.schema'],
+      packages=['pappyproxy', 'pappyproxy.schema', 'pappyproxy.plugins'],
       include_package_data = True,
       license='MIT',
       entry_points = {
