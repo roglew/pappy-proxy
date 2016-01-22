@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Pappy Proxy &mdash; Pappy Proxy 0.2.0 documentation</title>
+    <title>The Pappy Proxy &mdash; Pappy Proxy 0.2.1 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '0.2.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Pappy Proxy 0.2.0 documentation" href="index.html" />
+    <link rel="top" title="Pappy Proxy 0.2.1 documentation" href="index.html" />
     <link rel="next" title="The Pappy Proxy Tutorial" href="tutorial.html" />
     <link rel="prev" title="Welcome to Pappy Proxy’s documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to Pappy Proxy’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -1627,6 +1627,32 @@ you can write out commands that you use regularly but may not be worth
 creating a dedicated plugin for.</p>
 </div>
 </div>
+<div class="section" id="global-settings">
+<h2>Global Settings<a class="headerlink" href="#global-settings" title="Permalink to this headline">¶</a></h2>
+<p>There are some settings that apply to Pappy as a whole and are stored in
+<code class="docutils literal"><span class="pre">~/.pappy/global_config.json</span></code>. These settings are generally for tuning
+performance or modifying behavior on a system-wide level. No information
+about projects is put in here since it is world readable. You can
+technically add settings in here for plugins that you write, but if it&#8217;s
+at all possible, please keep settings in the normal project config.</p>
+<p>Settings included in <code class="docutils literal"><span class="pre">~/.pappy/global_config.json</span></code>:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="8%" />
+<col width="92%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Setting</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>cache_size</td>
+<td>The number of requests from history that will be included in memory at any given time. Set to -1 to keep everything in memory. See the request cache section for more info.</td>
+</tr>
+</tbody>
+</table>
+</div>
 <div class="section" id="faq">
 <h2>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="i-still-like-burp-but-pappy-looks-interesting-can-i-use-both">
@@ -1654,10 +1680,39 @@ it&#8217;s saved to disk, it will have an ID of <code class="docutils literal"><
 bit and it will get an ID you can use.</p>
 </div>
 </div>
+<div class="section" id="boring-technical-stuff">
+<h2>Boring, Technical Stuff<a class="headerlink" href="#boring-technical-stuff" title="Permalink to this headline">¶</a></h2>
+<p>I do some stuff to try and keep speed and memory usage to reasonable
+levels. Unfortunately, things might seem slow in some areas. This is
+where I try and explain why those exist. Honestly, you probably don&#8217;t
+care about this, but I&#8217;d rather have it written down and have nobody
+read it than just leave people in the dark.</p>
+<div class="section" id="request-cache-memory-usage">
+<h3>Request Cache / Memory usage<a class="headerlink" href="#request-cache-memory-usage" title="Permalink to this headline">¶</a></h3>
+<p>For performance reasons, Pappy by default will not store every request
+in memory. The cache will store a certain number of the most recently
+accessed requests in memory. This means that if you go through all of
+history, it could be slow (for example running <code class="docutils literal"><span class="pre">ls</span> <span class="pre">a</span></code> or <code class="docutils literal"><span class="pre">sm</span></code>). If
+you have enough RAM to keep everything in memory, you can set the
+request cache size to -1 to just keep everything in memory. However,
+even if the cache size is unlimited, it still won&#8217;t load a request into
+memory untill you access it. So if you want to load everything in
+memory, run <code class="docutils literal"><span class="pre">ls</span> <span class="pre">a</span></code>.</p>
+<p>By default, Pappy will cache 2000 requests. This is kind of heavy, but
+it&#8217;s assumed you&#8217;re doing testing on a reasonably specced laptop.
+Personally, I live on the edge and use -1 until I run into memory
+issues.</p>
+</div>
+</div>
 <div class="section" id="changelog">
 <h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <p>The boring part of the readme</p>
 <ul class="simple">
+<li>0.2.1<ul>
+<li>Improve memory usage</li>
+<li>Tweaked plugin API</li>
+</ul>
+</li>
 <li>0.2.0<ul>
 <li>Lots of refactoring</li>
 <li>Plugins</li>
@@ -1741,9 +1796,14 @@ always be pappy time in your heart, I promise)</li>
 <li><a class="reference internal" href="#should-i-write-a-plugin-or-a-macro">Should I Write a Plugin or a Macro?</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#global-settings">Global Settings</a></li>
 <li><a class="reference internal" href="#faq">FAQ</a><ul>
 <li><a class="reference internal" href="#i-still-like-burp-but-pappy-looks-interesting-can-i-use-both">I still like Burp, but Pappy looks interesting, can I use both?</a></li>
 <li><a class="reference internal" href="#why-does-my-request-have-an-id-of">Why does my request have an id of <code class="docutils literal"><span class="pre">--</span></code>?!?!</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#boring-technical-stuff">Boring, Technical Stuff</a><ul>
+<li><a class="reference internal" href="#request-cache-memory-usage">Request Cache / Memory usage</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#changelog">Changelog</a></li>
@@ -1796,7 +1856,7 @@ always be pappy time in your heart, I promise)</li>
         <li class="right" >
           <a href="index.html" title="Welcome to Pappy Proxy’s documentation!"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

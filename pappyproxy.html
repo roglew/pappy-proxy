@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pappyproxy package &mdash; Pappy Proxy 0.2.0 documentation</title>
+    <title>pappyproxy package &mdash; Pappy Proxy 0.2.1 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '0.2.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Pappy Proxy 0.2.0 documentation" href="index.html" /> 
+    <link rel="top" title="Pappy Proxy 0.2.1 documentation" href="index.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -191,6 +191,12 @@ yes, otherwise returns False.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pappyproxy.console.get_req_data_row">
+<code class="descclassname">pappyproxy.console.</code><code class="descname">get_req_data_row</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.console.get_req_data_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the row data for a request to be printed.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pappyproxy.console.load_reqlist">
 <code class="descclassname">pappyproxy.console.</code><code class="descname">load_reqlist</code><span class="sig-paren">(</span><em>line</em>, <em>allow_special=True</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.console.load_reqlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>A helper function for parsing a list of requests that are passed as an
@@ -207,6 +213,15 @@ Returns a deferred.</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.console.print_request_rows">
+<code class="descclassname">pappyproxy.console.</code><code class="descname">print_request_rows</code><span class="sig-paren">(</span><em>request_rows</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.console.print_request_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in a list of request rows generated from <a class="reference internal" href="#pappyproxy.console.get_req_data_row" title="pappyproxy.console.get_req_data_row"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.console.get_req_data_row()</span></code></a>
+and prints a table with data on each of the
+requests. Used instead of <a class="reference internal" href="#pappyproxy.console.print_requests" title="pappyproxy.console.print_requests"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.console.print_requests()</span></code></a> if you
+can&#8217;t count on storing all the requests in memory at once.</p>
 </dd></dl>
 
 <dl class="function">
@@ -263,62 +278,9 @@ the filter from the <code class="docutils literal"><span class="pre">active_requ
 </dd></dl>
 
 <dl class="method">
-<dt id="pappyproxy.context.Context.add_request">
-<code class="descname">add_request</code><span class="sig-paren">(</span><em>req</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.context.Context.add_request" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds a request to the context. If the request passes all of the context&#8217;s
-filters, it will be placed in the <code class="docutils literal"><span class="pre">active_requests</span></code> set. If it does not,
-it will be placed in the <code class="docutils literal"><span class="pre">inactive_requests</span></code> set. Either way, it will
-be added to <code class="docutils literal"><span class="pre">all_reqs</span></code> and if appropriate, <code class="docutils literal"><span class="pre">in_memory_requests</span></code>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>req</strong> (<a class="reference internal" href="#pappyproxy.http.Request" title="pappyproxy.http.Request"><em>Request</em></a>) &#8211; The request to add</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pappyproxy.context.Context.all_reqs">
-<code class="descname">all_reqs</code><em class="property"> = set([])</em><a class="headerlink" href="#pappyproxy.context.Context.all_reqs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class variable! All requests in history. Do not directly add requests to this set. Instead,
-use <a class="reference internal" href="#pappyproxy.context.Context.add_request" title="pappyproxy.context.Context.add_request"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.context.Context.add_request()</span></code></a> on some context. It will
-automatically be added to this set.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="pappyproxy.context.Context.filter_up">
 <code class="descname">filter_up</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.context.Context.filter_up" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes the last filter that was applied to the context.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pappyproxy.context.Context.in_memory_requests">
-<code class="descname">in_memory_requests</code><em class="property"> = set([])</em><a class="headerlink" href="#pappyproxy.context.Context.in_memory_requests" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class variable! Requests that are only stored in memory. These are the requests with <code class="docutils literal"><span class="pre">m##</span></code>
-style IDs. Do not directly add requests to this set. Instead, use
-<a class="reference internal" href="#pappyproxy.context.Context.add_request" title="pappyproxy.context.Context.add_request"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.context.Context.add_request()</span></code></a> on some context with a request
-that has not been saved. It will automatically be assigned a <code class="docutils literal"><span class="pre">m##</span></code> id and
-be added to this set.</p>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="pappyproxy.context.Context.remove_request">
-<em class="property">static </em><code class="descname">remove_request</code><span class="sig-paren">(</span><em>req</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.context.Context.remove_request" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes request from all contexts. It is suggested that you use
-<a class="reference internal" href="#pappyproxy.http.Request.deep_delete" title="pappyproxy.http.Request.deep_delete"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.deep_delete()</span></code></a> instead as this will
-remove the request (and its unmangled version, response, and
-unmangled response) from the data file as well. Otherwise it will
-just be put back into the context when Pappy is restarted.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>req</strong> (<a class="reference internal" href="#pappyproxy.http.Request" title="pappyproxy.http.Request"><em>Request</em></a>) &#8211; The request to remove</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -799,6 +761,12 @@ to the resulting response.</p>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.cache">
+<code class="descname">cache</code><em class="property"> = &lt;pappyproxy.requestcache.RequestCache object&gt;</em><a class="headerlink" href="#pappyproxy.http.Request.cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>The request cache that stores requests in memory for performance</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="pappyproxy.http.Request.deep_delete">
 <code class="descname">deep_delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.deep_delete" title="Permalink to this definition">¶</a></dt>
@@ -885,9 +853,31 @@ ie <cite>/path/to/stuff?foo=bar&amp;baz=something#somewhere</cite></p>
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="pappyproxy.http.Request.load_all_requests">
-<em class="property">static </em><code class="descname">load_all_requests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_all_requests" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load all the requests in the data file and return them in a list.
+<dt id="pappyproxy.http.Request.load_request">
+<em class="property">static </em><code class="descname">load_request</code><span class="sig-paren">(</span><em>to_load</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a request with the given request id and return it.
+Returns a deferred which calls back with the request when complete.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>allow_special</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Whether to allow special IDs such as <code class="docutils literal"><span class="pre">u##</span></code> or <code class="docutils literal"><span class="pre">s##</span></code></li>
+<li><strong>use_cache</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Whether to use the cache. If set to false, it will always query the data file to get the request</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">twisted.internet.defer.Deferred</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pappyproxy.http.Request.load_requests_by_tag">
+<em class="property">static </em><code class="descname">load_requests_by_tag</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_requests_by_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all the requests in the data file with a given tag and return them in a list.
 Returns a deferred which calls back with the list of requests when complete.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -900,24 +890,9 @@ Returns a deferred which calls back with the list of requests when complete.</p>
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="pappyproxy.http.Request.load_request">
-<em class="property">static </em><code class="descname">load_request</code><span class="sig-paren">(</span><em>to_load</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_request" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load a request with the given request id and return it.
-Returns a deferred which calls back with the request when complete.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twisted.internet.defer.Deferred</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="pappyproxy.http.Request.load_requests_by_tag">
-<em class="property">static </em><code class="descname">load_requests_by_tag</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_requests_by_tag" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load all the requests in the data file with a given tag and return them in a list.
+<dt id="pappyproxy.http.Request.load_requests_by_time">
+<em class="property">static </em><code class="descname">load_requests_by_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.load_requests_by_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all the requests in the data file and return them in a list.
 Returns a deferred which calls back with the list of requests when complete.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1021,6 +996,13 @@ Cannot be called from inside an async function.</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.http.Request.sort_time">
+<code class="descname">sort_time</code><a class="headerlink" href="#pappyproxy.http.Request.sort_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the request has a submit time, returns the submit time&#8217;s unix timestamp.
+Returns 0 otherwise</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1425,80 +1407,91 @@ more functionality into the next version.</p>
 <dl class="function">
 <dt id="pappyproxy.plugin.active_intercepting_macros">
 <code class="descclassname">pappyproxy.plugin.</code><code class="descname">active_intercepting_macros</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.active_intercepting_macros" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of the active intercepting macro objects. Modifying this list
-will not affect which macros are active.</p>
+<dd><p>Returns a list of the active intercepting macro objects. Modifying
+this list will not affect which macros are active.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pappyproxy.plugin.add_intercepting_macro">
 <code class="descclassname">pappyproxy.plugin.</code><code class="descname">add_intercepting_macro</code><span class="sig-paren">(</span><em>name</em>, <em>macro</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.add_intercepting_macro" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds an intercepting macro to the proxy. You can either use a
-<a class="reference internal" href="#pappyproxy.macros.FileInterceptMacro" title="pappyproxy.macros.FileInterceptMacro"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.macros.FileInterceptMacro</span></code></a> to load an intercepting macro
-from the disk, or you can create your own using an <a class="reference internal" href="#pappyproxy.macros.InterceptMacro" title="pappyproxy.macros.InterceptMacro"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.macros.InterceptMacro</span></code></a>
-for a base class. You must give a unique name that will be used in
-<a class="reference internal" href="#pappyproxy.plugin.remove_intercepting_macro" title="pappyproxy.plugin.remove_intercepting_macro"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.plugin.remove_intercepting_macro()</span></code></a> to deactivate it. Remember
-that activating an intercepting macro will disable request streaming and will
-affect performance. So please try and only use this if you may need to modify
-messages before they are passed along.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pappyproxy.plugin.add_req">
-<code class="descclassname">pappyproxy.plugin.</code><code class="descname">add_req</code><span class="sig-paren">(</span><em>req</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.add_req" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds a request to the history. Will not do anything to requests which are
-already in history. If the request is not saved, it will be given an m## id.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pappyproxy.plugin.all_reqs">
-<code class="descclassname">pappyproxy.plugin.</code><code class="descname">all_reqs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.all_reqs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list containing all the requests in history (including requests
-that only exist in memory). Modifying this list will not modify requests
-included in the history. However, you can edit the requests
-in this list then call either <a class="reference internal" href="#pappyproxy.http.Request.save" title="pappyproxy.http.Request.save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.save()</span></code></a> or 
-<a class="reference internal" href="#pappyproxy.http.Request.async_save" title="pappyproxy.http.Request.async_save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.async_save()</span></code></a> to modify the actual request.</p>
+<a class="reference internal" href="#pappyproxy.macros.FileInterceptMacro" title="pappyproxy.macros.FileInterceptMacro"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.macros.FileInterceptMacro</span></code></a> to load an
+intercepting macro from the disk, or you can create your own using
+an <a class="reference internal" href="#pappyproxy.macros.InterceptMacro" title="pappyproxy.macros.InterceptMacro"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.macros.InterceptMacro</span></code></a> for a base class. You
+must give a unique name that will be used in
+<a class="reference internal" href="#pappyproxy.plugin.remove_intercepting_macro" title="pappyproxy.plugin.remove_intercepting_macro"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.plugin.remove_intercepting_macro()</span></code></a> to deactivate
+it. Remember that activating an intercepting macro will disable
+request streaming and will affect performance. So please try and
+only use this if you may need to modify messages before they are
+passed along.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pappyproxy.plugin.in_memory_reqs">
 <code class="descclassname">pappyproxy.plugin.</code><code class="descname">in_memory_reqs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.in_memory_reqs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list containing all out of the requests which exist in memory only
-(requests with an m## style id).
-You can call either <a class="reference internal" href="#pappyproxy.http.Request.save" title="pappyproxy.http.Request.save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.save()</span></code></a> or 
-<a class="reference internal" href="#pappyproxy.http.Request.async_save" title="pappyproxy.http.Request.async_save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.async_save()</span></code></a> to save the request to the data file.</p>
+<dd><p>Returns a list containing the ids of the requests which exist in
+memory only (requests with an m## style id).  You can call either
+<a class="reference internal" href="#pappyproxy.http.Request.save" title="pappyproxy.http.Request.save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.save()</span></code></a> or
+<a class="reference internal" href="#pappyproxy.http.Request.async_deep_save" title="pappyproxy.http.Request.async_deep_save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.async_deep_save()</span></code></a> to save the
+request to the data file.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pappyproxy.plugin.main_context">
-<code class="descclassname">pappyproxy.plugin.</code><code class="descname">main_context</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.main_context" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the context object representing the main context. Use this to interact
-with the context. The returned object can be modified
-at will. Avoid modifying any class values (ie all_reqs, in_memory_requests)
-and use the class methods to add/remove requests. See the documentation on
-<a class="reference internal" href="#pappyproxy.context.Context" title="pappyproxy.context.Context"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.context.Context</span></code></a> for more information.</p>
+<dt id="pappyproxy.plugin.main_context_ids">
+<code class="descclassname">pappyproxy.plugin.</code><code class="descname">main_context_ids</code><span class="sig-paren">(</span><em>n=-1</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.main_context_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a deferred that resolves into a list of up to <code class="docutils literal"><span class="pre">n</span></code> of the
+most recent requests in the main context.  You can then use
+<a class="reference internal" href="#pappyproxy.http.Request.load_request" title="pappyproxy.http.Request.load_request"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.load_request()</span></code></a> to load the requests
+in the current context. If no value is passed for <code class="docutils literal"><span class="pre">n</span></code>, this will
+return all of the IDs in the context.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pappyproxy.plugin.plugin_by_name">
 <code class="descclassname">pappyproxy.plugin.</code><code class="descname">plugin_by_name</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.plugin_by_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an interface to access the methods of a plugin from its name.
-For example, to call the <code class="docutils literal"><span class="pre">foo</span></code> function from the <code class="docutils literal"><span class="pre">bar</span></code> plugin
-you would call <code class="docutils literal"><span class="pre">plugin_by_name('bar').foo()</span></code>.</p>
+<dd><p>Returns an interface to access the methods of a plugin from its
+name.  For example, to call the <code class="docutils literal"><span class="pre">foo</span></code> function from the <code class="docutils literal"><span class="pre">bar</span></code>
+plugin you would call <code class="docutils literal"><span class="pre">plugin_by_name('bar').foo()</span></code>.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pappyproxy.plugin.remove_intercepting_macro">
 <code class="descclassname">pappyproxy.plugin.</code><code class="descname">remove_intercepting_macro</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.remove_intercepting_macro" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stops an active intercepting macro. You must pass in the name that you used
-when calling <a class="reference internal" href="#pappyproxy.plugin.add_intercepting_macro" title="pappyproxy.plugin.add_intercepting_macro"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.plugin.add_intercepting_macro()</span></code></a> to identify
-which macro you would like to stop.</p>
+<dd><p>Stops an active intercepting macro. You must pass in the name that
+you used when calling
+<a class="reference internal" href="#pappyproxy.plugin.add_intercepting_macro" title="pappyproxy.plugin.add_intercepting_macro"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.plugin.add_intercepting_macro()</span></code></a> to identify which
+macro you would like to stop.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugin.req_history">
+<code class="descclassname">pappyproxy.plugin.</code><code class="descname">req_history</code><span class="sig-paren">(</span><em>num=-1</em>, <em>ids=None</em>, <em>include_unmangled=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.req_history" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an a generator that generates deferreds which resolve to
+requests in history, ignoring the current context.  If <code class="docutils literal"><span class="pre">n</span></code> is
+given, it will stop after <code class="docutils literal"><span class="pre">n</span></code> requests have been generated.  If
+<code class="docutils literal"><span class="pre">ids</span></code> is given, it will only include those IDs. If
+<code class="docutils literal"><span class="pre">include_unmangled</span></code> is True, then the iterator will include
+requests which are the unmangled version of other requests.</p>
+<p>An example of using the iterator to print the 10 most recent requests:
+<a href="#id1"><span class="problematic" id="id2">``</span></a>`
+&#64;defer.inlineCallbacks
+def find_food():</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>for req_d in req_history(10):</dt>
+<dd>req = yield req_d
+print &#8216;-&#8216;<a href="#id3"><span class="problematic" id="id4">*</span></a>10
+print req.full_message_pretty</dd>
+</dl>
+</div></blockquote>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pappyproxy.plugin.run_cmd">
 <code class="descclassname">pappyproxy.plugin.</code><code class="descname">run_cmd</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugin.run_cmd" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run a command as if you typed it into the console. Try and use existing APIs
-to do what you want before using this.</p>
+<dd><p>Run a command as if you typed it into the console. Try and use
+existing APIs to do what you want before using this.</p>
 </dd></dl>
 
 </div>
@@ -1605,7 +1598,7 @@ message will be printed to the console rather than displaying a traceback.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
