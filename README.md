@@ -743,6 +743,16 @@ A lot of the time, you can get away with writing a macro. However, you may consi
 
 My guess is that if you need one quick thing for a project, you're better off writing a macro first and seeing if you end up using it in future projects. Then if you find yourself needing it a lot, write a plugin for it. You may also consider keeping a `mine.py` plugin where you can write out commands that you use regularly but may not be worth creating a dedicated plugin for.
 
+Global Settings
+---------------
+There are some settings that apply to Pappy as a whole and are stored in `~/.pappy/global_config.json`. These settings are generally for tuning performance or modifying behavior on a system-wide level. No information about projects is put in here since it is world readable. You can technically add settings in here for plugins that you write, but if it's at all possible, please keep settings in the normal project config.
+
+Settings included in `~/.pappy/global_config.json`:
+
+| Setting | Description |
+|:--------|:------------|
+| cache_size | The number of requests from history that will be included in memory at any given time. Set to -1 to keep everything in memory. See the request cache section for more info. |
+
 FAQ
 ---
 
@@ -760,10 +770,23 @@ How to have Burp forward traffic through Pappy:
 ### Why does my request have an id of `--`?!?!
 You can't do anything with a request/response until it is decoded and saved to disk. In between the time when a request is decoded and when it's saved to disk, it will have an ID of `--`. So just wait a little bit and it will get an ID you can use.
 
+Boring, Technical Stuff
+-----------------------
+I do some stuff to try and keep speed and memory usage to reasonable levels. Unfortunately, things might seem slow in some areas. This is where I try and explain why those exist. Honestly, you probably don't care about this, but I'd rather have it written down and have nobody read it than just leave people in the dark.
+
+### Request Cache / Memory usage
+For performance reasons, Pappy by default will not store every request in memory. The cache will store a certain number of the most recently accessed requests in memory. This means that if you go through all of history, it could be slow (for example running `ls a` or `sm`). If you have enough RAM to keep everything in memory, you can set the request cache size to -1 to just keep everything in memory. However, even if the cache size is unlimited, it still won't load a request into memory untill you access it. So if you want to load everything in memory, run `ls a`.
+
+By default, Pappy will cache 2000 requests. This is kind of heavy, but it's assumed you're doing testing on a reasonably specced laptop. Personally, I live on the edge and use -1 until I run into memory issues.
+
+
 Changelog
 ---------
 The boring part of the readme
 
+* 0.2.1
+    * Improve memory usage
+    * Tweaked plugin API
 * 0.2.0
     * Lots of refactoring
     * Plugins

@@ -2,10 +2,11 @@ import crochet
 import pappyproxy
 import shlex
 
-from pappyproxy.plugin import main_context
+from pappyproxy.plugin import main_context_ids
 from pappyproxy.console import load_reqlist
 from pappyproxy.util import PappyException
 from twisted.internet import defer
+from pappyproxy.http import Request
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -22,19 +23,18 @@ def tag(line):
     tag = args[0]
 
     if len(args) > 1:
-        reqs = yield load_reqlist(args[1], False)
-        ids = [r.reqid for r in reqs]
-        print 'Tagging %s with %s' % (', '.join(ids), tag)
+        reqids = yield load_reqlist(args[1], False, ids_only=True)
+        print 'Tagging %s with %s' % (', '.join(reqids), tag)
     else:
         print "Tagging all in-context requests with %s" % tag
-        reqs = main_context().active_requests
+        reqids = yield main_context_ids()
 
-    for req in reqs:
+    for reqid in reqids:
+        req = yield Request.load_request(reqid)
         if tag not in req.tags:
             req.tags.append(tag)
             if req.saved:
                 yield req.async_save()
-            add_req(req)
         else:
             print 'Request %s already has tag %s' % (req.reqid, tag)
 
@@ -55,13 +55,14 @@ def untag(line):
 
     ids = []
     if len(args) > 1:
-        reqs = yield load_reqlist(args[1], False)
-        ids = [r.reqid for r in reqs]
+        reqids = yield load_reqlist(args[1], False, ids_only=True)
+        print 'Removing tag %s from %s' % (tag, ', '.join(reqids))
     else:
-        print "Untagging all in-context requests with tag %s" % tag
-        reqs = main_context().active_requests
+        print "Removing tag %s from all in-context requests" % tag
+        reqids = yield main_context_ids()
 
-    for req in reqs:
+    for reqid in reqids:
+        req = yield Request.load_request(reqid)
         if tag in req.tags:
             req.tags.remove(tag)
             if req.saved:

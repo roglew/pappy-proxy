@@ -15,6 +15,7 @@ from . import context
 from . import http
 from . import plugin
 from . import proxy
+from . import requestcache
 from .console import ProxyCmd
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, defer
@@ -29,26 +30,6 @@ all_contexts = [main_context]
 plugin_loader = None
 cons = None
 
-@defer.inlineCallbacks
-def wait_for_saves(ignored):
-    reset = True
-    printed = False
-    lastprint = 0
-    while reset:
-        reset = False
-        togo = 0
-        for c in all_contexts:
-            for r in c.all_reqs:
-                if r.reqid == '--':
-                    reset = True
-                    togo += 1
-                    d = defer.Deferred()
-                    d.callback(None)
-                    yield d
-        if togo % 10 == 0 and lastprint != togo:
-            lastprint = togo
-            print '%d requests left to be saved (probably won\'t work)' % togo
-            
 def parse_args():
     # parses sys.argv and returns a settings dictionary
 
@@ -92,6 +73,7 @@ def main():
     else:
         # Initialize config
         config.load_from_file('./config.json')
+        config.global_load_from_file()
         delete_data_on_quit = False
 
     # If the data file doesn't exist, create it with restricted permissions
@@ -110,7 +92,8 @@ def main():
         print 'Exiting...'
         reactor.stop()
     http.init(dbpool)
-    yield context.init()
+    yield requestcache.RequestCache.load_ids()
+    context.reset_context_caches()
 
     # Run the proxy
     if config.DEBUG_DIR and os.path.exists(config.DEBUG_DIR):
@@ -167,7 +150,6 @@ def main():
 
     d = deferToThread(cons.cmdloop)
     d.addCallback(close_listeners)
-    d.addCallback(wait_for_saves)
     d.addCallback(lambda ignored: reactor.stop())
     if delete_data_on_quit:
         d.addCallback(lambda ignored: delete_datafile())

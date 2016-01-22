@@ -4,16 +4,19 @@ import shlex
 
 from pappyproxy.console import confirm, load_reqlist
 from pappyproxy.util import PappyException
+from pappyproxy.http import Request
 from twisted.internet import defer
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
 def clrmem(line):
     """
     Delete all in-memory only requests
     Usage: clrmem
     """
-    to_delete = list(pappyproxy.context.Context.in_memory_requests)
+    to_delete = list(pappyproxy.requestcache.RequestCache.inmem_reqs)
     for r in to_delete:
-        pappyproxy.context.Context.remove_request(r)
+        yield r.deep_delete()
 
 def gencerts(line):
     """
@@ -42,6 +45,15 @@ def log(line):
     raw_input()
     pappyproxy.config.DEBUG_VERBOSITY = 0
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def save(line):
+    args = shlex.split(line)
+    reqids = args[0]
+    reqs = yield load_reqlist(reqids)
+    for req in reqs:
+        yield req.async_deep_save()
+    
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
 def export(line):
@@ -77,6 +89,7 @@ def load_cmds(cmd):
     cmd.set_cmds({
         'clrmem': (clrmem, None),
         'gencerts': (gencerts, None),
+        'sv': (save, None),
         'export': (export, None),
         'log': (log, None),
     })

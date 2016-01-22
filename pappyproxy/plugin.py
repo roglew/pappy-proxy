@@ -15,6 +15,8 @@ from .proxy import add_intercepting_macro as proxy_add_intercepting_macro
 from .proxy import remove_intercepting_macro as proxy_remove_intercepting_macro
 from .util import PappyException
 
+from twisted.internet import defer
+
 class Plugin(object):
 
     def __init__(self, cmd, fname=None):
@@ -68,9 +70,9 @@ class PluginLoader(object):
 
 def plugin_by_name(name):
     """
-    Returns an interface to access the methods of a plugin from its name.
-    For example, to call the ``foo`` function from the ``bar`` plugin
-    you would call ``plugin_by_name('bar').foo()``.
+    Returns an interface to access the methods of a plugin from its
+    name.  For example, to call the ``foo`` function from the ``bar``
+    plugin you would call ``plugin_by_name('bar').foo()``.
     """
     import pappyproxy.pappy
     if name in pappyproxy.pappy.plugin_loader.plugins_by_name:
@@ -81,70 +83,78 @@ def plugin_by_name(name):
 def add_intercepting_macro(name, macro):
     """
     Adds an intercepting macro to the proxy. You can either use a
-    :class:`pappyproxy.macros.FileInterceptMacro` to load an intercepting macro
-    from the disk, or you can create your own using an :class:`pappyproxy.macros.InterceptMacro`
-    for a base class. You must give a unique name that will be used in
-    :func:`pappyproxy.plugin.remove_intercepting_macro` to deactivate it. Remember
-    that activating an intercepting macro will disable request streaming and will
-    affect performance. So please try and only use this if you may need to modify
-    messages before they are passed along.
+    :class:`pappyproxy.macros.FileInterceptMacro` to load an
+    intercepting macro from the disk, or you can create your own using
+    an :class:`pappyproxy.macros.InterceptMacro` for a base class. You
+    must give a unique name that will be used in
+    :func:`pappyproxy.plugin.remove_intercepting_macro` to deactivate
+    it. Remember that activating an intercepting macro will disable
+    request streaming and will affect performance. So please try and
+    only use this if you may need to modify messages before they are
+    passed along.
     """
     proxy_add_intercepting_macro(name, macro, pappyproxy.pappy.server_factory.intercepting_macros)
     
 def remove_intercepting_macro(name):
     """
-    Stops an active intercepting macro. You must pass in the name that you used
-    when calling :func:`pappyproxy.plugin.add_intercepting_macro` to identify
-    which macro you would like to stop.
+    Stops an active intercepting macro. You must pass in the name that
+    you used when calling
+    :func:`pappyproxy.plugin.add_intercepting_macro` to identify which
+    macro you would like to stop.
     """
     proxy_remove_intercepting_macro(name, pappyproxy.pappy.server_factory.intercepting_macros)
     
 def active_intercepting_macros():
     """
-    Returns a list of the active intercepting macro objects. Modifying this list
-    will not affect which macros are active.
+    Returns a list of the active intercepting macro objects. Modifying
+    this list will not affect which macros are active.
     """
     return pappyproxy.pappy.server_factory.intercepting_macros[:]
 
 def in_memory_reqs():
     """
-    Returns a list containing all out of the requests which exist in memory only
-    (requests with an m## style id).
-    You can call either :func:`pappyproxy.http.Request.save` or 
-    :func:`pappyproxy.http.Request.async_save` to save the request to the data file.
+    Returns a list containing the ids of the requests which exist in
+    memory only (requests with an m## style id).  You can call either
+    :func:`pappyproxy.http.Request.save` or
+    :func:`pappyproxy.http.Request.async_deep_save` to save the
+    request to the data file.
     """
-    return list(pappyproxy.context.Context.in_memory_requests)
+    return list(pappyproxy.http.Request.cache.inmem_reqs)
 
-def all_reqs():
+def req_history(num=-1, ids=None, include_unmangled=False):
     """
-    Returns a list containing all the requests in history (including requests
-    that only exist in memory). Modifying this list will not modify requests
-    included in the history. However, you can edit the requests
-    in this list then call either :func:`pappyproxy.http.Request.save` or 
-    :func:`pappyproxy.http.Request.async_save` to modify the actual request.
-    """
-    return list(pappyproxy.context.Context.all_reqs)
+    Returns an a generator that generates deferreds which resolve to
+    requests in history, ignoring the current context.  If ``n`` is
+    given, it will stop after ``n`` requests have been generated.  If
+    ``ids`` is given, it will only include those IDs. If
+    ``include_unmangled`` is True, then the iterator will include
+    requests which are the unmangled version of other requests.
 
-def main_context():
+    An example of using the iterator to print the 10 most recent requests:
+    ```
+    @defer.inlineCallbacks
+    def find_food():
+        for req_d in req_history(10):
+            req = yield req_d
+            print '-'*10
+            print req.full_message_pretty
+    ```
     """
-    Returns the context object representing the main context. Use this to interact
-    with the context. The returned object can be modified
-    at will. Avoid modifying any class values (ie all_reqs, in_memory_requests)
-    and use the class methods to add/remove requests. See the documentation on
-    :class:`pappyproxy.context.Context` for more information.
-    """
-    return pappyproxy.pappy.main_context
+    return pappyproxy.Request.cache.req_it(num=num, ids=ids, include_unmangled=include_unmangled)
 
-def add_req(req):
+def main_context_ids(n=-1):
     """
-    Adds a request to the history. Will not do anything to requests which are
-    already in history. If the request is not saved, it will be given an m## id.
+    Returns a deferred that resolves into a list of up to ``n`` of the
+    most recent requests in the main context.  You can then use
+    :func:`pappyproxy.http.Request.load_request` to load the requests
+    in the current context. If no value is passed for ``n``, this will
+    return all of the IDs in the context.
     """
-    pappyproxy.pappy.main_context.add_request(req)
+    return pappyproxy.pappy.main_context.get_reqs(n)
 
 def run_cmd(cmd):
     """
-    Run a command as if you typed it into the console. Try and use existing APIs
-    to do what you want before using this.
+    Run a command as if you typed it into the console. Try and use
+    existing APIs to do what you want before using this.
     """
     pappyproxy.pappy.cons.onecmd(cmd)

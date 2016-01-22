@@ -3,11 +3,11 @@ import datetime
 import pappyproxy
 import shlex
 
-from pappyproxy.console import load_reqlist, print_table, print_requests
+from pappyproxy.console import load_reqlist, print_table, print_request_rows, get_req_data_row
 from pappyproxy.util import PappyException
-from pappyproxy.plugin import main_context
 from pappyproxy.http import Request
 from twisted.internet import defer
+from pappyproxy.plugin import main_context_ids
 
 ###################
 ## Helper functions
@@ -78,14 +78,6 @@ def print_request_extended(request):
     if request.plugin_data:
         print 'Plugin Data: %s' % (request.plugin_data)
 
-def get_site_map(reqs):
-    # Takes in a list of requests and returns a tree representing the site map
-    paths_set = set()
-    for req in reqs:
-        paths_set.add(req.path_tuple)
-    paths = sorted(list(paths_set))
-    return paths
-
 def print_tree(tree):
     # Prints a tree. Takes in a sorted list of path tuples
     _print_tree_helper(tree, 0, [])
@@ -142,6 +134,8 @@ def _print_tree_helper(tree, depth, print_bars):
 ####################
 ## Command functions
     
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
 def list_reqs(line):
     """
     List the most recent in-context requests. By default shows the most recent 25
@@ -163,16 +157,12 @@ def list_reqs(line):
     else:
         print_count = 25
 
-    def key_reqtime(req):
-        if req.time_start is None:
-            return -1
-        else:
-            return (req.time_start-datetime.datetime(1970,1,1)).total_seconds()
-
-    to_print = sorted(main_context().active_requests, key=key_reqtime, reverse=True)
-    if print_count > 0:
-        to_print = to_print[:print_count]
-    print_requests(to_print)
+    rows = []
+    ids = yield main_context_ids(print_count)
+    for i in ids:
+        req = yield Request.load_request(i)
+        rows.append(get_req_data_row(req))
+    print_request_rows(rows)
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -292,13 +282,20 @@ def dump_response(line):
         f.write(rsp.body)
     print 'Response data written to %s' % fname
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
 def site_map(line):
     """
     Print the site map. Only includes requests in the current context.
     Usage: site_map
     """
-    to_print = [r for r in main_context().active_requests if not r.response or r.response.response_code != 404]
-    tree = get_site_map(to_print)
+    ids = yield main_context_ids()
+    paths_set = set()
+    for reqid in ids:
+        req = yield Request.load_request(reqid)
+        if req.response and req.response.response_code != 404:
+            paths_set.add(req.path_tuple)
+    tree = sorted(list(paths_set))
     print_tree(tree)
 
     

@@ -3,6 +3,7 @@ import pappyproxy
 
 from pappyproxy.console import confirm
 from pappyproxy.util import PappyException
+from pappyproxy.http import Request
 from twisted.internet import defer
 
 class BuiltinFilters(object):
@@ -72,7 +73,7 @@ def builtin_filter(line):
     filters_to_add = yield BuiltinFilters.get(line)
     for f in filters_to_add:
         print f.filter_string
-        pappyproxy.pappy.main_context.add_filter(f)
+        yield pappyproxy.pappy.main_context.add_filter(f)
     defer.returnValue(None)
 
 def filter_up(line):
@@ -82,15 +83,12 @@ def filter_up(line):
     """
     pappyproxy.pappy.main_context.filter_up()
 
-@crochet.wait_for(timeout=None)
-@defer.inlineCallbacks
 def filter_clear(line):
     """
     Reset the context so that it contains no filters (ignores scope)
     Usage: filter_clear
     """
-    pappyproxy.pappy.main_context.active_filters = []
-    yield pappyproxy.context.reload_from_storage()
+    pappyproxy.pappy.main_context.set_filters([])
 
 def filter_list(line):
     """
@@ -111,12 +109,14 @@ def scope_save(line):
     pappyproxy.context.save_scope(pappyproxy.pappy.main_context)
     yield pappyproxy.context.store_scope(pappyproxy.http.dbpool)
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
 def scope_reset(line):
     """
     Set the context to be the scope (view in-scope items)
     Usage: scope_reset
     """
-    pappyproxy.context.reset_to_scope(pappyproxy.pappy.main_context)
+    yield pappyproxy.context.reset_to_scope(pappyproxy.pappy.main_context)
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -143,6 +143,7 @@ def filter_prune(line):
     CANNOT BE UNDONE!! Be careful!
     Usage: filter_prune
     """
+    from pappyproxy.requestcache import RequestCache
     # Delete filtered items from datafile
     print ''
     print 'Currently active filters:'
@@ -150,15 +151,20 @@ def filter_prune(line):
         print '> %s' % f.filter_string
 
     # We copy so that we're not removing items from a set we're iterating over
-    reqs = list(pappyproxy.pappy.main_context.inactive_requests)
-    act_reqs = list(pappyproxy.pappy.main_context.active_requests)
-    message = 'This will delete %d/%d requests. You can NOT undo this!! Continue?' % (len(reqs), (len(reqs) + len(act_reqs)))
+    act_reqs = yield pappyproxy.pappy.main_context.get_reqs()
+    inact_reqs = RequestCache.all_ids.difference(set(act_reqs))
+    inact_reqs = inact_reqs.difference(set(RequestCache.unmangled_ids))
+    message = 'This will delete %d/%d requests. You can NOT undo this!! Continue?' % (len(inact_reqs), (len(inact_reqs) + len(act_reqs)))
     if not confirm(message, 'n'):
         defer.returnValue(None)
     
-    for r in reqs:
-        yield r.deep_delete()
-    print 'Deleted %d requests' % len(reqs)
+    for reqid in inact_reqs:
+        try:
+            req = yield pappyproxy.http.Request.load_request(reqid)
+            yield req.deep_delete()
+        except PappyException as e:
+            print e
+    print 'Deleted %d requests' % len(inact_reqs)
     defer.returnValue(None)
 
 ###############

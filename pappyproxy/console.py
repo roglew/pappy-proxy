@@ -23,7 +23,7 @@ def print_pappy_errors(func):
     return catch
 
 @defer.inlineCallbacks
-def load_reqlist(line, allow_special=True):
+def load_reqlist(line, allow_special=True, ids_only=False):
     """
     load_reqlist(line, allow_special=True)
     A helper function for parsing a list of requests that are passed as an
@@ -40,13 +40,16 @@ def load_reqlist(line, allow_special=True):
     # prints any errors
     ids = re.split(',\s*', line)
     reqs = []
-    for reqid in ids:
-        try:
-            req = yield Request.load_request(reqid, allow_special)
-            reqs.append(req)
-        except PappyException as e:
-            print e
-    defer.returnValue(reqs)
+    if not ids_only:
+        for reqid in ids:
+            try:
+                req = yield Request.load_request(reqid, allow_special)
+                reqs.append(req)
+            except PappyException as e:
+                print e
+        defer.returnValue(reqs)
+    else:
+        defer.returnValue(ids)
 
 def print_table(coldata, rows):
     """
@@ -122,41 +125,68 @@ def print_requests(requests):
         {'name':'Mngl'},
     ]
     rows = []
-    for request in requests:
-        rid = request.reqid
-        method = request.verb
-        if 'host' in request.headers:
-            host = request.headers['host']
-        else:
-            host = '??'
-        path = request.full_path
-        reqlen = len(request.body)
-        rsplen = 'N/A'
-        mangle_str = '--'
-
-        if request.unmangled:
-            mangle_str = 'q'
-            
-        if request.response:
-            response_code = str(request.response.response_code) + \
-                ' ' + request.response.response_text
-            rsplen = len(request.response.body)
-            if request.response.unmangled:
-                if mangle_str == '--':
-                    mangle_str = 's'
-                else:
-                    mangle_str += '/s'
-        else:
-            response_code = ''
-
-        time_str = '--'
-        if request.time_start and request.time_end:
-            time_delt = request.time_end - request.time_start
-            time_str = "%.2f" % time_delt.total_seconds()
-
-        rows.append([rid, method, host, path, response_code,
-                     reqlen, rsplen, time_str, mangle_str])
+    for req in requests:
+        rows.append(get_req_data_row(req))
     print_table(cols, rows)
+
+def print_request_rows(request_rows):
+    """
+    Takes in a list of request rows generated from :func:`pappyproxy.console.get_req_data_row`
+    and prints a table with data on each of the
+    requests. Used instead of :func:`pappyproxy.console.print_requests` if you
+    can't count on storing all the requests in memory at once.
+    """
+    # Print a table with info on all the requests in the list
+    cols = [
+        {'name':'ID'},
+        {'name':'Verb'},
+        {'name': 'Host'},
+        {'name':'Path', 'width':40},
+        {'name':'S-Code'},
+        {'name':'Req Len'},
+        {'name':'Rsp Len'},
+        {'name':'Time'},
+        {'name':'Mngl'},
+    ]
+    print_table(cols, request_rows)
+    
+def get_req_data_row(request):
+    """
+    Get the row data for a request to be printed.
+    """
+    rid = request.reqid
+    method = request.verb
+    if 'host' in request.headers:
+        host = request.headers['host']
+    else:
+        host = '??'
+    path = request.full_path
+    reqlen = len(request.body)
+    rsplen = 'N/A'
+    mangle_str = '--'
+
+    if request.unmangled:
+        mangle_str = 'q'
+
+    if request.response:
+        response_code = str(request.response.response_code) + \
+            ' ' + request.response.response_text
+        rsplen = len(request.response.body)
+        if request.response.unmangled:
+            if mangle_str == '--':
+                mangle_str = 's'
+            else:
+                mangle_str += '/s'
+    else:
+        response_code = ''
+
+    time_str = '--'
+    if request.time_start and request.time_end:
+        time_delt = request.time_end - request.time_start
+        time_str = "%.2f" % time_delt.total_seconds()
+
+    return [rid, method, host, path, response_code,
+            reqlen, rsplen, time_str, mangle_str]
     
 def confirm(message, default='n'):
     """

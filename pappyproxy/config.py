@@ -57,6 +57,12 @@ The configuration settings for the proxy.
     The dictionary read from config.json. When writing plugins, use this to load
     configuration options for your plugin.
 
+.. data: GLOBAL_CONFIG_DICT
+
+    The dictionary from ~/.pappy/global_config.json. It contains settings for
+    Pappy that are specific to the current computer. Avoid putting settings here,
+    especially if it involves specific projects.
+
 """
 
 import json
@@ -65,7 +71,6 @@ import shutil
 
 PAPPY_DIR = os.path.dirname(os.path.realpath(__file__))
 DATA_DIR = os.path.join(os.path.expanduser('~'), '.pappy')
-DATA_DIR
 
 CERT_DIR = os.path.join(DATA_DIR, 'certs')
 
@@ -83,6 +88,7 @@ SSL_PKEY_FILE = 'private.key'
 PLUGIN_DIRS = [os.path.join(DATA_DIR, 'plugins'), os.path.join(PAPPY_DIR, 'plugins')]
 
 CONFIG_DICT = {}
+GLOBAL_CONFIG_DICT = {}
 
 def get_default_config():
     default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -105,7 +111,7 @@ def load_settings(proj_config):
 
     # Substitution dictionary
     subs = {}
-    #subs['PAPPYDIR'] = PAPPY_DIR
+    subs['PAPPYDIR'] = PAPPY_DIR
     subs['DATADIR'] = DATA_DIR
 
     # Data file settings
@@ -128,6 +134,15 @@ def load_settings(proj_config):
         for l in proj_config["proxy_listeners"]:
             LISTENERS.append((l['port'], l['interface']))
 
+def load_global_settings(global_config):
+    from .http import Request
+    global CACHE_SIZE
+
+    if "cache_size" in global_config:
+        CACHE_SIZE = global_config['cache_size']
+    else:
+        CACHE_SIZE = 2000
+    Request.cache.resize(CACHE_SIZE)
 
 def load_from_file(fname):
     global CONFIG_DICT
@@ -142,3 +157,19 @@ def load_from_file(fname):
     with open(fname, 'r') as f:
         CONFIG_DICT = json.load(f)
     load_settings(CONFIG_DICT)
+
+def global_load_from_file():
+    global GLOBAL_CONFIG_DICT
+    global DATA_DIR
+    # Make sure we have a config file
+    fname = os.path.join(DATA_DIR, 'global_config.json')
+    if not os.path.isfile(fname):
+        print "Copying default global config to %s" % fname
+        default_global_config_file = os.path.join(PAPPY_DIR,
+                                                  'default_global_config.json')
+        shutil.copyfile(default_global_config_file, fname)
+
+    # Load local project config
+    with open(fname, 'r') as f:
+        GLOBAL_CONFIG_DICT = json.load(f)
+    load_global_settings(GLOBAL_CONFIG_DICT)

@@ -7,13 +7,18 @@ import gzip
 import json
 import pygments
 import re
+import time
 import urlparse
 import zlib
+import weakref
 
 from .util import PappyException, printable_data
+from .requestcache import RequestCache
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_mimetype, HttpLexer
 from twisted.internet import defer, reactor
+
+import sys
 
 ENCODE_NONE = 0
 ENCODE_DEFLATE = 1
@@ -545,8 +550,6 @@ class HTTPMessage(object):
         self._data_obj = None
         self._end_after_headers = False
 
-        #self._set_dict_callbacks()
-
         if full_message is not None:
             self._from_full_message(full_message, update_content_length)
 
@@ -930,6 +933,11 @@ class Request(HTTPMessage):
     :vartype plugin_data: Dict
     """
 
+    cache = RequestCache(100)
+    """
+    The request cache that stores requests in memory for performance
+    """
+
     def __init__(self, full_request=None, update_content_length=True,
                  port=None, is_ssl=None, host=None):
         self.time_end = None
@@ -1178,6 +1186,17 @@ class Request(HTTPMessage):
             ret = ret[:-1]
         return tuple(ret)
 
+    @property
+    def sort_time(self):
+        """
+        If the request has a submit time, returns the submit time's unix timestamp.
+        Returns 0 otherwise
+        """
+        if self.time_start:
+            return time.mktime(self.time_start.timetuple())
+        else:
+            return 0
+
     ###########
     ## Metadata
 
@@ -1222,9 +1241,15 @@ class Request(HTTPMessage):
 
     def _set_dict_callbacks(self):
         # Add callbacks to dicts
-        self.headers.set_modify_callback(self.update_from_headers)
-        self.cookies.set_modify_callback(self._update_from_objects)
-        self.post_params.set_modify_callback(self._update_from_objects)
+        def f1():
+            obj = weakref.proxy(self)
+            obj.update_from_headers()
+        def f2():
+            obj = weakref.proxy(self)
+            obj._update_from_objects()
+        self.headers.set_modify_callback(f1)
+        self.cookies.set_modify_callback(f2)
+        self.post_params.set_modify_callback(f2)
         
     def update_from_body(self):
         # Updates metadata that's based off of data
@@ -1237,6 +1262,8 @@ class Request(HTTPMessage):
     def _update_from_objects(self):
         # Updates text values that depend on objects.
         # DOES NOT MAINTAIN HEADER DUPLICATION, ORDER, OR CAPITALIZATION
+        print 'FOOOOO'
+        print self.post_params.all_pairs()
         if self.cookies:
             assignments = []
             for ck, cv in self.cookies.all_pairs():
@@ -1387,13 +1414,12 @@ class Request(HTTPMessage):
 
         :rtype: twisted.internet.defer.Deferred
         """
-        from .context import add_request_to_contexts, Context
+        from .context import Context
         from .pappy import main_context
 
         assert(dbpool)
         if not self.reqid:
             self.reqid = '--'
-        add_request_to_contexts(self)
         try:
             # Check for intyness
             _ = int(self.reqid)
@@ -1407,9 +1433,8 @@ class Request(HTTPMessage):
             yield dbpool.runInteraction(self._insert)
             assert(self.reqid is not None)
             yield dbpool.runInteraction(self._update_tags)
-        if self.unmangled:
-            Context.remove_request(self.unmangled)
-        main_context.filter_recheck()
+        Request.cache.add(self)
+        main_context.cache_reset()
 
     @crochet.wait_for(timeout=180.0)
     @defer.inlineCallbacks
@@ -1500,10 +1525,10 @@ class Request(HTTPMessage):
             queryargs.append(self.unmangled.reqid)
         if self.time_start:
             setnames.append('start_datetime=?')
-            queryargs.append(self.time_start.isoformat())
+            queryargs.append(time.mktime(self.time_start.timetuple()))
         if self.time_end:
             setnames.append('end_datetime=?')
-            queryargs.append(self.time_end.isoformat())
+            queryargs.append(time.mktime(self.time_end.timetuple()))
 
         setnames.append('is_ssl=?')
         if self.is_ssl:
@@ -1549,10 +1574,10 @@ class Request(HTTPMessage):
             colvals.append(self.unmangled.reqid)
         if self.time_start:
             colnames.append('start_datetime')
-            colvals.append(self.time_start.isoformat())
+            colvals.append(time.mktime(self.time_start.timetuple()))
         if self.time_end:
             colnames.append('end_datetime')
-            colvals.append(self.time_end.isoformat())
+            colvals.append(time.mktime(self.time_end.timetuple()))
         colnames.append('submitted')
         if self.submitted:
             colvals.append('1')
@@ -1589,22 +1614,35 @@ class Request(HTTPMessage):
             
     @defer.inlineCallbacks
     def delete(self):
-        from .context import Context
+        from .context import Context, reset_context_caches
 
-        assert(self.reqid is not None)
-        Context.remove_request(self)
-        yield dbpool.runQuery(
-            """
-            DELETE FROM requests WHERE id=?;
-            """,
-            (self.reqid,)
+        if self.reqid is None:
+            raise PappyException("Cannot delete request with id=None")
+        self.cache.evict(self.reqid)
+        RequestCache.ordered_ids.remove(self.reqid)
+        RequestCache.all_ids.remove(self.reqid)
+        if self.reqid in RequestCache.req_times:
+            del RequestCache.req_times[self.reqid]
+        if self.reqid in RequestCache.inmem_reqs:
+            RequestCache.inmem_reqs.remove(self.reqid)
+        if self.reqid in RequestCache.unmangled_ids:
+            RequestCache.unmangled_ids.remove(self.reqid)
+
+        reset_context_caches()
+
+        if self.reqid[0] != 'm':
+            yield dbpool.runQuery(
+                """
+                DELETE FROM requests WHERE id=?;
+                """,
+                (self.reqid,)
+                )
+            yield dbpool.runQuery(
+                """
+                DELETE FROM tagged WHERE reqid=?;
+                """,
+                (self.reqid,)
             )
-        yield dbpool.runQuery(
-            """
-            DELETE FROM tagged WHERE reqid=?;
-            """,
-            (self.reqid,)
-        )
         self.reqid = None
 
     @defer.inlineCallbacks
@@ -1647,9 +1685,9 @@ class Request(HTTPMessage):
             unmangled_req = yield Request.load_request(str(row[3]))
             req.unmangled = unmangled_req
         if row[4]:
-            req.time_start = datetime.datetime.strptime(row[4], "%Y-%m-%dT%H:%M:%S.%f")
+            req.time_start = datetime.datetime.fromtimestamp(row[4])
         if row[5]:
-            req.time_end = datetime.datetime.strptime(row[5], "%Y-%m-%dT%H:%M:%S.%f")
+            req.time_end = datetime.datetime.fromtimestamp(row[5])
         if row[6] is not None:
             req.port = int(row[6])
         if row[7] == 1:
@@ -1676,25 +1714,26 @@ class Request(HTTPMessage):
 
     @staticmethod
     @defer.inlineCallbacks
-    def load_all_requests():
+    def load_requests_by_time(first, num):
         """
-        load_all_requests()
+        load_requests_by_time()
         Load all the requests in the data file and return them in a list.
         Returns a deferred which calls back with the list of requests when complete.
 
         :rtype: twisted.internet.defer.Deferred
         """
-        from .context import Context
+        from .requestcache import RequestCache
         from .http import Request
 
-        reqs = []
-        reqs += list(Context.in_memory_requests)
+        starttime = RequestCache.req_times[first]
         rows = yield dbpool.runQuery(
             """
             SELECT %s
-            FROM requests;
-            """ % Request._gen_sql_row(),
+            FROM requests
+            WHERE start_datetime<=? ORDER BY start_datetime desc LIMIT ?;
+            """ % Request._gen_sql_row(), (starttime, num)
             )
+        reqs = []
         for row in rows:
             req = yield Request._from_sql_row(row)
             reqs.append(req)
@@ -1728,17 +1767,23 @@ class Request(HTTPMessage):
         
     @staticmethod
     @defer.inlineCallbacks
-    def load_request(to_load, allow_special=True):
+    def load_request(to_load, allow_special=True, use_cache=True):
         """
         load_request(to_load)
         Load a request with the given request id and return it.
         Returns a deferred which calls back with the request when complete.
 
+        :param allow_special: Whether to allow special IDs such as ``u##`` or ``s##``
+        :type allow_special: bool
+        :param use_cache: Whether to use the cache. If set to false, it will always query the data file to get the request
+        :type use_cache: bool
+
         :rtype: twisted.internet.defer.Deferred
         """
         from .context import Context
 
-        assert(dbpool)
+        if not dbpool:
+            raise PappyException('No database connection to load from')
 
         if to_load == '--':
             raise PappyException('Invalid request ID. Wait for it to save first.')
@@ -1775,15 +1820,14 @@ class Request(HTTPMessage):
             else:
                 return r
 
-        for r in Context.in_memory_requests:
-            if r.reqid == to_load:
-                defer.returnValue(retreq(r))
-        for r in Context.all_reqs:
-            if r.reqid == to_load:
-                defer.returnValue(retreq(r))
-        if to_load[0] == 'm':
-            # An in-memory request should have been loaded in the previous loop
-            raise PappyException('In-memory request %s not found' % to_load)
+        # Get it through the cache
+        if use_cache:
+            # If it's not cached, load_request will be called again and be told
+            # not to use the cache.
+            r = yield Request.cache.get(loadid)
+            defer.returnValue(r)
+
+        # Load it from the data file
         rows = yield dbpool.runQuery(
             """
             SELECT %s
@@ -1795,34 +1839,10 @@ class Request(HTTPMessage):
         if len(rows) != 1:
             raise PappyException("Request with id %s does not exist" % loadid)
         req = yield Request._from_sql_row(rows[0])
-        req.reqid = to_load
-
+        assert req.reqid == loadid
+        Request.cache.add(req)
         defer.returnValue(retreq(req))
 
-    @staticmethod
-    @defer.inlineCallbacks
-    def load_from_filters(filters):
-        # Not efficient in any way
-        # But it stays this way until we hit performance issues
-        from .context import Context, filter_reqs
-
-        assert(dbpool)
-        rows = yield dbpool.runQuery(
-            """
-            SELECT %s FROM requests r1
-                LEFT JOIN requests r2 ON r1.id=r2.unmangled_id
-            WHERE r2.id is NULL;
-            """ % Request._gen_sql_row('r1'),
-            )
-        reqs = []
-        for row in rows:
-            req = yield Request._from_sql_row(row)
-            reqs.append(req)
-        reqs += list(Context.in_memory_requests)
-        (reqs, _) = filter_reqs(reqs, filters)
-
-        defer.returnValue(reqs)
-    
     ######################
     ## Submitting Requests
         
@@ -2009,8 +2029,14 @@ class Response(HTTPMessage):
     
     def _set_dict_callbacks(self):
         # Add callbacks to dicts
-        self.headers.set_modify_callback(self.update_from_headers)
-        self.cookies.set_modify_callback(self._update_from_objects)
+        def f1():
+            obj = weakref.proxy(self)
+            obj.update_from_headers()
+        def f2():
+            obj = weakref.proxy(self)
+            obj._update_from_objects()
+        self.headers.set_modify_callback(f1)
+        self.cookies.set_modify_callback(f2)
 
     def update_from_body(self):
         HTTPMessage.update_from_body(self)
@@ -2149,19 +2175,15 @@ class Response(HTTPMessage):
         :rtype: twisted.internet.defer.Deferred
         """
         assert(dbpool)
-        if not self._saving:
-            # Not thread safe... I know, but YOLO
-            self._saving = True
-            try:
-                # Check for intyness
-                _ = int(self.rspid)
+        try:
+            # Check for intyness
+            _ = int(self.rspid)
 
-                # If we have rspid, we're updating
-                yield dbpool.runInteraction(self._update)
-            except (ValueError, TypeError):
-                yield dbpool.runInteraction(self._insert)
-            self._saving = False
-            assert(self.rspid is not None)
+            # If we have rspid, we're updating
+            yield dbpool.runInteraction(self._update)
+        except (ValueError, TypeError):
+            yield dbpool.runInteraction(self._insert)
+        assert(self.rspid is not None)
 
     # Right now responses without requests are unviewable
     # @crochet.wait_for(timeout=180.0)
@@ -2206,13 +2228,13 @@ class Response(HTTPMessage):
 
     @defer.inlineCallbacks
     def delete(self):
-        assert(self.rspid is not None)
-        row = yield dbpool.runQuery(
-            """
-            DELETE FROM responses WHERE id=?;
-            """,
-            (self.rspid,)
-            )
+        if self.rspid is not None:
+            row = yield dbpool.runQuery(
+                """
+                DELETE FROM responses WHERE id=?;
+                """,
+                (self.rspid,)
+                )
         self.rspid = None
 
     @staticmethod

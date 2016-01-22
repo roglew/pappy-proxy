@@ -3,7 +3,8 @@ import pappyproxy
 import re
 import shlex
 
-from . import http
+from .http import Request, RepeatableDict
+from .requestcache import RequestCache
 from twisted.internet import defer
 from util import PappyException
 
@@ -28,28 +29,10 @@ class Context(object):
     :type inactive_requests: Request
     """
 
-    all_reqs = set()
-    """
-    Class variable! All requests in history. Do not directly add requests to this set. Instead,
-    use :func:`pappyproxy.context.Context.add_request` on some context. It will
-    automatically be added to this set.
-    """
-
-    in_memory_requests = set()
-    """
-    Class variable! Requests that are only stored in memory. These are the requests with ``m##``
-    style IDs. Do not directly add requests to this set. Instead, use
-    :func:`pappyproxy.context.Context.add_request` on some context with a request
-    that has not been saved. It will automatically be assigned a ``m##`` id and
-    be added to this set.
-    """
-
-    _next_in_mem_id = 1
-
     def __init__(self):
         self.active_filters = []
-        self.active_requests = set()
-        self.inactive_requests = set()
+        self.complete = True
+        self.active_requests = []
 
     @staticmethod
     def get_memid():
@@ -57,11 +40,9 @@ class Context(object):
         Context._next_in_mem_id += 1
         return i
 
-    def filter_recheck(self):
-        self.inactive_requests = set()
-        self.active_requests = set()
-        for req in Context.all_reqs:
-            self.add_request(req)
+    def cache_reset(self):
+        self.active_requests = []
+        self.complete = False
         
     def add_filter(self, filt):
         """
@@ -72,59 +53,7 @@ class Context(object):
         :type filt: Function that takes one :class:`pappyproxy.http.Request` and returns either true or false. (or a :class:`pappyproxy.context.Filter`)
         """
         self.active_filters.append(filt)
-        (new_active, deleted) = filter_reqs(self.active_requests, self.active_filters)
-        self.active_requests = set(new_active)
-        for r in deleted:
-            self.inactive_requests.add(r)
-        
-    def add_request(self, req):
-        """
-        Adds a request to the context. If the request passes all of the context's
-        filters, it will be placed in the ``active_requests`` set. If it does not,
-        it will be placed in the ``inactive_requests`` set. Either way, it will
-        be added to ``all_reqs`` and if appropriate, ``in_memory_requests``.
-
-        :param req: The request to add
-        :type req: Request
-        """
-        # Check if we have to add it to in_memory
-        if not req.reqid:
-            req.reqid = Context.get_memid()
-        if req.reqid[0] == 'm':
-            Context.in_memory_requests.add(req)
-    
-        # Check if we have to add it to active_requests
-        if passes_filters(req, self.active_filters):
-            self.active_requests.add(req)
-        else:
-            self.inactive_requests.add(req)
-    
-        # Add it to all_reqs
-        Context.all_reqs.add(req)
-        
-    @staticmethod
-    def remove_request(req):
-        """
-        Removes request from all contexts. It is suggested that you use
-        :func:`pappyproxy.http.Request.deep_delete` instead as this will
-        remove the request (and its unmangled version, response, and
-        unmangled response) from the data file as well. Otherwise it will
-        just be put back into the context when Pappy is restarted.
-
-        :param req: The request to remove
-        :type req: Request
-        """
-        if req in Context.all_reqs:
-            Context.all_reqs.remove(req)
-        if req in Context.in_memory_requests:
-            Context.in_memory_requests.remove(req)
-
-        # Remove it from all other contexts
-        for c in pappyproxy.pappy.all_contexts:
-            if req in c.inactive_requests:
-                c.inactive_requests.remove(req)
-            if req in c.active_requests:
-                c.active_requests.remove(req)
+        self.cache_reset()
 
     def filter_up(self):
         """
@@ -133,15 +62,40 @@ class Context(object):
         # Deletes the last filter of the context
         if self.active_filters:
             self.active_filters = self.active_filters[:-1]
-        self.filter_recheck()
+        self.cache_reset()
 
     def set_filters(self, filters):
         """
         Set the list of filters for the context.
         """
         self.active_filters = filters[:]
-        self.filter_recheck()
+        self.cache_reset()
 
+    @defer.inlineCallbacks
+    def get_reqs(self, n=-1):
+        # This is inefficient but I want it to work for now, and as long as we
+        # don't put the full requests in memory I don't care.
+        ids = self.active_requests
+        if (len(ids) >= n and n != -1) or self.complete == True:
+            if n == -1:
+                defer.returnValue(ids)
+            else:
+                defer.returnValue(ids[:n])
+        ids = []
+        for req_d in Request.cache.req_it():
+            r = yield req_d
+            passed = True
+            for filt in self.active_filters:
+                if not filt(r):
+                    passed = False
+                    break
+            if passed:
+                self.active_requests.append(r.reqid)
+                ids.append(r.reqid)
+            if len(ids) >= n and n != -1:
+                defer.returnValue(ids[:n])
+        self.complete = True
+        defer.returnValue(ids)
 
 class FilterParseError(PappyException):
     pass
@@ -506,7 +460,7 @@ def gen_filter_by_set_cookies(args):
     def f(req):
         if not req.response:
             return False
-        checkdict = http.RepeatableDict()
+        checkdict = RepeatableDict()
         for k, v in req.response.cookies.all_pairs():
             checkdict[k] = v.cookie_str
         return comparer(checkdict)
@@ -531,27 +485,27 @@ def gen_filter_by_params(args):
     return f
 
 @defer.inlineCallbacks
-def init():
-    yield reload_from_storage()
-
-def filter_reqs(requests, filters):
+def filter_reqs(reqids, filters):
     to_delete = set()
     # Could definitely be more efficient, but it stays like this until
     # it impacts performance
+    requests = []
+    for reqid in reqids:
+        r = yield Request.load_request(reqid)
+        requests.append(r)
     for req in requests:
         for filt in filters:
             if not filt(req):
                 to_delete.add(req)
-    retreqs = [r for r in requests if r not in to_delete]
-    return (retreqs, list(to_delete))
+    retreqs = []
+    retdel = []
+    for r in requests:
+        if r in to_delete:
+            retdel.append(r.reqid)
+        else:
+            retreqs.append(r.reqid)
+    defer.returnValue((retreqs, retdel))
 
-@defer.inlineCallbacks
-def reload_from_storage():
-    Context.all_reqs = set()
-    reqs = yield http.Request.load_all_requests()
-    for req in reqs:
-        Context.all_reqs.add(req)
-        
 def passes_filters(request, filters):
     for filt in filters:
         if not filt(request):
@@ -560,7 +514,8 @@ def passes_filters(request, filters):
 
 def in_scope(request):
     global scope
-    return passes_filters(request, scope)
+    passes = passes_filters(request, scope)
+    return passes
     
 def set_scope(filters):
     global scope
@@ -573,7 +528,7 @@ def save_scope(context):
 def reset_to_scope(context):
     global scope
     context.active_filters = scope[:]
-    context.filter_recheck()
+    context.cache_reset()
     
 def print_scope():
     global scope
@@ -619,12 +574,12 @@ def load_scope(dbpool):
 @defer.inlineCallbacks
 def clear_tag(tag):
     # Remove a tag from every request
-    reqs = yield http.Request.load_requests_by_tag(tag)
+    reqs = yield Request.cache.load_by_tag(tag)
     for req in reqs:
         req.tags.remove(tag)
         if req.saved:
             yield req.async_save()
-    filter_recheck()
+    reset_context_caches()
 
 @defer.inlineCallbacks
 def async_set_tag(tag, reqs):
@@ -640,10 +595,9 @@ def async_set_tag(tag, reqs):
     """
     yield clear_tag(tag)
     for req in reqs:
-        if not req.reqid:
-            req.reqid = get_memid()
         req.tags.append(tag)
-        add_request(req)
+        Request.cache.add(req)
+    reset_context_caches()
 
 @crochet.wait_for(timeout=180.0)
 @defer.inlineCallbacks
@@ -666,8 +620,7 @@ def validate_regexp(r):
     except re.error as e:
         raise PappyException('Invalid regexp: %s' % e)
 
-def add_request_to_contexts(req):
+def reset_context_caches():
     import pappyproxy.pappy
     for c in pappyproxy.pappy.all_contexts:
-        c.add_request(req)
-
+        c.cache_reset()
