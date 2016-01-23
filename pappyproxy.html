@@ -49,7 +49,27 @@
 <div class="section" id="subpackages">
 <h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
-<ul class="simple">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pappyproxy.plugins.html">pappyproxy.plugins package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html">pappyproxy.plugins.vim_repeater package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html#pappyproxy-plugins-vim-repeater-repeater-module">pappyproxy.plugins.vim_repeater.repeater module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html#module-pappyproxy.plugins.vim_repeater">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#module-pappyproxy.plugins.filter">pappyproxy.plugins.filter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#module-pappyproxy.plugins.macrocmds">pappyproxy.plugins.macrocmds module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#module-pappyproxy.plugins.manglecmds">pappyproxy.plugins.manglecmds module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#module-pappyproxy.plugins.misc">pappyproxy.plugins.misc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#module-pappyproxy.plugins.tagcmds">pappyproxy.plugins.tagcmds module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#module-pappyproxy.plugins.view">pappyproxy.plugins.view module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.html#module-pappyproxy.plugins">Module contents</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -816,6 +836,12 @@ ie <cite>/path/to/stuff?foo=bar&amp;baz=something#somewhere</cite></p>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="pappyproxy.http.Request.get_plugin_dict">
+<code class="descname">get_plugin_dict</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.http.Request.get_plugin_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the data dictionary for the given plugin name.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="pappyproxy.http.Request.host">
 <code class="descname">host</code><a class="headerlink" href="#pappyproxy.http.Request.host" title="Permalink to this definition">¶</a></dt>
@@ -1270,7 +1296,7 @@ Alias for Response.full_message</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
-<li><strong>key</strong> &#8211; The key of the cookie</li>
+<li><a class="reference internal" href="#pappyproxy.sortedcollection.SortedCollection.key" title="pappyproxy.sortedcollection.SortedCollection.key"><strong>key</strong></a> &#8211; The key of the cookie</li>
 <li><strong>val</strong> &#8211; The value of the cookie</li>
 <li><strong>expires</strong> &#8211; The value of the &#8220;expires&#8221; attribute</li>
 <li><strong>max_age</strong> &#8211; The max age of the cookie</li>
@@ -1498,11 +1524,240 @@ existing APIs to do what you want before using this.</p>
 <div class="section" id="module-pappyproxy.proxy">
 <span id="pappyproxy-proxy-module"></span><h2>pappyproxy.proxy module<a class="headerlink" href="#module-pappyproxy.proxy" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pappyproxy.repeater">
-<span id="pappyproxy-repeater-module"></span><h2>pappyproxy.repeater module<a class="headerlink" href="#module-pappyproxy.repeater" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pappyproxy.requestcache">
+<span id="pappyproxy-requestcache-module"></span><h2>pappyproxy.requestcache module<a class="headerlink" href="#module-pappyproxy.requestcache" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pappyproxy.requestcache.RequestCache">
+<em class="property">class </em><code class="descclassname">pappyproxy.requestcache.</code><code class="descname">RequestCache</code><span class="sig-paren">(</span><em>cache_size=100</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.requestcache.RequestCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>An interface for loading requests. Stores a number of requests in memory and
+leaves the rest on disk. Transparently handles loading requests from disk.
+Most useful functions are <a class="reference internal" href="#pappyproxy.requestcache.RequestCache.get" title="pappyproxy.requestcache.RequestCache.get"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.requestcache.RequestCache.get()</span></code></a> to
+get a request by id and <code class="xref py py-func docutils literal"><span class="pre">pappyproxy.requestcache.RequestCache.req_id()</span></code>
+to iterate over requests starting with the most recent requests.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>cache_size</strong> &#8211; The number of requests to keep in memory at any given time. This is the number of requests, so if all of the requests are to download something huge, this could still take up a lot of memory.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pappyproxy.requestcache.RequestCache.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>req</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a request to the cache</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.requestcache.RequestCache.all_ids">
+<code class="descname">all_ids</code><em class="property"> = set([])</em><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.all_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.requestcache.RequestCache.check">
+<code class="descname">check</code><span class="sig-paren">(</span><em>reqid</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the id is cached, false otherwise</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.requestcache.RequestCache.evict">
+<code class="descname">evict</code><span class="sig-paren">(</span><em>reqid</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.evict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a request from the cache by its id.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.requestcache.RequestCache.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a request by id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.requestcache.RequestCache.inmem_reqs">
+<code class="descname">inmem_reqs</code><em class="property"> = set([])</em><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.inmem_reqs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.requestcache.RequestCache.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a number of requests after an id into the cache</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.requestcache.RequestCache.ordered_ids">
+<code class="descname">ordered_ids</code><em class="property"> = SortedCollection([], key=&lt;lambda&gt;)</em><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.ordered_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.requestcache.RequestCache.req_it">
+<code class="descname">req_it</code><span class="sig-paren">(</span><em>num=-1</em>, <em>ids=None</em>, <em>include_unmangled=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.req_it" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generator over all the requests in history when the function was called.
+Generates deferreds which resolve to requests.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.requestcache.RequestCache.req_times">
+<code class="descname">req_times</code><em class="property"> = {}</em><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.req_times" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.requestcache.RequestCache.unmangled_ids">
+<code class="descname">unmangled_ids</code><em class="property"> = set([])</em><a class="headerlink" href="#pappyproxy.requestcache.RequestCache.unmangled_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pappyproxy.requestcache.RequestCacheIterator">
+<em class="property">class </em><code class="descclassname">pappyproxy.requestcache.</code><code class="descname">RequestCacheIterator</code><a class="headerlink" href="#pappyproxy.requestcache.RequestCacheIterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>An iterator to iterate over requests in history through the request cache.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-pappyproxy.session">
 <span id="pappyproxy-session-module"></span><h2>pappyproxy.session module<a class="headerlink" href="#module-pappyproxy.session" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pappyproxy.sortedcollection">
+<span id="pappyproxy-sortedcollection-module"></span><h2>pappyproxy.sortedcollection module<a class="headerlink" href="#module-pappyproxy.sortedcollection" title="Permalink to this headline">¶</a></h2>
+<p>Sorted collection for maintaining a sorted list.</p>
+<p>Taken from <a class="reference external" href="http://code.activestate.com/recipes/577197-sortedcollection/">http://code.activestate.com/recipes/577197-sortedcollection/</a></p>
+<dl class="class">
+<dt id="pappyproxy.sortedcollection.SortedCollection">
+<em class="property">class </em><code class="descclassname">pappyproxy.sortedcollection.</code><code class="descname">SortedCollection</code><span class="sig-paren">(</span><em>iterable=()</em>, <em>key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Sequence sorted by a key function.</p>
+<p>SortedCollection() is much easier to work with than using bisect() directly.
+It supports key functions like those use in sorted(), min(), and max().
+The result of the key function call is saved so that keys can be searched
+efficiently.</p>
+<p>Instead of returning an insertion-point which can be hard to interpret, the
+five find-methods return a specific item in the sequence. They can scan for
+exact matches, the last item less-than-or-equal to a key, or the first item
+greater-than-or-equal to a key.</p>
+<p>Once found, an item&#8217;s ordinal position can be located with the index() method.
+New items can be added with the insert() and insert_right() methods.
+Old items can be deleted with the remove() method.</p>
+<p>The usual sequence methods are provided to support indexing, slicing,
+length lookup, clearing, copying, forward and reverse iteration, contains
+checking, item counts, item removal, and a nice looking repr.</p>
+<p>Finding and indexing are O(log n) operations while iteration and insertion
+are O(n).  The initial sort is O(n log n).</p>
+<p>The key function is stored in the &#8216;key&#8217; attibute for easy introspection or
+so that you can assign a new key function (triggering an automatic re-sort).</p>
+<p>In short, the class was designed to handle all of the common use cases for
+bisect but with a simpler API and support for key functions.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">itemgetter</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">SortedCollection</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="p">[</span>
+<span class="gp">... </span>        <span class="p">(</span><span class="s">&#39;roger&#39;</span><span class="p">,</span> <span class="s">&#39;young&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="p">(</span><span class="s">&#39;angela&#39;</span><span class="p">,</span> <span class="s">&#39;jones&#39;</span><span class="p">,</span> <span class="mi">28</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="p">(</span><span class="s">&#39;bill&#39;</span><span class="p">,</span> <span class="s">&#39;smith&#39;</span><span class="p">,</span> <span class="mi">22</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="p">(</span><span class="s">&#39;david&#39;</span><span class="p">,</span> <span class="s">&#39;thomas&#39;</span><span class="p">,</span> <span class="mi">32</span><span class="p">)]:</span>
+<span class="gp">... </span>    <span class="n">s</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pprint</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>         <span class="c"># show records sorted by age</span>
+<span class="go">[(&#39;bill&#39;, &#39;smith&#39;, 22),</span>
+<span class="go"> (&#39;angela&#39;, &#39;jones&#39;, 28),</span>
+<span class="go"> (&#39;roger&#39;, &#39;young&#39;, 30),</span>
+<span class="go"> (&#39;david&#39;, &#39;thomas&#39;, 32)]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">find_le</span><span class="p">(</span><span class="mi">29</span><span class="p">)</span>           <span class="c"># find oldest person aged 29 or younger</span>
+<span class="go">(&#39;angela&#39;, &#39;jones&#39;, 28)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">find_lt</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span>           <span class="c"># find oldest person under 28</span>
+<span class="go">(&#39;bill&#39;, &#39;smith&#39;, 22)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">find_gt</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span>           <span class="c"># find youngest person over 28</span>
+<span class="go">(&#39;roger&#39;, &#39;young&#39;, 30)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">find_ge</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>       <span class="c"># find youngest person aged 32 or older</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>              <span class="c"># get the index of their record</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>                    <span class="c"># fetch the record at that index</span>
+<span class="go">(&#39;david&#39;, &#39;thomas&#39;, 32)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>   <span class="c"># now sort by first name</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pprint</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+<span class="go">[(&#39;angela&#39;, &#39;jones&#39;, 28),</span>
+<span class="go"> (&#39;bill&#39;, &#39;smith&#39;, 22),</span>
+<span class="go"> (&#39;david&#39;, &#39;thomas&#39;, 32),</span>
+<span class="go"> (&#39;roger&#39;, &#39;young&#39;, 30)]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.count">
+<code class="descname">count</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return number of occurrences of item</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.find">
+<code class="descname">find</code><span class="sig-paren">(</span><em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return first item with a key == k.  Raise ValueError if not found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.find_ge">
+<code class="descname">find_ge</code><span class="sig-paren">(</span><em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.find_ge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return first item with a key &gt;= equal to k.  Raise ValueError if not found</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.find_gt">
+<code class="descname">find_gt</code><span class="sig-paren">(</span><em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.find_gt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return first item with a key &gt; k.  Raise ValueError if not found</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.find_le">
+<code class="descname">find_le</code><span class="sig-paren">(</span><em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.find_le" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return last item with a key &lt;= k.  Raise ValueError if not found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.find_lt">
+<code class="descname">find_lt</code><span class="sig-paren">(</span><em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.find_lt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return last item with a key &lt; k.  Raise ValueError if not found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.index">
+<code class="descname">index</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the position of an item.  Raise ValueError if not found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert a new item.  If equal keys are found, add to the left</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.insert_right">
+<code class="descname">insert_right</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.insert_right" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert a new item.  If equal keys are found, add to the right</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pappyproxy.sortedcollection.SortedCollection.key">
+<code class="descname">key</code><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.key" title="Permalink to this definition">¶</a></dt>
+<dd><p>key function</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pappyproxy.sortedcollection.SortedCollection.remove">
+<code class="descname">remove</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.sortedcollection.SortedCollection.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove first occurence of item.  Raise ValueError if not found</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-pappyproxy.util">
 <span id="pappyproxy-util-module"></span><h2>pappyproxy.util module<a class="headerlink" href="#module-pappyproxy.util" title="Permalink to this headline">¶</a></h2>
@@ -1557,8 +1812,9 @@ message will be printed to the console rather than displaying a traceback.</p>
 <li><a class="reference internal" href="#module-pappyproxy.pappy">pappyproxy.pappy module</a></li>
 <li><a class="reference internal" href="#module-pappyproxy.plugin">pappyproxy.plugin module</a></li>
 <li><a class="reference internal" href="#module-pappyproxy.proxy">pappyproxy.proxy module</a></li>
-<li><a class="reference internal" href="#module-pappyproxy.repeater">pappyproxy.repeater module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.requestcache">pappyproxy.requestcache module</a></li>
 <li><a class="reference internal" href="#module-pappyproxy.session">pappyproxy.session module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.sortedcollection">pappyproxy.sortedcollection module</a></li>
 <li><a class="reference internal" href="#module-pappyproxy.util">pappyproxy.util module</a></li>
 <li><a class="reference internal" href="#module-pappyproxy">Module contents</a></li>
 </ul>

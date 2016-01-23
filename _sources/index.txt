@@ -14,6 +14,7 @@ Contents:
    overview
    tutorial
    pappyplugins
+   contributing
 
 
 Indices and tables

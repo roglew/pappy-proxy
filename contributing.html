@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Contributing &mdash; Pappy Proxy 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Pappy Proxy 0.2.1 documentation" href="index.html" />
+    <link rel="prev" title="Writing Plugins for the Pappy Proxy" href="pappyplugins.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pappyplugins.html" title="Writing Plugins for the Pappy Proxy"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">Contributing</a></li>
+<li><a class="reference internal" href="#feature-wishlist" id="id3">Feature Wishlist</a></li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">Contributing</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Want to help out? Awesome! This page will give you some ideas on features you can implement. Make sure to read the docs on <a class="reference external" href="pappyplugins">writing plugins</a> before starting since most of these features are implemented as plugins</p>
+</div>
+<div class="section" id="feature-wishlist">
+<h2><a class="toc-backref" href="#id3">Feature Wishlist</a><a class="headerlink" href="#feature-wishlist" title="Permalink to this headline">¶</a></h2>
+<p>This is a wish-list of features that I haven&#8217;t gotten around to implementing, but could probably be done without too much trouble. I would prefer that you try and implement something via plugin because the core code tends to get changed up pretty regularly. If you build something via plugin, worst case scenario a few API calls break. If you try and implement something in the core, worst case scenario everything changes and your efforts are lost because the function you were modifying doesn&#8217;t exist any more.</p>
+<p>If you need to save data to the disk, just save a JSON object to disk for your plugin. When you submit the pull request, I will make changes to plugin/schema to store the data in the datafile.</p>
+<p>Anyways, here&#8217;s some ideas for things you could implement:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>Creds management</dt>
+<dd><p class="first last">When doing a test, the client may give you a number of usernames/passwords. It would be great if you can implement a system to easily copy/paste usernames and passwords from the console so you don&#8217;t have to keep opening up creds.txt and copying from there. My suggestion is to add a command to coppy a username or a password and let people tab complete the username.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Session management</dt>
+<dd><p class="first last">Add a system to manage sessions and easily swap between them. I already started on a sessions class in pappyproxy/sessions.py which might help you get started.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Scan history for easy findings</dt>
+<dd><p class="first">Some findings are as simple as checking whether a header exists or not. Implement a pluging to go through history and list off some of the easier to find findings. For example you could search for things like</p>
+<ul class="last simple">
+<li>Secure/httponly flag not set on cookies (mainly session cookies)</li>
+<li>Lack of HSTS headers</li>
+<li>Pasword fields with auto-complete</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Perform an SSL config check on a host (ie similar functionality to an <a class="reference external" href="https://www.ssllabs.com/">ssllabs scan</a> without having to go through a website)</dt>
+<dd><p class="first last">Find a library to perform some kind of check for weak ciphers, etc on a host and print out any issues that are found.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Add a SQLMap button</dt>
+<dd><p class="first last">Make it easy to pass a request to SQLMap to check for SQLi. Make sure you can configure which fields you do/don&#8217;t want tested and by default just give either &#8220;yes it looks like SQLi&#8221; or &#8220;no it doesn&#8217;t look like SQLi&#8221;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Decoder functionality</dt>
+<dd><p class="first last">Add some commands for encoding/decoding text. If you go after this, let me know because I&#8217;m probably going to be pretty picky about how this is implemented. You&#8217;ll have to do better than just a <code class="docutils literal"><span class="pre">base64_decode</span> <span class="pre">&lt;text&gt;</span></code> command.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Additional macro templates</dt>
+<dd><p class="first last">Write some commands for generating additional types of macros. For example let people generate an intercepting macro that does search/replace or modifies a header. Save as much typing as possible for common actions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Show requests/responses real-time as they go through the proxy</dt>
+<dd><p class="first last">Let people watch requests as they pass through the proxy. It&#8217;s fine to implement this as an intercepting macro since people watching the requests aren&#8217;t going to notice response streaming being disabled.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Vim plugin to make editing HTTP messages easier</dt>
+<dd><p class="first last">Implement some functionality to make editing HTTP messages easier. It would be great to have a plugin to automatically add to vim when using the interceptor/repeater to make editing requests easier. Look at burp&#8217;s request editor and try to implement anything you miss from it.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Request Diff</dt>
+<dd><p class="first last">Add some way to compare requests. Preferably both a &#8220;diff&#8221; mode and a &#8220;just look at 2 at once&#8221; mode. Probably want to implement it as a vim plugin for consistency.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Feel free to contact me with ideas if you want to add something to this list.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Contributing</a><ul>
+<li><a class="reference internal" href="#id1">Contributing</a></li>
+<li><a class="reference internal" href="#feature-wishlist">Feature Wishlist</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pappyplugins.html"
+                        title="previous chapter">Writing Plugins for the Pappy Proxy</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/contributing.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pappyplugins.html" title="Writing Plugins for the Pappy Proxy"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Rob Glew.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pappyproxy.plugins package &mdash; Pappy Proxy 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Pappy Proxy 0.2.1 documentation" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pappyproxy-plugins-package">
+<h1>pappyproxy.plugins package<a class="headerlink" href="#pappyproxy-plugins-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html">pappyproxy.plugins.vim_repeater package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html#pappyproxy-plugins-vim-repeater-repeater-module">pappyproxy.plugins.vim_repeater.repeater module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pappyproxy.plugins.vim_repeater.html#module-pappyproxy.plugins.vim_repeater">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pappyproxy.plugins.filter">
+<span id="pappyproxy-plugins-filter-module"></span><h2>pappyproxy.plugins.filter module<a class="headerlink" href="#module-pappyproxy.plugins.filter" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.filter_clear">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">filter_clear</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.filter_clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the context so that it contains no filters (ignores scope)
+Usage: filter_clear</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.filter_list">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">filter_list</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.filter_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the filters that make up the current context
+Usage: filter_list</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.filter_prune">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">filter_prune</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.filter_prune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete all out of context requests from the data file. 
+CANNOT BE UNDONE!! Be careful!
+Usage: filter_prune</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.filter_up">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">filter_up</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.filter_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the last applied filter
+Usage: filter_up</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.filtercmd">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">filtercmd</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.filtercmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a filter to the current context
+Usage: filter &lt;filter string&gt;
+See README.md for information on filter strings</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.scope_delete">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">scope_delete</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.scope_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the scope so that it contains all request/response pairs
+Usage: scope_delete</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.scope_list">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">scope_list</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.scope_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the filters that make up the scope
+Usage: scope_list</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.scope_reset">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">scope_reset</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.scope_reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the context to be the scope (view in-scope items)
+Usage: scope_reset</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.filter.scope_save">
+<code class="descclassname">pappyproxy.plugins.filter.</code><code class="descname">scope_save</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.filter.scope_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the scope to be the current context. Saved between launches
+Usage: scope_save</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.plugins.macrocmds">
+<span id="pappyproxy-plugins-macrocmds-module"></span><h2>pappyproxy.plugins.macrocmds module<a class="headerlink" href="#module-pappyproxy.plugins.macrocmds" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.generate_int_macro">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">generate_int_macro</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.generate_int_macro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate an intercepting macro script
+Usage: generate_int_macro &lt;name&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.generate_macro">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">generate_macro</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.generate_macro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a macro script with request objects
+Usage: generate_macro &lt;name&gt; [reqs]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.list_int_macros">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">list_int_macros</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.list_int_macros" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all active/inactive intercepting macros</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.load_macros_cmd">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">load_macros_cmd</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.load_macros_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load macros from a directory. By default loads macros in the current directory.
+Usage: load_macros [dir]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.rpy">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">rpy</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.rpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy python object definitions of requests.
+Usage: rpy &lt;reqs&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.run_int_macro">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">run_int_macro</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.run_int_macro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate an intercepting macro
+Usage: run_int_macro &lt;macro name or macro short name&gt;
+Macro can be stopped with stop_int_macro</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.run_macro">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">run_macro</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.run_macro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a macro
+Usage: run_macro &lt;macro name or macro short name&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.macrocmds.stop_int_macro">
+<code class="descclassname">pappyproxy.plugins.macrocmds.</code><code class="descname">stop_int_macro</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.macrocmds.stop_int_macro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop a running intercepting macro
+Usage: stop_int_macro &lt;macro name or macro short name&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.plugins.manglecmds">
+<span id="pappyproxy-plugins-manglecmds-module"></span><h2>pappyproxy.plugins.manglecmds module<a class="headerlink" href="#module-pappyproxy.plugins.manglecmds" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pappyproxy.plugins.manglecmds.MangleInterceptMacro">
+<em class="property">class </em><code class="descclassname">pappyproxy.plugins.manglecmds.</code><code class="descname">MangleInterceptMacro</code><a class="headerlink" href="#pappyproxy.plugins.manglecmds.MangleInterceptMacro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pappyproxy.html#pappyproxy.macros.InterceptMacro" title="pappyproxy.macros.InterceptMacro"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.macros.InterceptMacro</span></code></a></p>
+<p>A class representing a macro that modifies requests as they pass through the
+proxy</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.manglecmds.intercept">
+<code class="descclassname">pappyproxy.plugins.manglecmds.</code><code class="descname">intercept</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.manglecmds.intercept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intercept requests and/or responses and edit them with before passing them along
+Usage: intercept &lt;reqid&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.manglecmds.repeater">
+<code class="descclassname">pappyproxy.plugins.manglecmds.</code><code class="descname">repeater</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.manglecmds.repeater" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a request in the repeater
+Usage: repeater &lt;reqid&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.plugins.misc">
+<span id="pappyproxy-plugins-misc-module"></span><h2>pappyproxy.plugins.misc module<a class="headerlink" href="#module-pappyproxy.plugins.misc" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pappyproxy.plugins.misc.clrmem">
+<code class="descclassname">pappyproxy.plugins.misc.</code><code class="descname">clrmem</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.misc.clrmem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete all in-memory only requests
+Usage: clrmem</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.misc.export">
+<code class="descclassname">pappyproxy.plugins.misc.</code><code class="descname">export</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.misc.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the full request/response of a request/response to a file.
+Usage: export [req|rsp] &lt;reqid(s)&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.misc.gencerts">
+<code class="descclassname">pappyproxy.plugins.misc.</code><code class="descname">gencerts</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.misc.gencerts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate CA cert and private CA file
+Usage: gencerts [/path/to/put/certs/in]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.misc.log">
+<code class="descclassname">pappyproxy.plugins.misc.</code><code class="descname">log</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.misc.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the log in real time. Honestly it probably doesn&#8217;t work.
+Usage: log [verbosity (default is 1)]
+verbosity=1: Show connections as they&#8217;re made/lost, some additional info
+verbosity=3: Show full requests/responses as they are processed by the proxy</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.plugins.tagcmds">
+<span id="pappyproxy-plugins-tagcmds-module"></span><h2>pappyproxy.plugins.tagcmds module<a class="headerlink" href="#module-pappyproxy.plugins.tagcmds" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pappyproxy.plugins.tagcmds.clrtag">
+<code class="descclassname">pappyproxy.plugins.tagcmds.</code><code class="descname">clrtag</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.tagcmds.clrtag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear all the tags from requests
+Usage: clrtag &lt;request ids&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.tagcmds.tag">
+<code class="descclassname">pappyproxy.plugins.tagcmds.</code><code class="descname">tag</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.tagcmds.tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a tag to requests.
+Usage: tag &lt;tag&gt; [request ids]
+You can tag as many requests as you want at the same time. If no
+ids are given, the tag will be applied to all in-context requests.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.tagcmds.untag">
+<code class="descclassname">pappyproxy.plugins.tagcmds.</code><code class="descname">untag</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.tagcmds.untag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a tag from requests
+Usage: untag &lt;tag&gt; &lt;request ids&gt;
+You can provide as many request ids as you want and the tag will
+be removed from all of them. If no ids are given, the tag will 
+be removed from all in-context requests.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.plugins.view">
+<span id="pappyproxy-plugins-view-module"></span><h2>pappyproxy.plugins.view module<a class="headerlink" href="#module-pappyproxy.plugins.view" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pappyproxy.plugins.view.dump_response">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">dump_response</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.dump_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dump the data of the response to a file.
+Usage: dump_response &lt;id&gt; &lt;filename&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.view.list_reqs">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">list_reqs</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.list_reqs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List the most recent in-context requests. By default shows the most recent 25
+Usage: list [a|num]</p>
+<p>If <cite>a</cite> is given, all the in-context requests are shown. If a number is given,
+that many requests will be shown.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.view.site_map">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">site_map</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.site_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the site map. Only includes requests in the current context.
+Usage: site_map</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.view.view_full_request">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">view_full_request</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.view_full_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>View the full data of the request
+Usage: view_full_request &lt;reqid&gt; [u]
+If &#8216;u&#8217; is given as an additional argument, the unmangled version 
+of the request will be displayed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.view.view_full_response">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">view_full_response</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.view_full_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>View the full data of the response associated with a request
+Usage: view_full_response &lt;reqid&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.view.view_request_headers">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">view_request_headers</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.view_request_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>View the headers of the request
+Usage: view_request_headers &lt;reqid&gt; [u]
+If &#8216;u&#8217; is given as an additional argument, the unmangled version 
+of the request will be displayed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.view.view_request_info">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">view_request_info</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.view_request_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>View information about request
+Usage: view_request_info &lt;reqid&gt; [u]
+If &#8216;u&#8217; is given as an additional argument, the unmangled version 
+of the request will be displayed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pappyproxy.plugins.view.view_response_headers">
+<code class="descclassname">pappyproxy.plugins.view.</code><code class="descname">view_response_headers</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pappyproxy.plugins.view.view_response_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>View the headers of the response
+Usage: view_response_headers &lt;reqid&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pappyproxy.plugins">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pappyproxy.plugins" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pappyproxy.plugins package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.plugins.filter">pappyproxy.plugins.filter module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.plugins.macrocmds">pappyproxy.plugins.macrocmds module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.plugins.manglecmds">pappyproxy.plugins.manglecmds module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.plugins.misc">pappyproxy.plugins.misc module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.plugins.tagcmds">pappyproxy.plugins.tagcmds module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.plugins.view">pappyproxy.plugins.view module</a></li>
+<li><a class="reference internal" href="#module-pappyproxy.plugins">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pappyproxy.plugins.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Rob Glew.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

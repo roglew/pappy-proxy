@@ -1,0 +1,22 @@
+pappyproxy.plugins.vim_repeater package
+=======================================
+
+Submodules
+----------
+
+pappyproxy.plugins.vim_repeater.repeater module
+-----------------------------------------------
+
+.. automodule:: pappyproxy.plugins.vim_repeater.repeater
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pappyproxy.plugins.vim_repeater
+    :members:
+    :undoc-members:
+    :show-inheritance:

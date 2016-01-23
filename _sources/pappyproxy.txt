@@ -10,7 +10,6 @@ Subpackages
     pappyproxy.schema
     pappyproxy.templates
     pappyproxy.tests
-    pappyproxy.vim_repeater
 
 Submodules
 ----------
@@ -95,10 +94,10 @@ pappyproxy.proxy module
     :undoc-members:
     :show-inheritance:
 
-pappyproxy.repeater module
---------------------------
+pappyproxy.requestcache module
+------------------------------
 
-.. automodule:: pappyproxy.repeater
+.. automodule:: pappyproxy.requestcache
     :members:
     :undoc-members:
     :show-inheritance:
@@ -107,6 +106,14 @@ pappyproxy.session module
 -------------------------
 
 .. automodule:: pappyproxy.session
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pappyproxy.sortedcollection module
+----------------------------------
+
+.. automodule:: pappyproxy.sortedcollection
     :members:
     :undoc-members:
     :show-inheritance:

@@ -263,6 +263,7 @@ Now let's say we want to add some help to the command so that when the user runs
             ('hello', 'hlo'),
             ('wizard_hat', 'wh'),
         ])
+
 Using defer.inlineCallbacks With a Command
 ------------------------------------------
 
@@ -437,6 +438,82 @@ Useful Functions
 ----------------
 * Load a request by id: :func:`pappyproxy.http.Request.load_request`
 * Create a filter from a filter string: :func:`pappyproxy.context.Filter.from_filter_string`
+
+Memory Usage
+------------
+
+Request histories aren't small. As a result, if you're going through history, make sure you aren't storing every request in memory. If you go through all history, use :func:`pappyproxy.plugin.req_history`. If you need to iterate through the current context, use :func:`pappyproxy.plugin.main_context_ids` to get the IDs of the requests then use :func:`pappyproxy.http.Request.load_request` to load requests one at a time.
+
+However, if the user is manually passing in IDs, you should be able to store them all in memory. As a rule of thumb, if you're using :func:`pappyproxy.console.load_reqlist` to get requests you should be fine.
+
+.. warning::
+
+   When iterating over history, never assume you can fit all the requests you need in memory. Sometimes people have big data files and they should be able to use your plugin too.
+
+Examples
+++++++++
+
+Iterating over current context::
+
+    ## Iterating over current context the right way
+    @crochet.wait_for(timeout=None)
+    @defer.inlineCallbacks
+    def print_paths(line):
+        paths = []
+        ids = yield main_context_ids(print_count)
+        for i in ids:
+            # The request will be released from memory after each iteration
+            req = yield Request.load_request(i)
+            paths.append(req.path)
+        for path in paths:
+            print path
+
+    ## Iterating over current context the wrong way
+    @crochet.wait_for(timeout=None)
+    @defer.inlineCallbacks
+    def print_paths(line):
+        reqs = [] # all the requests will be stored in memory because of this list
+        ids = yield main_context_ids(print_count)
+        for i in ids:
+            req = yield Request.load_request(i)
+            reqs.append(req)
+        for req in reqs:
+            print req.path
+
+Iterating over history::
+
+    ## Iterating over history the right way
+    @crochet.wait_for(timeout=None)
+    @defer.inlineCallbacks
+    def avg_response_time(line):
+        sum_time = 0
+        req_count = 0
+        for req_d in req_history():
+            # The request will be released from memory after each iteration
+            req = yield req_d
+            sum_time += req.rsptime.total_seconds()
+            req_count += 1
+        avg_time = sum_time / req_count
+    
+    ## Iterating over history the wrong way
+    @crochet.wait_for(timeout=None)
+    @defer.inlineCallbacks
+    def avg_response_time(line):
+        reqs = [] # all the requests will be stored in memory because of this list
+        for req_d in req_history():
+            req = yield req_d
+            reqs.append(req)
+    
+        sum_time = 0
+        for req in reqs:
+            sum_time += req.rsptime.total_seconds()
+        avg_time = sum_time / len(reqs)
+
+Summary
++++++++
+
+* Use :func:`pappyproxy.plugin.req_history` and :func:`pappyproxy.plugin.main_context_ids` to go through history and try not to keep the requests in memory
+* If you use :func:`pappyproxy.console.load_reqlist` to get a few IDs from the user, it's fine to keep them in memory
 
 Built In Plugins As Examples
 ============================
