@@ -14,6 +14,8 @@ If you're brave and want to try and contribute code, please let me know. Right n
 
 Another option is to try writing a plugin. It might be a bit easier than contributing code and plugins are extremely easy to integrate as a core feature. So you can also contribute by writing a plugin and letting me know about it. You can find out more by looking at [the official plugin docs](https://roglew.github.io/pappy-proxy/pappyplugins.html).
 
+You can find ideas for features to add on [the contributing page in the docs](https://roglew.github.io/pappy-proxy/contributing.html).
+
 How to Use It
 =============
 
