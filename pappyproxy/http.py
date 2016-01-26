@@ -73,7 +73,7 @@ def _consume_line(instr):
             return (''.join(l), instr[pos+1:])
         l.append(instr[pos])
         pos += 1
-    return instr
+    return (instr, '')
 
 ###################
 ## Functions to use
@@ -537,18 +537,8 @@ class HTTPMessage(object):
     reserved_meta_keys = ['full_message']
 
     def __init__(self, full_message=None, update_content_length=False):
-        self.complete = False
-        self.headers = RepeatableDict(case_insensitive=True)
-        self.headers_complete = False
-        self.malformed = False
-        self.start_line = ''
-        self.reset_metadata()
-        self._decoded = False
-
-        self._encoding_type = ENCODE_NONE
-        self._first_line = True
-        self._data_obj = None
-        self._end_after_headers = False
+        # Initializes instance variables too
+        self.clear()
 
         if full_message is not None:
             self._from_full_message(full_message, update_content_length)
@@ -579,19 +569,44 @@ class HTTPMessage(object):
         """
         return self.__copy__()
 
+    def clear(self):
+        """
+        Resets all internal data and clears the message
+        """
+        self.complete = False
+        self.headers = RepeatableDict(case_insensitive=True)
+        self.headers_complete = False
+        self.malformed = False
+        self.start_line = ''
+        self.reset_metadata()
+        self._decoded = False
+
+        self._encoding_type = ENCODE_NONE
+        self._first_line = True
+        self._data_obj = None
+        self._end_after_headers = False
+
     def _from_full_message(self, full_message, update_content_length=False, meta=None):
         # Set defaults for metadata
-        self.reset_metadata()
+        self.clear()
         # Get rid of leading CRLF. Not in spec, should remove eventually
         full_message = _strip_leading_newlines(full_message)
         if full_message == '':
             return
 
-        remaining = full_message
-        while remaining and not self.headers_complete:
-            line, remaining = _consume_line(remaining)
-            self.add_line(line)
-
+        lines = full_message.splitlines(True)
+        header_len = 0
+        for line in lines:
+            if line[-2] == '\r':
+                l = line[:-2]
+            else:
+                l = line[:-1]
+            self.add_line(l)
+            header_len += len(line)
+            if self.headers_complete:
+                break
+        remaining = full_message[header_len:]
+            
         if not self.headers_complete:
             self.add_line('')
 
@@ -940,24 +955,8 @@ class Request(HTTPMessage):
 
     def __init__(self, full_request=None, update_content_length=True,
                  port=None, is_ssl=None, host=None):
-        self.time_end = None
-        self.time_start = None
-        self.cookies = RepeatableDict()
-        self.fragment = None
-        self.url_params = RepeatableDict()
-        self._host = None
-        self._is_ssl = False
-        self.path = ''
-        self.port = None
-        self.post_params = RepeatableDict()
-        self.reqid = None
-        self.response = None
-        self.submitted = False
-        self.unmangled = None
-        self.verb = ''
-        self.version = ''
-        self.tags = []
-        self.plugin_data = {}
+        # Resets instance variables
+        self.clear()
 
         # Called after instance vars since some callbacks depend on
         # instance vars
@@ -1232,9 +1231,31 @@ class Request(HTTPMessage):
         self.tags = []
 
     def get_plugin_dict(self, name):
+        """
+        Get the data dictionary for the given plugin name.
+        """
         if not name in self.plugin_data:
             self.plugin_data[name] = {}
         return self.plugin_data[name]
+
+    def clear(self):
+        HTTPMessage.clear(self)
+        self.time_end = None
+        self.time_start = None
+        self.cookies = RepeatableDict()
+        self.fragment = None
+        self.url_params = RepeatableDict()
+        self._is_ssl = False
+        self.path = ''
+        self.post_params = RepeatableDict()
+        self.response = None
+        self.submitted = False
+        self.unmangled = None
+        self.verb = ''
+        self.version = ''
+        self.plugin_data = {}
+        self.reset_metadata()
+        self.is_unmangled_version = False
 
     ############################
     ## Internal update functions
@@ -1262,8 +1283,6 @@ class Request(HTTPMessage):
     def _update_from_objects(self):
         # Updates text values that depend on objects.
         # DOES NOT MAINTAIN HEADER DUPLICATION, ORDER, OR CAPITALIZATION
-        print 'FOOOOO'
-        print self.post_params.all_pairs()
         if self.cookies:
             assignments = []
             for ck, cv in self.cookies.all_pairs():
@@ -1684,6 +1703,7 @@ class Request(HTTPMessage):
         if row[3]:
             unmangled_req = yield Request.load_request(str(row[3]))
             req.unmangled = unmangled_req
+            req.unmangled.is_unmangled_version = True
         if row[4]:
             req.time_start = datetime.datetime.fromtimestamp(row[4])
         if row[5]:
@@ -1825,7 +1845,7 @@ class Request(HTTPMessage):
             # If it's not cached, load_request will be called again and be told
             # not to use the cache.
             r = yield Request.cache.get(loadid)
-            defer.returnValue(r)
+            defer.returnValue(retreq(r))
 
         # Load it from the data file
         rows = yield dbpool.runQuery(
@@ -1923,14 +1943,8 @@ class Response(HTTPMessage):
     """
 
     def __init__(self, full_response=None, update_content_length=True):
-        self.complete = False
-        self.cookies = RepeatableDict()
-        self.response_code = 0
-        self.response_text = ''
-        self.rspid = None
-        self.unmangled = None
-        self.version = ''
-        self._saving = False
+        # Resets instance variables
+        self.clear()
         
         # Called after instance vars since some callbacks depend on
         # instance vars
@@ -2023,6 +2037,15 @@ class Response(HTTPMessage):
 
     def reset_metadata(self):
         self.rspid = None
+
+    def clear(self):
+        HTTPMessage.clear(self)
+        self.cookies = RepeatableDict()
+        self.response_code = 0
+        self.response_text = ''
+        self.rspid = None
+        self.unmangled = None
+        self.version = ''
     
     ############################
     ## Internal update functions

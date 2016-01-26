@@ -733,13 +733,13 @@ def test_request_to_json():
 
     r.response = rsp
 
-    expected_reqdata = {u'full_message': unicode(base64.b64encode(r.full_request)),
-                        u'response_id': str(rsp.rspid),
-                        u'port': 80,
-                        u'is_ssl': False,
-                        u'tags': ['foo', 'bar'],
-                        u'reqid': str(r.reqid),
-                        u'host': '',
+    expected_reqdata = {'full_message': unicode(base64.b64encode(r.full_request)),
+                        'response_id': str(rsp.rspid),
+                        'port': 80,
+                        'is_ssl': False,
+                        'tags': ['foo', 'bar'],
+                        'reqid': str(r.reqid),
+                        'host': '',
                        }
 
     assert json.loads(r.to_json()) == expected_reqdata

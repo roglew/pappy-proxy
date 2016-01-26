@@ -128,7 +128,7 @@ class ProxyClient(LineReceiver):
             if self.factory.save_all:
                 # It isn't the actual time, but this should work in case
                 # we do an 'ls' before it gets a real time saved
-                sendreq.time_start = datetime.datetime.now()
+                self.request.time_start = datetime.datetime.now()
                 if self.factory.stream_response and not to_mangle:
                     self.request.async_deep_save()
                 else:
@@ -157,6 +157,7 @@ class ProxyClient(LineReceiver):
             if sendreq != self.request:
                 sendreq.unmangled = self.request
                 if self.factory.save_all:
+                    sendreq.time_start = datetime.datetime.now()
                     yield sendreq.async_deep_save()
         else:
             self.log("Request out of scope, passing along unmangled")

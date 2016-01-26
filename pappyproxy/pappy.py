@@ -30,6 +30,14 @@ all_contexts = [main_context]
 plugin_loader = None
 cons = None
 
+try:
+    from guppy import hpy
+    heapstats = hpy()
+    heapstats.setref()
+except ImportError:
+    heapstats = None
+    
+
 def parse_args():
     # parses sys.argv and returns a settings dictionary
 

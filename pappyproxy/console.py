@@ -7,8 +7,10 @@ import cmd2
 import re
 import string
 import sys
+import itertools
 
 from .util import PappyException
+from .colors import Styles, Colors, verb_color, scode_color, path_formatter, host_color
 from twisted.internet import defer
 
 ###################
@@ -84,9 +86,13 @@ def print_table(coldata, rows):
             maxwidth = 0
         colwidth = 0
         for row in rows:
-            printstr = str(row[i])
-            if len(printstr) > colwidth:
-                colwidth = len(printstr)
+            printdata = row[i]
+            if isinstance(printdata, dict):
+                collen = len(str(printdata['data']))
+            else:
+                collen = len(str(printdata))
+            if collen > colwidth:
+                colwidth = collen
         if maxwidth > 0 and colwidth > maxwidth:
             widths.append(maxwidth)
         else:
@@ -94,16 +100,45 @@ def print_table(coldata, rows):
 
     # Print rows
     padding = 2
+    is_heading = not empty_headers
     for row in rows:
+        if is_heading:
+            sys.stdout.write(Styles.TABLE_HEADER)
         for (col, width) in zip(row, widths):
-            printstr = str(col)
+            if isinstance(col, dict):
+                printstr = str(col['data'])
+                if 'color' in col:
+                    colors = col['color']
+                    formatter = None
+                elif 'formatter' in col:
+                    colors = None
+                    formatter = col['formatter']
+                else:
+                    colors = None
+                    formatter = None
+            else:
+                printstr = str(col)
+                colors = None
+                formatter = None
             if len(printstr) > width:
-                for i in range(len(printstr)-4, len(printstr)-1):
-                    printstr=printstr[:width]
-                    printstr=printstr[:-3]+'...'
-            sys.stdout.write(printstr)
+                trunc_printstr=printstr[:width]
+                trunc_printstr=trunc_printstr[:-3]+'...'
+            else:
+                trunc_printstr=printstr
+            if colors is not None:
+                sys.stdout.write(colors)
+                sys.stdout.write(trunc_printstr)
+                sys.stdout.write(Colors.ENDC)
+            elif formatter is not None:
+                toprint = formatter(printstr, width)
+                sys.stdout.write(toprint)
+            else:
+                sys.stdout.write(trunc_printstr)
             sys.stdout.write(' '*(width-len(printstr)))
             sys.stdout.write(' '*padding)
+        if is_heading:
+            sys.stdout.write(Colors.ENDC)
+            is_heading = False
         sys.stdout.write('\n')
         sys.stdout.flush()
 
@@ -112,23 +147,11 @@ def print_requests(requests):
     Takes in a list of requests and prints a table with data on each of the
     requests. It's the same table that's used by ``ls``.
     """
-    # Print a table with info on all the requests in the list
-    cols = [
-        {'name':'ID'},
-        {'name':'Verb'},
-        {'name': 'Host'},
-        {'name':'Path', 'width':40},
-        {'name':'S-Code'},
-        {'name':'Req Len'},
-        {'name':'Rsp Len'},
-        {'name':'Time'},
-        {'name':'Mngl'},
-    ]
     rows = []
     for req in requests:
         rows.append(get_req_data_row(req))
     print_table(cols, rows)
-
+    
 def print_request_rows(request_rows):
     """
     Takes in a list of request rows generated from :func:`pappyproxy.console.get_req_data_row`
@@ -142,13 +165,23 @@ def print_request_rows(request_rows):
         {'name':'Verb'},
         {'name': 'Host'},
         {'name':'Path', 'width':40},
-        {'name':'S-Code'},
+        {'name':'S-Code', 'width':16},
         {'name':'Req Len'},
         {'name':'Rsp Len'},
         {'name':'Time'},
         {'name':'Mngl'},
     ]
-    print_table(cols, request_rows)
+    print_rows = []
+    for row in request_rows:
+        (reqid, verb, host, path, scode, qlen, slen, time, mngl) = row
+
+        verb =  {'data':verb, 'color':verb_color(verb)}
+        scode = {'data':scode, 'color':scode_color(scode)}
+        host = {'data':host, 'color':host_color(host)}
+        path = {'data':path, 'formatter':path_formatter}
+
+        print_rows.append((reqid, verb, host, path, scode, qlen, slen, time, mngl))
+    print_table(cols, print_rows)
     
 def get_req_data_row(request):
     """

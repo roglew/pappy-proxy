@@ -8,6 +8,7 @@ from pappyproxy.util import PappyException
 from pappyproxy.http import Request
 from twisted.internet import defer
 from pappyproxy.plugin import main_context_ids
+from pappyproxy.colors import Colors, Styles, verb_color, scode_color, path_formatter, host_color
 
 ###################
 ## Helper functions
@@ -21,8 +22,7 @@ def view_full_message(request, headers_only=False):
 def print_request_extended(request):
     # Prints extended info for the request
     title = "Request Info (reqid=%s)" % request.reqid
-    print title
-    print '-'*len(title)
+    print Styles.TABLE_HEADER + title + Colors.ENDC
     reqlen = len(request.body)
     reqlen = '%d bytes' % reqlen
     rsplen = 'No response'
@@ -34,6 +34,7 @@ def print_request_extended(request):
     if request.response:
         response_code = str(request.response.response_code) + \
             ' ' + request.response.response_text
+        response_code = scode_color(response_code) + response_code + Colors.ENDC
         rsplen = len(request.response.body)
         rsplen = '%d bytes' % rsplen
 
@@ -59,24 +60,31 @@ def print_request_extended(request):
         time_made_str = request.time_start.strftime('%a, %b %d, %Y, %I:%M:%S %p')
     else:
         time_made_str = '--'
+
+    verb = verb_color(request.verb) + request.verb + Colors.ENDC
+    host = host_color(request.host) + request.host + Colors.ENDC
     
-    print 'Made on %s' % time_made_str
-    print 'ID: %s' % request.reqid
-    print 'Verb: %s' % request.verb
-    print 'Host: %s' % request.host
-    print 'Path: %s' % request.full_path
-    print 'Status Code: %s' % response_code
-    print 'Request Length: %s' % reqlen
-    print 'Response Length: %s' % rsplen
+    print_pairs = []
+    print_pairs.append(('Made on', time_made_str))
+    print_pairs.append(('ID', request.reqid))
+    print_pairs.append(('Verb', verb))
+    print_pairs.append(('Host', host))
+    print_pairs.append(('Path', path_formatter(request.full_path)))
+    print_pairs.append(('Status Code', response_code))
+    print_pairs.append(('Request Length', reqlen))
+    print_pairs.append(('Response Length', rsplen))
     if request.response and request.response.unmangled:
-        print 'Unmangled Response Length: %s bytes' % len(request.response.unmangled.full_response)
-    print 'Time: %s' % time_str
-    print 'Port: %s' % request.port
-    print 'SSL: %s' % is_ssl
-    print 'Mangled: %s' % mangle_str
-    print 'Tags: %s' % (', '.join(request.tags))
+        print_pairs.append(('Unmangled Response Length', len(request.response.unmangled.full_response)))
+    print_pairs.append(('Time', time_str))
+    print_pairs.append(('Port', request.port))
+    print_pairs.append(('SSL', is_ssl))
+    print_pairs.append(('Mangled', mangle_str))
+    print_pairs.append(('Tags', ', '.join(request.tags)))
     if request.plugin_data:
-        print 'Plugin Data: %s' % (request.plugin_data)
+        print_pairs.append(('Plugin Data', request.plugin_data))
+
+    for k, v in print_pairs:
+        print Styles.KV_KEY+str(k)+': '+Styles.KV_VAL+str(v)
 
 def print_tree(tree):
     # Prints a tree. Takes in a sorted list of path tuples

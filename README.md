@@ -786,6 +786,10 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.2
+    * COLORS
+    * Performance improvements
+    * Bugfixes (duh)
 * 0.2.1
     * Improve memory usage
     * Tweaked plugin API

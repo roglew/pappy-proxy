@@ -46,13 +46,6 @@ class RequestCache(object):
         RequestCache._next_in_mem_id += 1
         return i
 
-    def _update_meta(self):
-        # Can probably do better to prevent unmangled IDs from being added, but whatever
-        over = self._cached_reqs.items()[:]
-        for k, v in over:
-            if v.unmangled:
-                RequestCache.unmangled_ids.add(v.unmangled.reqid)
-    
     @staticmethod
     @defer.inlineCallbacks
     def load_ids():
@@ -87,16 +80,11 @@ class RequestCache(object):
                 self._evict_single()
             self._cache_size = size
             
-    def assert_ids(self):
-        for k, v in self._cached_reqs.iteritems():
-            assert v.reqid is not None
-        
     @defer.inlineCallbacks
     def get(self, reqid):
         """
         Get a request by id
         """
-        self.assert_ids()
         if self.check(reqid):
             self._update_last_used(reqid)
             self.hits += 1
@@ -112,25 +100,26 @@ class RequestCache(object):
         """
         Returns True if the id is cached, false otherwise
         """
-        self.assert_ids()
         return reqid in self._cached_reqs
 
     def add(self, req):
         """
         Add a request to the cache
         """
-        self.assert_ids()
         if not req.reqid:
             req.reqid = RequestCache.get_memid()
         if req.reqid[0] == 'm':
             self.inmem_reqs.add(req)
+        if req.is_unmangled_version:
+            self.unmangled_ids.add(req.reqid)
+        if req.unmangled:
+            self.unmangled_ids.add(req.unmangled.reqid)
         self._cached_reqs[req.reqid] = req
         self._update_last_used(req.reqid)
         RequestCache.req_times[req.reqid] = req.sort_time
         if req.reqid not in RequestCache.all_ids:
             RequestCache.ordered_ids.insert(req.reqid)
         RequestCache.all_ids.add(req.reqid)
-        self._update_meta()
         if len(self._cached_reqs) > self._cache_size and self._cache_size != -1:
             self._evict_single()
 
