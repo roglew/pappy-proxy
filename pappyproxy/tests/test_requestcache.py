@@ -106,7 +106,7 @@ def test_cache_inmem_evict():
     assert cache.check(reqs[3].reqid)
     
     # Testing the implementation
-    assert reqs[0] in RequestCache.inmem_reqs
-    assert reqs[1] in RequestCache.inmem_reqs
-    assert reqs[2] in RequestCache.inmem_reqs
-    assert reqs[3] in RequestCache.inmem_reqs
+    assert reqs[0] in cache.inmem_reqs
+    assert reqs[1] in cache.inmem_reqs
+    assert reqs[2] in cache.inmem_reqs
+    assert reqs[3] in cache.inmem_reqs

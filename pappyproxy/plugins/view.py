@@ -4,7 +4,7 @@ import pappyproxy
 import shlex
 
 from pappyproxy.console import load_reqlist, print_table, print_request_rows, get_req_data_row
-from pappyproxy.util import PappyException
+from pappyproxy.util import PappyException, utc2local
 from pappyproxy.http import Request
 from twisted.internet import defer
 from pappyproxy.plugin import main_context_ids
@@ -57,7 +57,8 @@ def print_request_extended(request):
         is_ssl = 'NO'
 
     if request.time_start:
-        time_made_str = request.time_start.strftime('%a, %b %d, %Y, %I:%M:%S %p')
+        dtobj = utc2local(request.time_start)
+        time_made_str = dtobj.strftime('%a, %b %d, %Y, %I:%M:%S %p')
     else:
         time_made_str = '--'
 

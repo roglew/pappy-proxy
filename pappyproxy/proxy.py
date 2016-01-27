@@ -128,7 +128,7 @@ class ProxyClient(LineReceiver):
             if self.factory.save_all:
                 # It isn't the actual time, but this should work in case
                 # we do an 'ls' before it gets a real time saved
-                self.request.time_start = datetime.datetime.now()
+                self.request.time_start = datetime.datetime.utcnow()
                 if self.factory.stream_response and not to_mangle:
                     self.request.async_deep_save()
                 else:
@@ -157,13 +157,13 @@ class ProxyClient(LineReceiver):
             if sendreq != self.request:
                 sendreq.unmangled = self.request
                 if self.factory.save_all:
-                    sendreq.time_start = datetime.datetime.now()
+                    sendreq.time_start = datetime.datetime.utcnow()
                     yield sendreq.async_deep_save()
         else:
             self.log("Request out of scope, passing along unmangled")
                 
         if not self._sent:
-            self.factory.start_time = datetime.datetime.now()
+            self.factory.start_time = datetime.datetime.utcnow()
             self.transport.write(sendreq.full_request)
             self.request = sendreq
             self.request.submitted = True
@@ -190,7 +190,7 @@ class ProxyClientFactory(ClientFactory):
         self.request = request
         self.connection_id = -1
         self.data_defer = defer.Deferred()
-        self.start_time = datetime.datetime.now()
+        self.start_time = datetime.datetime.utcnow()
         self.end_time = None
         self.save_all = save_all
         self.stream_response = stream_response
@@ -213,7 +213,7 @@ class ProxyClientFactory(ClientFactory):
 
     @defer.inlineCallbacks
     def return_request_pair(self, request):
-        self.end_time = datetime.datetime.now()
+        self.end_time = datetime.datetime.utcnow()
         log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
 
         request.time_start = self.start_time

@@ -143,7 +143,6 @@ def filter_prune(line):
     CANNOT BE UNDONE!! Be careful!
     Usage: filter_prune
     """
-    from pappyproxy.requestcache import RequestCache
     # Delete filtered items from datafile
     print ''
     print 'Currently active filters:'
@@ -152,8 +151,8 @@ def filter_prune(line):
 
     # We copy so that we're not removing items from a set we're iterating over
     act_reqs = yield pappyproxy.pappy.main_context.get_reqs()
-    inact_reqs = RequestCache.all_ids.difference(set(act_reqs))
-    inact_reqs = inact_reqs.difference(set(RequestCache.unmangled_ids))
+    inact_reqs = Request.cache.all_ids.difference(set(act_reqs))
+    inact_reqs = inact_reqs.difference(set(Request.cache.unmangled_ids))
     message = 'This will delete %d/%d requests. You can NOT undo this!! Continue?' % (len(inact_reqs), (len(inact_reqs) + len(act_reqs)))
     if not confirm(message, 'n'):
         defer.returnValue(None)

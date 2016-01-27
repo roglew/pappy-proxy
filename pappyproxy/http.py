@@ -558,9 +558,6 @@ class HTTPMessage(object):
         retmsg.set_metadata(self.get_metadata())
         return retmsg
 
-    def __deepcopy__(self):
-        return self.__copy__()
-
     def copy(self):
         """
         Returns a copy of the request
@@ -568,6 +565,12 @@ class HTTPMessage(object):
         :rtype: Request
         """
         return self.__copy__()
+
+    def deepcopy(self):
+        """
+        Returns a deep copy of the message. Implemented by child.
+        """
+        return self.__deepcopy__()
 
     def clear(self):
         """
@@ -972,6 +975,20 @@ class Request(HTTPMessage):
             self.port = port
         if host:
             self._host = host
+            
+    def __copy__(self):
+        if not self.complete:
+            raise PappyException("Cannot copy incomplete http messages")
+        retreq = self.__class__(self.full_message)
+        retreq.set_metadata(self.get_metadata())
+        retreq.time_start = self.time_start
+        retreq.time_end = self.time_end
+        retreq.reqid = None
+        if self.response:
+            retreq.response = self.response.copy()
+        if self.unmangled:
+            retreq.unmangled = self.unmangled.copy()
+        return retreq
             
     @property
     def rsptime(self):
@@ -1425,7 +1442,7 @@ class Request(HTTPMessage):
     ## Data store functions
                 
     @defer.inlineCallbacks
-    def async_save(self):
+    def async_save(self, cust_dbpool=None, cust_cache=None):
         """
         async_save()
         Save/update the request in the data file. Returns a twisted deferred which
@@ -1436,7 +1453,15 @@ class Request(HTTPMessage):
         from .context import Context
         from .pappy import main_context
 
-        assert(dbpool)
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            use_cache = cust_cache
+        else:
+            use_dbpool = dbpool
+            use_cache = Request.cache
+
+        assert(use_dbpool)
         if not self.reqid:
             self.reqid = '--'
         try:
@@ -1444,15 +1469,16 @@ class Request(HTTPMessage):
             _ = int(self.reqid)
 
             # If we have reqid, we're updating
-            yield dbpool.runInteraction(self._update)
+            yield use_dbpool.runInteraction(self._update)
             assert(self.reqid is not None)
-            yield dbpool.runInteraction(self._update_tags)
+            yield use_dbpool.runInteraction(self._update_tags)
         except (ValueError, TypeError):
             # Either no id or in-memory
-            yield dbpool.runInteraction(self._insert)
+            yield use_dbpool.runInteraction(self._insert)
             assert(self.reqid is not None)
-            yield dbpool.runInteraction(self._update_tags)
-        Request.cache.add(self)
+            yield use_dbpool.runInteraction(self._update_tags)
+        if use_cache:
+            use_cache.add(self)
         main_context.cache_reset()
 
     @crochet.wait_for(timeout=180.0)
@@ -1544,10 +1570,10 @@ class Request(HTTPMessage):
             queryargs.append(self.unmangled.reqid)
         if self.time_start:
             setnames.append('start_datetime=?')
-            queryargs.append(time.mktime(self.time_start.timetuple()))
+            queryargs.append((self.time_start-datetime.datetime(1970,1,1)).total_seconds())
         if self.time_end:
             setnames.append('end_datetime=?')
-            queryargs.append(time.mktime(self.time_end.timetuple()))
+            queryargs.append((self.time_end-datetime.datetime(1970,1,1)).total_seconds())
 
         setnames.append('is_ssl=?')
         if self.is_ssl:
@@ -1593,10 +1619,10 @@ class Request(HTTPMessage):
             colvals.append(self.unmangled.reqid)
         if self.time_start:
             colnames.append('start_datetime')
-            colvals.append(time.mktime(self.time_start.timetuple()))
+            colvals.append((self.time_start-datetime.datetime(1970,1,1)).total_seconds())
         if self.time_end:
             colnames.append('end_datetime')
-            colvals.append(time.mktime(self.time_end.timetuple()))
+            colvals.append((self.time_end-datetime.datetime(1970,1,1)).total_seconds())
         colnames.append('submitted')
         if self.submitted:
             colvals.append('1')
@@ -1632,31 +1658,41 @@ class Request(HTTPMessage):
         assert self.reqid is not None
             
     @defer.inlineCallbacks
-    def delete(self):
+    def delete(self, cust_dbpool=None, cust_cache=None):
         from .context import Context, reset_context_caches
+
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            use_cache = cust_cache
+        else:
+            use_dbpool = dbpool
+            use_cache = Request.cache
 
         if self.reqid is None:
             raise PappyException("Cannot delete request with id=None")
-        self.cache.evict(self.reqid)
-        RequestCache.ordered_ids.remove(self.reqid)
-        RequestCache.all_ids.remove(self.reqid)
-        if self.reqid in RequestCache.req_times:
-            del RequestCache.req_times[self.reqid]
-        if self.reqid in RequestCache.inmem_reqs:
-            RequestCache.inmem_reqs.remove(self.reqid)
-        if self.reqid in RequestCache.unmangled_ids:
-            RequestCache.unmangled_ids.remove(self.reqid)
+
+        if use_cache:
+            use_cache.evict(self.reqid)
+            Request.cache.ordered_ids.remove(self.reqid)
+            Request.cache.all_ids.remove(self.reqid)
+            if self.reqid in Request.cache.req_times:
+                del Request.cache.req_times[self.reqid]
+            if self.reqid in Request.cache.inmem_reqs:
+                Request.cache.inmem_reqs.remove(self.reqid)
+            if self.reqid in Request.cache.unmangled_ids:
+                Request.cache.unmangled_ids.remove(self.reqid)
 
         reset_context_caches()
 
         if self.reqid[0] != 'm':
-            yield dbpool.runQuery(
+            yield use_dbpool.runQuery(
                 """
                 DELETE FROM requests WHERE id=?;
                 """,
                 (self.reqid,)
                 )
-            yield dbpool.runQuery(
+            yield use_dbpool.runQuery(
                 """
                 DELETE FROM tagged WHERE reqid=?;
                 """,
@@ -1693,21 +1729,33 @@ class Request(HTTPMessage):
         
     @staticmethod
     @defer.inlineCallbacks
-    def _from_sql_row(row):
+    def _from_sql_row(row, cust_dbpool=None, cust_cache=None):
         from .http import Request
+
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            use_cache = cust_cache
+        else:
+            use_dbpool = dbpool
+            use_cache = Request.cache
 
         req = Request(row[0])
         if row[1]:
-            rsp = yield Response.load_response(str(row[1]))
+            rsp = yield Response.load_response(str(row[1]),
+                                               cust_dbpool=cust_dbpool,
+                                               cust_cache=cust_cache)
             req.response = rsp
         if row[3]:
-            unmangled_req = yield Request.load_request(str(row[3]))
+            unmangled_req = yield Request.load_request(str(row[3]),
+                                                       cust_dbpool=cust_dbpool,
+                                                       cust_cache=cust_cache)
             req.unmangled = unmangled_req
             req.unmangled.is_unmangled_version = True
         if row[4]:
-            req.time_start = datetime.datetime.fromtimestamp(row[4])
+            req.time_start = datetime.datetime.utcfromtimestamp(row[4])
         if row[5]:
-            req.time_end = datetime.datetime.fromtimestamp(row[5])
+            req.time_end = datetime.datetime.utcfromtimestamp(row[5])
         if row[6] is not None:
             req.port = int(row[6])
         if row[7] == 1:
@@ -1719,7 +1767,7 @@ class Request(HTTPMessage):
         req.reqid = str(row[2])
 
         # tags
-        rows = yield dbpool.runQuery(
+        rows = yield use_dbpool.runQuery(
             """
             SELECT tg.tag
             FROM tagged tgd, tags tg
@@ -1734,7 +1782,7 @@ class Request(HTTPMessage):
 
     @staticmethod
     @defer.inlineCallbacks
-    def load_requests_by_time(first, num):
+    def load_requests_by_time(first, num, cust_dbpool=None, cust_cache=None):
         """
         load_requests_by_time()
         Load all the requests in the data file and return them in a list.
@@ -1745,23 +1793,42 @@ class Request(HTTPMessage):
         from .requestcache import RequestCache
         from .http import Request
 
-        starttime = RequestCache.req_times[first]
-        rows = yield dbpool.runQuery(
-            """
-            SELECT %s
-            FROM requests
-            WHERE start_datetime<=? ORDER BY start_datetime desc LIMIT ?;
-            """ % Request._gen_sql_row(), (starttime, num)
-            )
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            use_cache = cust_cache
+        else:
+            use_dbpool = dbpool
+            use_cache = Request.cache
+
+        if use_cache:
+            starttime = use_cache.req_times[first]
+            rows = yield use_dbpool.runQuery(
+                """
+                SELECT %s
+                FROM requests
+                WHERE start_datetime<=? ORDER BY start_datetime desc LIMIT ?;
+                """ % Request._gen_sql_row(), (starttime, num)
+                )
+        else:
+            rows = yield use_dbpool.runQuery(
+                """
+                SELECT %s
+                FROM requests r1, requests r2
+                WHERE r2.id=? AND
+                r1.start_datetime<=r2.start_datetime
+                ORDER BY start_datetime desc LIMIT ?;
+                """ % Request._gen_sql_row('r1'), (first, num)
+                )
         reqs = []
         for row in rows:
-            req = yield Request._from_sql_row(row)
+            req = yield Request._from_sql_row(row, cust_dbpool=cust_dbpool, cust_cache=cust_cache)
             reqs.append(req)
         defer.returnValue(reqs)
 
     @staticmethod
     @defer.inlineCallbacks
-    def load_requests_by_tag(tag):
+    def load_requests_by_tag(tag, cust_dbpool=None, cust_cache=None):
         """
         load_requests_by_tag(tag)
         Load all the requests in the data file with a given tag and return them in a list.
@@ -1770,8 +1837,17 @@ class Request(HTTPMessage):
         :rtype: twisted.internet.defer.Deferred
         """
         from .http import Request
+
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            use_cache = cust_cache
+        else:
+            use_dbpool = dbpool
+            use_cache = Request.cache
+
         # tags
-        rows = yield dbpool.runQuery(
+        rows = yield use_dbpool.runQuery(
             """
             SELECT tgd.reqid
             FROM tagged tgd, tags tg
@@ -1781,13 +1857,15 @@ class Request(HTTPMessage):
         )
         reqs = []
         for row in rows:
-            req = Request.load_request(row[0])
+            req = Request.load_request(row[0],
+                                       cust_dbpool=cust_dbpool,
+                                       cust_cache=cust_cache)
             reqs.append(req)
         defer.returnValue(reqs)
         
     @staticmethod
     @defer.inlineCallbacks
-    def load_request(to_load, allow_special=True, use_cache=True):
+    def load_request(to_load, allow_special=True, use_cache=True, cust_dbpool=None, cust_cache=None):
         """
         load_request(to_load)
         Load a request with the given request id and return it.
@@ -1802,7 +1880,15 @@ class Request(HTTPMessage):
         """
         from .context import Context
 
-        if not dbpool:
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            cache_to_use = cust_cache
+        else:
+            use_dbpool = dbpool
+            cache_to_use = Request.cache
+
+        if not use_dbpool:
             raise PappyException('No database connection to load from')
 
         if to_load == '--':
@@ -1841,14 +1927,14 @@ class Request(HTTPMessage):
                 return r
 
         # Get it through the cache
-        if use_cache:
+        if use_cache and cache_to_use:
             # If it's not cached, load_request will be called again and be told
             # not to use the cache.
-            r = yield Request.cache.get(loadid)
+            r = yield cache_to_use.get(loadid)
             defer.returnValue(retreq(r))
 
         # Load it from the data file
-        rows = yield dbpool.runQuery(
+        rows = yield use_dbpool.runQuery(
             """
             SELECT %s
             FROM requests
@@ -1858,9 +1944,10 @@ class Request(HTTPMessage):
             )
         if len(rows) != 1:
             raise PappyException("Request with id %s does not exist" % loadid)
-        req = yield Request._from_sql_row(rows[0])
+        req = yield Request._from_sql_row(rows[0], cust_dbpool=cust_dbpool, cust_cache=cust_cache)
         assert req.reqid == loadid
-        Request.cache.add(req)
+        if cache_to_use:
+            cache_to_use.add(req)
         defer.returnValue(retreq(req))
 
     ######################
@@ -1952,6 +2039,16 @@ class Response(HTTPMessage):
 
         # After message init so that other instance vars are initialized
         self._set_dict_callbacks()
+
+    def __copy__(self):
+        if not self.complete:
+            raise PappyException("Cannot copy incomplete http messages")
+        retrsp = self.__class__(self.full_message)
+        retrsp.set_metadata(self.get_metadata())
+        retrsp.rspid = None
+        if self.unmangled:
+            retrsp.unmangled = self.unmangled.copy()
+        return retrsp
 
     @property
     def raw_headers(self):
@@ -2188,7 +2285,7 @@ class Response(HTTPMessage):
     ## Database interaction
         
     @defer.inlineCallbacks
-    def async_save(self):
+    def async_save(self, cust_dbpool=None, cust_cache=None):
         """
         async_save()
         Save/update the just request in the data file. Returns a twisted deferred which
@@ -2197,15 +2294,22 @@ class Response(HTTPMessage):
 
         :rtype: twisted.internet.defer.Deferred
         """
-        assert(dbpool)
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            use_cache = cust_cache
+        else:
+            use_dbpool = dbpool
+            use_cache = Request.cache
+        assert(use_dbpool)
         try:
             # Check for intyness
             _ = int(self.rspid)
 
             # If we have rspid, we're updating
-            yield dbpool.runInteraction(self._update)
+            yield use_dbpool.runInteraction(self._update)
         except (ValueError, TypeError):
-            yield dbpool.runInteraction(self._insert)
+            yield use_dbpool.runInteraction(self._insert)
         assert(self.rspid is not None)
 
     # Right now responses without requests are unviewable
@@ -2246,7 +2350,7 @@ class Response(HTTPMessage):
             """ % (','.join(colnames), ','.join(['?']*len(colvals))),
             tuple(colvals)
             )
-        self.rspid = txn.lastrowid
+        self.rspid = str(txn.lastrowid)
         assert(self.rspid is not None)
 
     @defer.inlineCallbacks
@@ -2262,14 +2366,22 @@ class Response(HTTPMessage):
 
     @staticmethod
     @defer.inlineCallbacks
-    def load_response(respid):
+    def load_response(respid, cust_dbpool=None, cust_cache=None):
         """
         Load a response from its response id. Returns a deferred. I don't suggest you use this.
 
         :rtype: twisted.internet.defer.Deferred
         """
-        assert(dbpool)
-        rows = yield dbpool.runQuery(
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+            use_cache = cust_cache
+        else:
+            use_dbpool = dbpool
+            use_cache = Request.cache
+
+        assert(use_dbpool)
+        rows = yield use_dbpool.runQuery(
             """
             SELECT full_response, id, unmangled_id
             FROM responses
@@ -2283,7 +2395,9 @@ class Response(HTTPMessage):
         resp = Response(full_response)
         resp.rspid = str(rows[0][1])
         if rows[0][2]:
-            unmangled_response = yield Response.load_response(int(rows[0][2]))
+            unmangled_response = yield Response.load_response(int(rows[0][2]),
+                                                              cust_dbpool=cust_dbpool,
+                                                              cust_cache=cust_cache)
             resp.unmangled = unmangled_response
         defer.returnValue(resp)
             
