@@ -67,7 +67,6 @@ def main():
     global plugin_loader
     global cons
     settings = parse_args()
-    load_start = datetime.datetime.now()
 
     if settings['lite']:
         conf_settings = config.get_default_config()
@@ -100,7 +99,7 @@ def main():
         print 'Exiting...'
         reactor.stop()
     http.init(dbpool)
-    yield requestcache.RequestCache.load_ids()
+    yield http.Request.cache.load_ids()
     context.reset_context_caches()
 
     # Run the proxy
@@ -135,13 +134,6 @@ def main():
     # Load the scope
     yield context.load_scope(http.dbpool)
     context.reset_to_scope(main_context)
-
-    # Apologize for slow start times
-    load_end = datetime.datetime.now()
-    load_time = (load_end - load_start)
-    if load_time.total_seconds() > 20:
-        print 'Startup was slow (%s)! Sorry!' % load_time
-        print 'Database has {0} requests (~{1:.2f}ms per request)'.format(len(main_context.active_requests), ((load_time.total_seconds()/len(main_context.active_requests))*1000))
 
     sys.argv = [sys.argv[0]] # cmd2 tries to parse args
     cons = ProxyCmd()

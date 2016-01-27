@@ -16,15 +16,7 @@ class RequestCache(object):
     :type cache_size: int
     """
 
-    _next_in_mem_id = 1
-    _preload_limit = 10
-    all_ids = set()
-    unmangled_ids = set()
-    ordered_ids = SortedCollection(key=lambda x: -RequestCache.req_times[x])
-    inmem_reqs = set()
-    req_times = {}
-
-    def __init__(self, cache_size=100):
+    def __init__(self, cache_size=100, cust_dbpool=None):
         self._cache_size = cache_size
         if cache_size >= 100:
             RequestCache._preload_limit = int(cache_size * 0.30)
@@ -33,6 +25,14 @@ class RequestCache(object):
         self._min_time = None
         self.hits = 0
         self.misses = 0
+        self.dbpool = cust_dbpool
+        self._next_in_mem_id = 1
+        self._preload_limit = 10
+        self.all_ids = set()
+        self.unmangled_ids = set()
+        self.ordered_ids = SortedCollection(key=lambda x: -self.req_times[x])
+        self.inmem_reqs = set()
+        self.req_times = {}
 
     @property
     def hit_ratio(self):
@@ -40,37 +40,37 @@ class RequestCache(object):
             return 0
         return float(self.hits)/float(self.hits + self.misses)
 
-    @staticmethod
-    def get_memid():
-        i = 'm%d' % RequestCache._next_in_mem_id
-        RequestCache._next_in_mem_id += 1
+    def get_memid(self):
+        i = 'm%d' % self._next_in_mem_id
+        self._next_in_mem_id += 1
         return i
 
-    @staticmethod
     @defer.inlineCallbacks
-    def load_ids():
-        rows = yield pappyproxy.http.dbpool.runQuery(
+    def load_ids(self):
+        if not self.dbpool:
+            self.dbpool = pappyproxy.http.dbpool
+        rows = yield self.dbpool.runQuery(
             """
             SELECT id, start_datetime FROM requests;
             """
             )
         for row in rows:
             if row[1]:
-                RequestCache.req_times[str(row[0])] = row[1]
+                self.req_times[str(row[0])] = row[1]
             else:
-                RequestCache.req_times[str(row[0])] = 0
-            if str(row[0]) not in RequestCache.all_ids:
-                RequestCache.ordered_ids.insert(str(row[0]))
-            RequestCache.all_ids.add(str(row[0]))
+                self.req_times[str(row[0])] = 0
+            if str(row[0]) not in self.all_ids:
+                self.ordered_ids.insert(str(row[0]))
+            self.all_ids.add(str(row[0]))
 
-        rows = yield pappyproxy.http.dbpool.runQuery(
+        rows = yield self.dbpool.runQuery(
             """
             SELECT unmangled_id FROM requests
             WHERE unmangled_id is NOT NULL;
             """
         )
         for row in rows:
-            RequestCache.unmangled_ids.add(str(row[0]))
+            self.unmangled_ids.add(str(row[0]))
 
     def resize(self, size):
         if size >= self._cache_size or size == -1:
@@ -107,7 +107,7 @@ class RequestCache(object):
         Add a request to the cache
         """
         if not req.reqid:
-            req.reqid = RequestCache.get_memid()
+            req.reqid = self.get_memid()
         if req.reqid[0] == 'm':
             self.inmem_reqs.add(req)
         if req.is_unmangled_version:
@@ -116,10 +116,10 @@ class RequestCache(object):
             self.unmangled_ids.add(req.unmangled.reqid)
         self._cached_reqs[req.reqid] = req
         self._update_last_used(req.reqid)
-        RequestCache.req_times[req.reqid] = req.sort_time
-        if req.reqid not in RequestCache.all_ids:
-            RequestCache.ordered_ids.insert(req.reqid)
-        RequestCache.all_ids.add(req.reqid)
+        self.req_times[req.reqid] = req.sort_time
+        if req.reqid not in self.all_ids:
+            self.ordered_ids.insert(req.reqid)
+        self.all_ids.add(req.reqid)
         if len(self._cached_reqs) > self._cache_size and self._cache_size != -1:
             self._evict_single()
 
@@ -142,7 +142,7 @@ class RequestCache(object):
         """
         Load a number of requests after an id into the cache
         """
-        reqs = yield pappyproxy.http.Request.load_requests_by_time(first, num)
+        reqs = yield pappyproxy.http.Request.load_requests_by_time(first, num, cust_dbpool=self.dbpool, cust_cache=self)
         for r in reqs:
             self.add(r)
         # Bulk loading is faster, so let's just say that loading 10 requests is
@@ -162,22 +162,22 @@ class RequestCache(object):
             req = yield self.get(reqid)
             defer.returnValue(req)
         
-        over = list(RequestCache.ordered_ids)
+        over = list(self.ordered_ids)
         for reqid in over:
             if ids is not None and reqid not in ids:
                 continue
-            if not include_unmangled and reqid in RequestCache.unmangled_ids:
+            if not include_unmangled and reqid in self.unmangled_ids:
                 continue
             do_load = True
-            if reqid in RequestCache.all_ids:
-                if count % RequestCache._preload_limit == 0:
+            if reqid in self.all_ids:
+                if count % self._preload_limit == 0:
                     do_load = True
                 if do_load and not self.check(reqid):
                     do_load = False
-                    if (num - count) < RequestCache._preload_limit and num != -1:
+                    if (num - count) < self._preload_limit and num != -1:
                         loadnum = num - count
                     else:
-                        loadnum = RequestCache._preload_limit
+                        loadnum = self._preload_limit
                     yield def_wrapper(reqid, load=True, num=loadnum)
                 else:
                     yield def_wrapper(reqid)
@@ -187,7 +187,7 @@ class RequestCache(object):
 
     @defer.inlineCallbacks
     def load_by_tag(tag):
-        reqs = yield load_requests_by_tag(tag)
+        reqs = yield load_requests_by_tag(tag, cust_cache=self, cust_dbpool=self.dbpool)
         for req in reqs:
             self.add(req)
         defer.returnValue(reqs)

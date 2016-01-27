@@ -297,6 +297,48 @@ Pappy also includes some built in filters that you can apply. These are things t
 |:--------|:--------|:------------|
 | `fbi <filter>` | `builtin_filter`, `fbi` | Apply a built-in filter to the current context |
 
+Decoding Strings
+----------------
+These features try to fill a similar role to Burp's decoder. Each command will automatically copy the results to the clipboard. In addition, if no string is given, the commands will encode/decode whatever is already in the clipboard. Here is an example of how to base64 encode/decode a string.
+
+```
+pappy> b64e "Hello World!"
+SGVsbG8gV29ybGQh
+pappy> b64d
+Hello World!
+pappy>
+```
+
+And if the result contains non-printable characters, a hexdump will be produced instead
+
+```
+pappy> b64d ImALittleTeapot=
+0000  22 60 0b 8a db 65 79 37 9a a6 8b                  "`...ey7...
+
+pappy>
+```
+
+The following commands can be used to encode/decode strings:
+
+| Command | Aliases | Description |
+|:--------|:--------|:------------|
+|`base64_decode`|`base64_decode`, `b64d` | Base64 decode a string |
+|`base64_encode`|`base64_encode`, `b64e` | Base64 encode a string |
+|`asciihex_decode`|`asciihex_decode`, `ahd` | Decode an ASCII hex string |
+|`asciihex_encode`|`asciihex_encode`, `ahe` | Encode an ASCII hex string |
+|`url_decode`|`url_decode`, `urld` | Url decode a string |
+|`url_encode`|`url_encode`, `urle` | Url encode a string |
+|`gzip_decode`|`gzip_decode`, `gzd` | Gzip decompress a string. Probably won't work too well since there's not a great way to get binary data passed in as an argument. I'm working on this. |
+|`gzip_encode`|`gzip_encode`, `gze` | Gzip compress a string. Result doesn't get copied to the clipboard. |
+|`base64_decode_raw`|`base64_decode_raw`, `b64dr` | Same as `base64_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`base64_encode_raw`|`base64_encode_raw`, `b64er` | Same as `base64_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`asciihex_decode_raw`|`asciihex_decode_raw`, `ahdr` | Same as `asciihex_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`asciihex_encode_raw`|`asciihex_encode_raw`, `aher` | Same as `asciihex_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`url_decode_raw`|`url_decode_raw`, `urldr` | Same as `url_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`url_encode_raw`|`url_encode_raw`, `urler` | Same as `url_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`gzip_decode_raw`|`gzip_decode_raw`, `gzdr` | Same as `gzip_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`gzip_encode_raw`|`gzip_encode_raw`, `gzer` | Same as `gzip_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+
 Interceptor
 -----------
 This feature is like Burp's proxy with "Intercept Mode" turned on, except it's not turned on unless you explicitly turn it on. When the proxy gets a request while in intercept mode, it lets you edit it before forwarding it to the server. In addition, it can stop responses from the server and let you edit them before they get forwarded to the browser. When you run the command, you can pass `req` and/or `rsp` as arguments to say whether you would like to intercept requests and/or responses. Only in-scope requests/responses will be intercepted (see Scope section).
@@ -654,6 +696,7 @@ This is a list of other random stuff you can do that isn't categorized under any
 |:--------|:--------|:------------|
 | `dump_response <reqid> [filename]` | `dump_response` | Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path. |
 | `export <req|rsp> <reqid>` | `export` | Writes either the full request or response to a file in the current directory. |
+| `merge <dbfile>` | `merge` | Add all the requests from another datafile to the current datafile |
 
 ### Response streaming
 
@@ -786,6 +829,10 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.3
+    * Decoder functions
+    * Add `merge` command
+    * Bugfixes
 * 0.2.2
     * COLORS
     * Performance improvements

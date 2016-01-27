@@ -1,0 +1,95 @@
+#+STARTUP: indent
+
+* Working on: bugfixes
+- performance problem
+- move time_start/end to metadata
+* todo
+** TODO For multipart forms, make sure metadata lines end in \r\n
+** DONE Store host in database in case request doesn't have host header (ie from scripting)
+** TODO Clean up imports (use relative imports)
+** TODO SQLMap button
+** TODO Add some kind of handling for dropped requests in request.submit() in macros
+** TODO Don't keep large requests/responses in memory
+** TODO write repeater/comm unit tests
+** DONE Clean up imports (use relative imports)
+** TODO Give a port for lite mode
+** TODO History scanner
+*** TODO Lack of HSTS headers
+*** TODO Password fields with auto-complete
+*** TODO Find places where input values are printed back to the screen
+*** TODO Session cookies without HttpOnly or Secure set
+** TODO Cred storage?
+- autocomplete username, copy username then say "press enter to copy password"
+- import from csv: "username,password,comment"
+** TODO Guess which creds are used for a request (associate a login request with session cookies, follow set-cookie for session cookies)
+** TODO Compare mode
+- Pick any number of requests (usually 2) and look at them all at the same time in vim
+** TODO Let interceptor take filter string
+** TODO inmem mode for repeater
+ie run it with `rp mem <id>` to store everything in memory
+** TODO How did I get here? (Follow referrers back as far as possible)
+** TODO SSL scan on website
+** TODO URL encoding/decoding in vim
+** TODO Inline decoders/encoders
+- optionally go straight to/from clipboard
+** TODO Easy session handling and switching
+- Option to create session from request
+- By default put session in foreground and end it by hitting enter, have option to background it
+- Can't edit contacts
+- Have one "session template" for entire project
+  - add/remove cookies and headers to it
+  - create session objects from requests
+  - option to add session object when generating macro
+** TODO Easy cleanup for fuzzing post requests
+- List POST/GET paths that aren't fuzzable yet
+** TODO Gracefully handle a non-responsive server
+** TODO Better logging
+** DONE Reorganize console commands
+** DONE load_request in macros
+** DONE Stream responses unless you have macros, then save once you get the whole thing
+** DONE modify database to store arbitrary data about request/response
+** TODO Show requests passing through real-time
+
+** TODO clean API to generate filters
+- Make it consistent that it should return a deferred
+** TODO Add VERSION to .config and bind it to docs and setup.py
+* Filter refactor
+** Format:
+[field] [field params]
+** Classes
+*** FilterFactory
+generate filter object
+associate factory with field text
+- generate(params)
+  generate a filter from the params
+** Adding filter from plugin
+*** get_additional_filters()
+return dict
+{'field_name', ChildFilterFactory}
+*** How to handle filter field if plugin doesn't exist
+Warn if invalid filter in scope and don't add (don't delete from scope though)
+** Converting context to class
+- how to handle all_requests / caching?
+- where do new inmem requests go/how do we pick their id?
+  - it might be fine the way it is since the request will get an inmem id when it's added to any context then it won't be repeated when it's added to another
+- check where we call all_reqs to see if we have to add it to some global all_reqs list
+
+* Tracking github
+git fetch github master:gh
+git branch --set-upstream-to=github/master
+
+* Merging to github
+git checkout gh
+git merge --squash -X theirs master
+git commit
+git tag 0.X.X
+git push --tags github gh:master
+
+* Pushing docs
+- Push dir dist to gh-pages on origin
+  git subtree push --prefix dist origin gh-pages
+- In our case
+  git subtree push --prefix docs/build/html/ github gh-pages
+
+* Fuzzing POST
+** List POST/GET paths that aren't fuzzable yet

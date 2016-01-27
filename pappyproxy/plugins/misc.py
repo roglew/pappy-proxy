@@ -5,7 +5,9 @@ import shlex
 from pappyproxy.console import confirm, load_reqlist
 from pappyproxy.util import PappyException
 from pappyproxy.http import Request
+from pappyproxy.requestcache import RequestCache
 from twisted.internet import defer
+from twisted.enterprise import adbapi
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -14,7 +16,7 @@ def clrmem(line):
     Delete all in-memory only requests
     Usage: clrmem
     """
-    to_delete = list(pappyproxy.requestcache.RequestCache.inmem_reqs)
+    to_delete = list(pappyproxy.http.Request.cache.inmem_reqs)
     for r in to_delete:
         yield r.deep_delete()
 
@@ -85,6 +87,34 @@ def export(line):
         except PappyException as e:
             print 'Unable to export %s: %s' % (req.reqid, e)
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def merge_datafile(line):
+    """
+    Add all the requests/responses from another data file to the current one
+    """
+
+    def set_text_factory(conn):
+        conn.text_factory = str
+
+    line = line.strip()
+    other_dbpool = adbapi.ConnectionPool("sqlite3", line,
+                                         check_same_thread=False,
+                                         cp_openfun=set_text_factory,
+                                         cp_max=1)
+    try:
+        count = 0
+        other_cache = RequestCache(cust_dbpool=other_dbpool)
+        yield other_cache.load_ids()
+        for req_d in other_cache.req_it():
+            count += 1
+            req = yield req_d
+            r = req.copy()
+            yield r.async_deep_save()
+        print 'Added %d requests' % count
+    finally:
+        other_dbpool.close()
+            
 def load_cmds(cmd):
     cmd.set_cmds({
         'clrmem': (clrmem, None),
@@ -92,6 +122,7 @@ def load_cmds(cmd):
         'sv': (save, None),
         'export': (export, None),
         'log': (log, None),
+        'merge': (merge_datafile, None)
     })
     cmd.add_aliases([
         #('rpy', ''),

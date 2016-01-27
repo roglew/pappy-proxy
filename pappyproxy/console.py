@@ -150,7 +150,7 @@ def print_requests(requests):
     rows = []
     for req in requests:
         rows.append(get_req_data_row(req))
-    print_table(cols, rows)
+    print_request_rows(rows)
     
 def print_request_rows(request_rows):
     """

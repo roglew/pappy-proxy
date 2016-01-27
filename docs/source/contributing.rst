@@ -33,8 +33,6 @@ Anyways, here's some ideas for things you could implement:
     Find a library to perform some kind of check for weak ciphers, etc on a host and print out any issues that are found.
 * Add a SQLMap button
     Make it easy to pass a request to SQLMap to check for SQLi. Make sure you can configure which fields you do/don't want tested and by default just give either "yes it looks like SQLi" or "no it doesn't look like SQLi"
-* Decoder functionality
-    Add some commands for encoding/decoding text. If you go after this, let me know because I'm probably going to be pretty picky about how this is implemented. You'll have to do better than just a ``base64_decode <text>`` command.
 * Additional macro templates
     Write some commands for generating additional types of macros. For example let people generate an intercepting macro that does search/replace or modifies a header. Save as much typing as possible for common actions.
 * Show requests/responses real-time as they go through the proxy

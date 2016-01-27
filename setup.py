@@ -3,7 +3,7 @@
 import pkgutil
 from setuptools import setup, find_packages
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 
 setup(name='pappyproxy',
       version=VERSION,
@@ -22,6 +22,7 @@ setup(name='pappyproxy',
       download_url='https://github.com/roglew/pappy-proxy/archive/%s.tar.gz'%VERSION,
       install_requires=[
           'beautifulsoup4>=4.4.1',
+          'clipboard>=0.0.4',
           'cmd2>=0.6.8',
           'crochet>=1.4.0',
           'Jinja2>=2.8',
