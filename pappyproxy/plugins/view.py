@@ -178,9 +178,7 @@ def list_reqs(line):
 def view_request_info(line):
     """
     View information about request
-    Usage: view_request_info <reqid> [u]
-    If 'u' is given as an additional argument, the unmangled version 
-    of the request will be displayed.
+    Usage: view_request_info <reqid(s)>
     """
     args = shlex.split(line)
     reqids = args[0]
@@ -197,9 +195,7 @@ def view_request_info(line):
 def view_request_headers(line):
     """
     View the headers of the request
-    Usage: view_request_headers <reqid> [u]
-    If 'u' is given as an additional argument, the unmangled version 
-    of the request will be displayed.
+    Usage: view_request_headers <reqid(s)>
     """
     args = shlex.split(line)
     reqid = args[0]
@@ -208,10 +204,10 @@ def view_request_headers(line):
     for req in reqs:
         if len(reqs) > 1:
             print 'Request %s:' % req.reqid
-        print ''
         view_full_message(req, True)
         if len(reqs) > 1:
             print '-'*30
+            print ''
 
 
 @crochet.wait_for(timeout=None)
@@ -219,9 +215,7 @@ def view_request_headers(line):
 def view_full_request(line):
     """
     View the full data of the request
-    Usage: view_full_request <reqid> [u]
-    If 'u' is given as an additional argument, the unmangled version 
-    of the request will be displayed.
+    Usage: view_full_request <reqid(s)>
     """
     args = shlex.split(line)
     reqid = args[0]
@@ -230,18 +224,36 @@ def view_full_request(line):
     for req in reqs:
         if len(reqs) > 1:
             print 'Request %s:' % req.reqid
-        print ''
         view_full_message(req)
         if len(reqs) > 1:
             print '-'*30
+            print ''
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def view_request_bytes(line):
+    """
+    View the raw bytes of the request. Use this if you want to redirect output to a file.
+    Usage: view_request_bytes <reqid(s)>
+    """
+    args = shlex.split(line)
+    reqid = args[0]
+
+    reqs = yield load_reqlist(reqid)
+    for req in reqs:
+        if len(reqs) > 1:
+            print 'Request %s:' % req.reqid
+        print req.full_message
+        if len(reqs) > 1:
+            print '-'*30
+            print ''
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
 def view_response_headers(line):
     """
     View the headers of the response
-    Usage: view_response_headers <reqid>
+    Usage: view_response_headers <reqid(s)>
     """
     reqs = yield load_reqlist(line)
     for req in reqs:
@@ -269,7 +281,22 @@ def view_full_response(line):
         else:
             print "Request %s does not have a response" % req.reqid
 
-    
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def view_response_bytes(line):
+    """
+    View the full data of the response associated with a request
+    Usage: view_request_bytes <reqid(s)>
+    """
+    reqs = yield load_reqlist(line)
+    for req in reqs:
+        if req.response:
+            if len(reqs) > 1:
+                print '-'*15 + (' %s ' % req.reqid)  + '-'*15
+            print req.response.full_message
+        else:
+            print "Request %s does not have a response" % req.reqid
+            
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
 def dump_response(line):
@@ -317,8 +344,10 @@ def load_cmds(cmd):
         'view_request_info': (view_request_info, None),
         'view_request_headers': (view_request_headers, None),
         'view_full_request': (view_full_request, None),
+        'view_request_bytes': (view_request_bytes, None),
         'view_response_headers': (view_response_headers, None),
         'view_full_response': (view_full_response, None),
+        'view_response_bytes': (view_response_bytes, None),
         'site_map': (site_map, None),
         'dump_response': (dump_response, None),
     })
@@ -327,8 +356,10 @@ def load_cmds(cmd):
         ('view_request_info', 'viq'),
         ('view_request_headers', 'vhq'),
         ('view_full_request', 'vfq'),
+        ('view_request_bytes', 'vbq'),
         ('view_response_headers', 'vhs'),
-        ('site_map', 'sm'),
         ('view_full_response', 'vfs'),
+        ('view_response_bytes', 'vbs'),
+        ('site_map', 'sm'),
         #('dump_response', 'dr'),
     ])

@@ -52,6 +52,12 @@ The configuration settings for the proxy.
     
     :Default: ``['{DATA_DIR}/plugins', '{PAPPY_DIR}/plugins']``
 
+.. data: SAVE_HISTORY
+
+    Whether command history should be saved to a file/loaded at startup.
+
+    :Default: True
+
 .. data: CONFIG_DICT
 
     The dictionary read from config.json. When writing plugins, use this to load
@@ -85,6 +91,8 @@ LISTENERS = [(8000, '127.0.0.1')]
 SSL_CA_FILE  = 'certificate.crt'
 SSL_PKEY_FILE = 'private.key'
 
+HISTSIZE = 1000
+
 PLUGIN_DIRS = [os.path.join(DATA_DIR, 'plugins'), os.path.join(PAPPY_DIR, 'plugins')]
 
 CONFIG_DICT = {}
@@ -108,6 +116,7 @@ def load_settings(proj_config):
     global DATA_DIR
     global SSL_CA_FILE 
     global SSL_PKEY_FILE
+    global HISTSIZE
 
     # Substitution dictionary
     subs = {}
@@ -133,6 +142,10 @@ def load_settings(proj_config):
         LISTENERS = []
         for l in proj_config["proxy_listeners"]:
             LISTENERS.append((l['port'], l['interface']))
+
+    # History saving settings
+    if "history_size" in proj_config:
+        HISTSIZE = proj_config['history_size']
 
 def load_global_settings(global_config):
     from .http import Request

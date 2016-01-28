@@ -145,7 +145,7 @@ def load_cmds(cmd):
         'gccollect': (collect, None),
         'graphobj': (graph_randobj, None),
         'meminfo': (memory_info, None),
-        'bigdata': (big_fucking_data_file, None),
+        'genbigdata': (big_fucking_data_file, None),
         'checkcache': (check_cache, None),
         'loadblock': (loadblock, None),
         'time': (time_cmd, None),
