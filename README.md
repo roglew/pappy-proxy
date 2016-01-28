@@ -95,6 +95,115 @@ The following tokens will also be replaced with values:
 
 See the default `config.json` for examples.
 
+General Console Techniques
+--------------------------
+There are a few tricks you can use in general when using Pappy's console. Most of these are provided by the [cmd](https://docs.python.org/2/library/cmd.html) and [cmd2](https://pythonhosted.org/cmd2/index.html).
+
+### Run a shell command
+
+You can run a shell command with `!`:
+
+```
+pappy> ls
+ID  Verb  Host         Path               S-Code            Req Len  Rsp Len  Time  Mngl
+5   GET   vitaly.sexy  /netscape.gif      304 Not Modified  0        0        0.08  --
+4   GET   vitaly.sexy  /esr1.jpg          304 Not Modified  0        0        0.07  --
+3   GET   vitaly.sexy  /construction.gif  304 Not Modified  0        0        0.07  --
+2   GET   vitaly.sexy  /vitaly2.jpg                         0        N/A      --    --
+1   GET   vitaly.sexy  /                  304 Not Modified  0        0        0.07  --
+pappy> !ls
+cmdhistory  config.json  data.db
+pappy>
+```
+
+### Running Python Code
+
+You can use the `py` command to either run python code or to drop down to a Python shell.
+
+```
+pappy> py print ':D '*10
+:D :D :D :D :D :D :D :D :D :D
+pappy> py
+Python 2.7.6 (default, Jun 22 2015, 17:58:13)
+[GCC 4.8.2] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+(ProxyCmd)
+
+        py <command>: Executes a Python command.
+        py: Enters interactive Python mode.
+        End with ``Ctrl-D`` (Unix) / ``Ctrl-Z`` (Windows), ``quit()``, '`exit()``.
+        Non-python commands can be issued with ``cmd("your command")``.
+        Run python code from external files with ``run("filename.py")``
+
+>>> from pappyproxy import config
+>>> config.CONFIG_DICT
+{u'data_file': u'./data.db', u'history_size': 1000, u'cert_dir': u'{DATADIR}/certs', u'proxy_listeners': [{u'interface': u'127.0.0.1', u'port': 8000}]}
+>>> exit()
+pappy>
+```
+
+### Redirect Output To File
+
+You can use `>` to direct output to a file. However, a number of commands use colored output. If you just redirect these to a file, there will be additional bytes which represent the ANSI color codes. To get around this, use the `nocolor` command to remove the color from the command output.
+
+```
+pappy> ls > ls.txt
+pappy> !xxd -c 32 -g 4 ls.txt
+0000000: 1b5b316d 1b5b346d 49442020 56657262 2020486f 73742020 20202020 20202050  .[1m.[4mID  Verb  Host         P
+0000020: 61746820 20202020 20202020 20202020 2020532d 436f6465 20202020 20202020  ath               S-Code
+0000040: 20202020 52657120 4c656e20 20527370 204c656e 20205469 6d652020 20204d6e      Req Len  Rsp Len  Time    Mn
+0000060: 676c2020 1b5b306d 0a352020 201b5b33 366d4745 541b5b30 6d202020 1b5b3931  gl  .[0m.5   .[36mGET.[0m   .[91
+0000080: 6d766974 616c792e 73657879 1b5b306d 20201b5b 33366d1b 5b306d2f 1b5b3334  mvitaly.sexy.[0m  .[36m.[0m/.[34
+00000a0: 6d6e6574 73636170 652e6769 661b5b30 6d202020 2020201b 5b33356d 33303420  mnetscape.gif.[0m      .[35m304
+00000c0: 4e6f7420 4d6f6469 66696564 1b5b306d 20203020 20202020 20202030 20202020  Not Modified.[0m  0        0
+00000e0: 20202020 302e3038 20202020 2d2d2020 20200a34 2020201b 5b33366d 4745541b      0.08    --    .4   .[36mGET.
+0000100: 5b306d20 20201b5b 39316d76 6974616c 792e7365 78791b5b 306d2020 1b5b3336  [0m   .[91mvitaly.sexy.[0m  .[36
+0000120: 6d1b5b30 6d2f1b5b 33346d65 7372312e 6a70671b 5b306d20 20202020 20202020  m.[0m/.[34mesr1.jpg.[0m
+0000140: 201b5b33 356d3330 34204e6f 74204d6f 64696669 65641b5b 306d2020 30202020   .[35m304 Not Modified.[0m  0
+0000160: 20202020 20302020 20202020 2020302e 30372020 20202d2d 20202020 0a332020       0        0.07    --    .3
+0000180: 201b5b33 366d4745 541b5b30 6d202020 1b5b3931 6d766974 616c792e 73657879   .[36mGET.[0m   .[91mvitaly.sexy
+00001a0: 1b5b306d 20201b5b 33366d1b 5b306d2f 1b5b3334 6d636f6e 73747275 6374696f  .[0m  .[36m.[0m/.[34mconstructio
+00001c0: 6e2e6769 661b5b30 6d20201b 5b33356d 33303420 4e6f7420 4d6f6469 66696564  n.gif.[0m  .[35m304 Not Modified
+00001e0: 1b5b306d 20203020 20202020 20202030 20202020 20202020 302e3037 20202020  .[0m  0        0        0.07
+0000200: 2d2d2020 20200a32 2020201b 5b33366d 4745541b 5b306d20 20201b5b 39316d76  --    .2   .[36mGET.[0m   .[91mv
+0000220: 6974616c 792e7365 78791b5b 306d2020 1b5b3336 6d1b5b30 6d2f1b5b 33346d76  italy.sexy.[0m  .[36m.[0m/.[34mv
+0000240: 6974616c 79322e6a 70671b5b 306d2020 20202020 201b5b33 366d3230 30204f4b  italy2.jpg.[0m       .[36m200 OK
+0000260: 1b5b306d 20202020 20202020 20202020 30202020 20202020 20323033 34303033  .[0m            0        2034003
+0000280: 20203135 352e3131 20202d2d 20202020 0a312020 201b5b33 366d4745 541b5b30    155.11  --    .1   .[36mGET.[0
+00002a0: 6d202020 1b5b3931 6d766974 616c792e 73657879 1b5b306d 20201b5b 33366d1b  m   .[91mvitaly.sexy.[0m  .[36m.
+00002c0: 5b306d2f 1b5b3334 6d1b5b30 6d202020 20202020 20202020 20202020 2020201b  [0m/.[34m.[0m                  .
+00002e0: 5b33356d 33303420 4e6f7420 4d6f6469 66696564 1b5b306d 20203020 20202020  [35m304 Not Modified.[0m  0
+0000300: 20202030 20202020 20202020 302e3037 20202020 2d2d2020 20200a                0        0.07    --    .
+pappy> nocolor ls > ls2.txt
+pappy> !xxd -c 32 -g 4 ls2.txt
+0000000: 49442020 56657262 2020486f 73742020 20202020 20202050 61746820 20202020  ID  Verb  Host         Path
+0000020: 20202020 20202020 2020532d 436f6465 20202020 20202020 20202020 52657120            S-Code            Req
+0000040: 4c656e20 20527370 204c656e 20205469 6d652020 20204d6e 676c2020 0a352020  Len  Rsp Len  Time    Mngl  .5
+0000060: 20474554 20202076 6974616c 792e7365 78792020 2f6e6574 73636170 652e6769   GET   vitaly.sexy  /netscape.gi
+0000080: 66202020 20202033 3034204e 6f74204d 6f646966 69656420 20302020 20202020  f      304 Not Modified  0
+00000a0: 20203020 20202020 20202030 2e303820 2020202d 2d202020 200a3420 20204745    0        0.08    --    .4   GE
+00000c0: 54202020 76697461 6c792e73 65787920 202f6573 72312e6a 70672020 20202020  T   vitaly.sexy  /esr1.jpg
+00000e0: 20202020 33303420 4e6f7420 4d6f6469 66696564 20203020 20202020 20202030      304 Not Modified  0        0
+0000100: 20202020 20202020 302e3037 20202020 2d2d2020 20200a33 20202047 45542020          0.07    --    .3   GET
+0000120: 20766974 616c792e 73657879 20202f63 6f6e7374 72756374 696f6e2e 67696620   vitaly.sexy  /construction.gif
+0000140: 20333034 204e6f74 204d6f64 69666965 64202030 20202020 20202020 30202020   304 Not Modified  0        0
+0000160: 20202020 20302e30 37202020 202d2d20 2020200a 32202020 47455420 20207669       0.07    --    .2   GET   vi
+0000180: 74616c79 2e736578 7920202f 76697461 6c79322e 6a706720 20202020 20203230  taly.sexy  /vitaly2.jpg       20
+00001a0: 30204f4b 20202020 20202020 20202020 30202020 20202020 20323033 34303033  0 OK            0        2034003
+00001c0: 20203135 352e3131 20202d2d 20202020 0a312020 20474554 20202076 6974616c    155.11  --    .1   GET   vital
+00001e0: 792e7365 78792020 2f202020 20202020 20202020 20202020 20202033 3034204e  y.sexy  /                  304 N
+0000200: 6f74204d 6f646966 69656420 20302020 20202020 20203020 20202020 20202030  ot Modified  0        0        0
+0000220: 2e303720 2020202d 2d202020 200a0a                                        .07    --    ..
+pappy>
+```
+
+If you want to write the contents of a request or response to a file, don't use `nocolor` with `vfq` or `vfs`. Use just the `vbq` or `vbs` commands.
+
+| Command | Description |
+|:--------|:------------|
+| `nocolor` | Run a command and print its output without ASCII escape codes. Intended for use when redirecting output to a file. Should only be used with text and not with binary data. |
+
+
 Generating Pappy's CA Cert
 --------------------------
 In order to intercept and modify requests to sites that use HTTPS, you have to generate and install CA certs to your browser. You can do this by running the `gencerts` command in Pappy. By default, certs are stored `~/.pappy/certs`. This is also the default location that Pappy will look for certificates (unless you specify otherwise in `config.json`.) In addition, you can give the `gencerts` command an argument to have it put the generated certs in a different directory.
@@ -110,11 +219,13 @@ The following commands can be used to view requests and responses
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
 | `ls [a|<num>`]| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
-| `sm` | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. |
+| `sm` | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. |
 | `viq <id(s)>` | view_request_info, viq | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information. |
 | `vfq <id(s)>` | view_full_request, vfq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. |
+| `vbq <id(s)>` | view_request_bytes, vbq | [V]iew [B]ytes of Re[Q]uest, prints the full request including headers and data without coloring or additional newlines. Use this if you want to write a request to a file. |
 | `vhq <id(s)>` | view_request_headers, vhq | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request. |
 | `vfs <id(s)>` | view_full_response, vfs |[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data. |
+| `vbs <id(s)>` | view_response_bytes, vbs | [V]iew [B]ytes of Re[S]ponse, prints the full response including headers and data without coloring or additional newlines. Use this if you want to write a response to a file. |
 | `vhs <id(s)>` | view_response_headers, vhs | [V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request. |
 
 The table shown by `ls` will have the following columns:
@@ -326,6 +437,8 @@ The following commands can be used to encode/decode strings:
 |`base64_encode`|`base64_encode`, `b64e` | Base64 encode a string |
 |`asciihex_decode`|`asciihex_decode`, `ahd` | Decode an ASCII hex string |
 |`asciihex_encode`|`asciihex_encode`, `ahe` | Encode an ASCII hex string |
+|`html_decode`|`html_decode`, `htmld` | Decode an html encoded string |
+|`html_encode`|`html_encode`, `htmle` | Encode a string to html encode all of the characters |
 |`url_decode`|`url_decode`, `urld` | Url decode a string |
 |`url_encode`|`url_encode`, `urle` | Url encode a string |
 |`gzip_decode`|`gzip_decode`, `gzd` | Gzip decompress a string. Probably won't work too well since there's not a great way to get binary data passed in as an argument. I'm working on this. |
@@ -334,6 +447,8 @@ The following commands can be used to encode/decode strings:
 |`base64_encode_raw`|`base64_encode_raw`, `b64er` | Same as `base64_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
 |`asciihex_decode_raw`|`asciihex_decode_raw`, `ahdr` | Same as `asciihex_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
 |`asciihex_encode_raw`|`asciihex_encode_raw`, `aher` | Same as `asciihex_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`html_decode_raw`|`html_decode_raw`, `htmldr` | Same as `html_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`html_encode_raw`|`html_encode_raw`, `htmler` | Same as `html_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
 |`url_decode_raw`|`url_decode_raw`, `urldr` | Same as `url_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
 |`url_encode_raw`|`url_encode_raw`, `urler` | Same as `url_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
 |`gzip_decode_raw`|`gzip_decode_raw`, `gzdr` | Same as `gzip_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
@@ -829,6 +944,10 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.4
+    * Add command history saving between sessions
+    * Add html encoder/decoder
+    * All the bugs were fixed so I added some more for 0.2.5
 * 0.2.3
     * Decoder functions
     * Add `merge` command

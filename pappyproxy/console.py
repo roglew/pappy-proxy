@@ -3,14 +3,19 @@ Contains helpers for interacting with the console. Includes definition for the
 class that is used to run the console.
 """
 
+import StringIO
+import atexit
 import cmd2
+import os
 import re
+import readline
 import string
 import sys
 import itertools
 
 from .util import PappyException
 from .colors import Styles, Colors, verb_color, scode_color, path_formatter, host_color
+from . import config
 from twisted.internet import defer
 
 ###################
@@ -262,7 +267,17 @@ class ProxyCmd(cmd2.Cmd):
 
         self._cmds = {}
         self._aliases = {}
+
+        atexit.register(self.save_histfile)
+        readline.set_history_length(config.HISTSIZE)
+        if os.path.exists('cmdhistory'):
+            if config.HISTSIZE != 0:
+                readline.read_history_file('cmdhistory')
+            else:
+                os.remove('cmdhistory')
+
         cmd2.Cmd.__init__(self, *args, **kwargs)
+
     
     def __dir__(self):
         # Hack to get cmd2 to detect that we can run a command
@@ -319,6 +334,12 @@ class ProxyCmd(cmd2.Cmd):
                     if self._cmds[real_command][1]:
                         return self._cmds[real_command][1]
         raise AttributeError(attr)
+
+    def save_histfile(self):
+        # Write the command to the history file
+        if config.HISTSIZE != 0:
+            readline.set_history_length(config.HISTSIZE)
+            readline.write_history_file('cmdhistory')
     
     def get_names(self):
         # Hack to get cmd to recognize do_/etc functions as functions for things
@@ -356,4 +377,15 @@ class ProxyCmd(cmd2.Cmd):
         """
         for command, alias in alias_list:
             self.add_alias(command, alias)
-    
+
+# Taken from http://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
+# then modified
+class Capturing():
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO.StringIO()
+        return self
+
+    def __exit__(self, *args):
+        self.val = self._stringio.getvalue()
+        sys.stdout = self._stdout

@@ -72,6 +72,7 @@ def main():
         conf_settings = config.get_default_config()
         conf_settings['debug_dir'] = None
         conf_settings['debug_to_file'] = False
+        conf_settings['history_size'] = 0
         with tempfile.NamedTemporaryFile(delete=False) as tf:
             conf_settings['data_file'] = tf.name
             print 'Temporary datafile is %s' % tf.name

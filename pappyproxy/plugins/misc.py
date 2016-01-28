@@ -2,10 +2,10 @@ import crochet
 import pappyproxy
 import shlex
 
-from pappyproxy.console import confirm, load_reqlist
-from pappyproxy.util import PappyException
-from pappyproxy.http import Request
+from pappyproxy.console import confirm, load_reqlist, Capturing
+from pappyproxy.util import PappyException, remove_color
 from pappyproxy.requestcache import RequestCache
+from pappyproxy.pappy import cons
 from twisted.internet import defer
 from twisted.enterprise import adbapi
 
@@ -114,7 +114,12 @@ def merge_datafile(line):
         print 'Added %d requests' % count
     finally:
         other_dbpool.close()
-            
+        
+def run_without_color(line):
+    with Capturing() as output:
+       cons.onecmd(line.strip())
+    print remove_color(output.val)
+        
 def load_cmds(cmd):
     cmd.set_cmds({
         'clrmem': (clrmem, None),
@@ -122,7 +127,8 @@ def load_cmds(cmd):
         'sv': (save, None),
         'export': (export, None),
         'log': (log, None),
-        'merge': (merge_datafile, None)
+        'merge': (merge_datafile, None),
+        'nocolor': (run_without_color, None),
     })
     cmd.add_aliases([
         #('rpy', ''),

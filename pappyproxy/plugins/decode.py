@@ -1,3 +1,4 @@
+import HTMLParser
 import StringIO
 import base64
 import clipboard
@@ -42,7 +43,13 @@ def gzip_decode_helper(s):
     dec_data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(s))
     dec_data = dec_data.read()
     return dec_data
-        
+
+def html_encode_helper(s):
+    return ''.join(['&#x{0:x};'.format(ord(c)) for c in s])
+
+def html_decode_helper(s):
+    return HTMLParser.HTMLParser().unescape(s)
+
 def _code_helper(line, func, copy=True):
     args = shlex.split(line)
     if not args:
@@ -110,6 +117,22 @@ def asciihex_encode(line):
     Results are copied to the clipboard.
     """
     print_maybe_bin(_code_helper(line, asciihex_encode_helper))
+
+def html_decode(line):
+    """
+    Decode an html encoded string.
+    If no string is given, will decode the contents of the clipboard.
+    Results are copied to the clipboard.
+    """
+    print_maybe_bin(_code_helper(line, html_decode_helper))
+
+def html_encode(line):
+    """
+    Encode a string and escape html control characters.
+    If no string is given, will encode the contents of the clipboard.
+    Results are copied to the clipboard.
+    """
+    print_maybe_bin(_code_helper(line, html_encode_helper))
     
 def gzip_decode(line):
     """
@@ -175,6 +198,22 @@ def asciihex_encode_raw(line):
     """
     print _code_helper(line, asciihex_encode_helper, copy=False)
     
+def html_decode_raw(line):
+    """
+    Same as html_decode but the output will never be printed as a hex dump and
+    results will not be copied. It is suggested you redirect the output
+    to a file.
+    """
+    print _code_helper(line, html_decode_helper, copy=False)
+
+def html_encode_raw(line):
+    """
+    Same as html_encode but the output will never be printed as a hex dump and
+    results will not be copied. It is suggested you redirect the output
+    to a file.
+    """
+    print _code_helper(line, html_encode_helper, copy=False)
+
 def gzip_decode_raw(line):
     """
     Same as gzip_decode but the output will never be printed as a hex dump and
@@ -199,6 +238,8 @@ def load_cmds(cmd):
         'asciihex_encode': (asciihex_encode, None),
         'url_decode': (url_decode, None),
         'url_encode': (url_encode, None),
+        'html_decode': (html_decode, None),
+        'html_encode': (html_encode, None),
         'gzip_decode': (gzip_decode, None),
         'gzip_encode': (gzip_encode, None),
         'base64_decode_raw': (base64_decode_raw, None),
@@ -207,6 +248,8 @@ def load_cmds(cmd):
         'asciihex_encode_raw': (asciihex_encode_raw, None),
         'url_decode_raw': (url_decode_raw, None),
         'url_encode_raw': (url_encode_raw, None),
+        'html_decode_raw': (html_decode_raw, None),
+        'html_encode_raw': (html_encode_raw, None),
         'gzip_decode_raw': (gzip_decode_raw, None),
         'gzip_encode_raw': (gzip_encode_raw, None),
     })
@@ -217,6 +260,8 @@ def load_cmds(cmd):
         ('asciihex_encode', 'ahe'),
         ('url_decode', 'urld'),
         ('url_encode', 'urle'),
+        ('html_decode', 'htmld'),
+        ('html_encode', 'htmle'),
         ('gzip_decode', 'gzd'),
         ('gzip_encode', 'gze'),
         ('base64_decode_raw', 'b64dr'),
@@ -225,6 +270,8 @@ def load_cmds(cmd):
         ('asciihex_encode_raw', 'aher'),
         ('url_decode_raw', 'urldr'),
         ('url_encode_raw', 'urler'),
+        ('html_decode_raw', 'htmldr'),
+        ('html_encode_raw', 'htmler'),
         ('gzip_decode_raw', 'gzdr'),
         ('gzip_encode_raw', 'gzer'),
     ])

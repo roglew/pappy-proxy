@@ -53,6 +53,11 @@ ie run it with `rp mem <id>` to store everything in memory
 ** TODO clean API to generate filters
 - Make it consistent that it should return a deferred
 ** TODO Add VERSION to .config and bind it to docs and setup.py
+** TODO Chain decode command (ie `decode b64 html url`)
+** TODO html encoding/decoding
+** TODO util autocompleters
+*** TODO files
+*** TODO commands
 * Filter refactor
 ** Format:
 [field] [field params]

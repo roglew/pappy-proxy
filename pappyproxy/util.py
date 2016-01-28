@@ -1,3 +1,4 @@
+import re
 import string
 import time
 import datetime
@@ -24,6 +25,10 @@ def printable_data(data):
         else:
             chars += '.'
     return ''.join(chars)
+
+def remove_color(s):
+    ansi_escape = re.compile(r'\x1b[^m]*m')
+    return ansi_escape.sub('', s)
 
 # Taken from http://stackoverflow.com/questions/4770297/python-convert-utc-datetime-string-to-local-datetime
 def utc2local(utc):

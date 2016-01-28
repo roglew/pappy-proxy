@@ -1,6 +1,7 @@
 {
     "data_file": "./data.db",
     "cert_dir": "{DATADIR}/certs",
+    "history_size": 1000,
     "proxy_listeners": [
         {"port": 8000, "interface": "127.0.0.1"}
     ]
