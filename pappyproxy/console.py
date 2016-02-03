@@ -262,7 +262,7 @@ class ProxyCmd(cmd2.Cmd):
     """
 
     def __init__(self, *args, **kwargs):
-        self.prompt = 'pappy> '
+        self.prompt = 'pappy' + Colors.YELLOW + '> ' + Colors.ENDC
         self.debug = True
 
         self._cmds = {}

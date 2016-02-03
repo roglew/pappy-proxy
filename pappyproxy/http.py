@@ -803,7 +803,17 @@ class HTTPMessage(object):
             stripped = True
         elif key.lower() == 'content-length':
             # We use our own content length
-            self._data_obj = LengthData(int(val))
+            if self._data_obj and self._data_obj.complete:
+                # We're regenerating or something so we want to base this header
+                # off our existing body
+                val = self._data_obj.body
+                self._data_obj = LengthData(len(val))
+                if len(val) > 0:
+                    self._data_obj.add_data(val)
+                self._encoding_type = ENCODE_NONE
+                self.complete = True
+            else:
+                self._data_obj = LengthData(int(val))
 
         return (not stripped)
 
@@ -1972,8 +1982,10 @@ class Request(HTTPMessage):
         """
         from .proxy import ProxyClientFactory, get_next_connection_id, ClientTLSContext
 
-        new_obj = Request(full_request)
-        factory = ProxyClientFactory(new_obj, save_all=False)
+        new_req = Request(full_request)
+        new_req.is_ssl = is_ssl
+        new_req.port = port
+        factory = ProxyClientFactory(new_req, save_all=False)
         factory.connection_id = get_next_connection_id()
         if is_ssl:
             reactor.connectSSL(host, port, factory, ClientTLSContext())

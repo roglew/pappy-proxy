@@ -212,7 +212,11 @@ def intercept(line):
                 editor = 'vi'
                 if 'EDITOR' in os.environ:
                     editor = os.environ['EDITOR']
-                subprocess.call([editor, to_edit])
+                additional_args = []
+                if editor == 'vim':
+                    # prevent adding additional newline
+                    additional_args.append('-b')
+                subprocess.call([editor, to_edit] + additional_args)
                 stdscr.clear()
                 deferred.callback(None)
     finally:

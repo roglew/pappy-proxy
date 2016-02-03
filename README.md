@@ -223,10 +223,18 @@ The following commands can be used to view requests and responses
 | `viq <id(s)>` | view_request_info, viq | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information. |
 | `vfq <id(s)>` | view_full_request, vfq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. |
 | `vbq <id(s)>` | view_request_bytes, vbq | [V]iew [B]ytes of Re[Q]uest, prints the full request including headers and data without coloring or additional newlines. Use this if you want to write a request to a file. |
+| `ppq <id(s)> [format]` | pretty_print_request, ppq | Pretty print a request. If a format is given, it will try and print the body of the request with that format. Otherwise it will make a guess based off of the Content-Type header. |
 | `vhq <id(s)>` | view_request_headers, vhq | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request. |
 | `vfs <id(s)>` | view_full_response, vfs |[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data. |
-| `vbs <id(s)>` | view_response_bytes, vbs | [V]iew [B]ytes of Re[S]ponse, prints the full response including headers and data without coloring or additional newlines. Use this if you want to write a response to a file. |
 | `vhs <id(s)>` | view_response_headers, vhs | [V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request. |
+| `vbs <id(s)>` | view_response_bytes, vbs | [V]iew [B]ytes of Re[S]ponse, prints the full response including headers and data without coloring or additional newlines. Use this if you want to write a response to a file. |
+| `pps <id(s)> [format]` | pretty_print_response, pps | Pretty print a response. If a format is given, it will try and print the body of the response with that format. Otherwise it will make a guess based off of the Content-Type header. |
+
+Available formats for `ppq` and `pps` commands:
+
+| Format | Description |
+|:-------|:------------|
+| `json` | Print as JSON |
 
 The table shown by `ls` will have the following columns:
 
@@ -944,6 +952,11 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.5
+    * Requests sent with repeater now are given `repeater` tag
+    * Add ppq and pps commands
+    * Look at the pretty prompt
+    * Bugfixes
 * 0.2.4
     * Add command history saving between sessions
     * Add html encoder/decoder

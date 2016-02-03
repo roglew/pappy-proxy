@@ -109,7 +109,7 @@ def active_intercepting_macros():
     Returns a list of the active intercepting macro objects. Modifying
     this list will not affect which macros are active.
     """
-    return pappyproxy.pappy.server_factory.intercepting_macros[:]
+    return [v for k, v in pappyproxy.pappy.server_factory.intercepting_macros.iteritems() ]
 
 def in_memory_reqs():
     """

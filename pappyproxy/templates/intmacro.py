@@ -5,6 +5,7 @@ SHORT_NAME = '{{short_name}}'
 runargs = []
 
 def init(args):
+    global runargs
     runargs = args
 
 def mangle_request(request):

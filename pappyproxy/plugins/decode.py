@@ -54,6 +54,8 @@ def _code_helper(line, func, copy=True):
     args = shlex.split(line)
     if not args:
         s = clipboard.paste()
+        print 'Will decode:'
+        print printable_data(s)
         s = func(s)
         if copy:
             try:

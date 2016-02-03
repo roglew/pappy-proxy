@@ -846,6 +846,24 @@ def test_request_url_blankpath():
     assert r.full_path == '/?foo=bar'
     assert r.url == 'https://www.google.com?foo=bar'
     
+def test_request_modify_header2():
+    r = http.Request(('POST /some/path HTTP/1.1\r\n'
+                      'Host: test.host.thing\r\n'
+                      'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:43.0) Gecko/20100101 Firefox/43.0\r\n'
+                      'Content-Length: 282\r\n'
+                      'Connection: keep-alive\r\n'
+                      '\r\n'
+                      'a|b|c|d'))
+    r2 = r.copy()
+    r2.headers['User-Agent'] = 'Moziller/6.9'
+    assert r2.full_message == ('POST /some/path HTTP/1.1\r\n'
+                               'Host: test.host.thing\r\n'
+                               'User-Agent: Moziller/6.9\r\n'
+                               'Content-Length: 7\r\n'
+                               'Connection: keep-alive\r\n'
+                               '\r\n'
+                               'a|b|c|d')
+    
 
 ####################
 ## Response tests

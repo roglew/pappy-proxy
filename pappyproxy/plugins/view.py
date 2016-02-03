@@ -1,6 +1,9 @@
 import crochet
 import datetime
+import json
 import pappyproxy
+import pygments
+import pprint
 import shlex
 
 from pappyproxy.console import load_reqlist, print_table, print_request_rows, get_req_data_row
@@ -9,6 +12,8 @@ from pappyproxy.http import Request
 from twisted.internet import defer
 from pappyproxy.plugin import main_context_ids
 from pappyproxy.colors import Colors, Styles, verb_color, scode_color, path_formatter, host_color
+from pygments.formatters import TerminalFormatter
+from pygments.lexers.data import JsonLexer
 
 ###################
 ## Helper functions
@@ -90,6 +95,17 @@ def print_request_extended(request):
 def print_tree(tree):
     # Prints a tree. Takes in a sorted list of path tuples
     _print_tree_helper(tree, 0, [])
+    
+def pretty_print_body(fmt, body):
+    if fmt.lower() == 'json':
+        try:
+            d = json.loads(body.strip())
+        except:
+            raise PappyException('Body could not be parsed as JSON')
+        s = json.dumps(d, indent=4, sort_keys=True)
+        print pygments.highlight(s, JsonLexer(), TerminalFormatter())
+    else:
+        raise PappyException('%s is not a valid format' % fmt)
     
 def _get_tree_prefix(depth, print_bars, last):
     if depth == 0:
@@ -247,6 +263,22 @@ def view_request_bytes(line):
         if len(reqs) > 1:
             print '-'*30
             print ''
+            
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def pretty_print_request(line):
+    """
+    Print the body of the request pretty printed.
+    Usage: pretty_print_request <format> <reqid(s)>
+    """
+    args = shlex.split(line)
+    if len(args) < 2:
+        raise PappyException("Usage: pretty_print_request <format> <reqid(s)>")
+    reqids = args[1]
+
+    reqs = yield load_reqlist(reqids)
+    for req in reqs:
+        pretty_print_body(args[0], req.body)
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -299,6 +331,25 @@ def view_response_bytes(line):
             
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
+def pretty_print_response(line):
+    """
+    Print the body of the request pretty printed.
+    Usage: pretty_print_request <format> <reqid(s)>
+    """
+    args = shlex.split(line)
+    if len(args) < 2:
+        raise PappyException("Usage: pretty_print_request <format> <reqid(s)>")
+    reqids = args[1]
+
+    reqs = yield load_reqlist(reqids)
+    for req in reqs:
+        if req.response:
+            pretty_print_body(args[0], req.response.body)
+        else:
+            print 'No response associated with request %s' % req.reqid
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
 def dump_response(line):
     """
     Dump the data of the response to a file.
@@ -345,9 +396,11 @@ def load_cmds(cmd):
         'view_request_headers': (view_request_headers, None),
         'view_full_request': (view_full_request, None),
         'view_request_bytes': (view_request_bytes, None),
+        'pretty_print_request': (pretty_print_request, None),
         'view_response_headers': (view_response_headers, None),
         'view_full_response': (view_full_response, None),
         'view_response_bytes': (view_response_bytes, None),
+        'pretty_print_response': (pretty_print_response, None),
         'site_map': (site_map, None),
         'dump_response': (dump_response, None),
     })
@@ -357,9 +410,11 @@ def load_cmds(cmd):
         ('view_request_headers', 'vhq'),
         ('view_full_request', 'vfq'),
         ('view_request_bytes', 'vbq'),
+        ('pretty_print_request', 'ppq'),
         ('view_response_headers', 'vhs'),
         ('view_full_response', 'vfs'),
         ('view_response_bytes', 'vbs'),
+        ('pretty_print_response', 'pps'),
         ('site_map', 'sm'),
         #('dump_response', 'dr'),
     ])
