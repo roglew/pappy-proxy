@@ -119,7 +119,7 @@ def submit_current_buffer():
     full_request = '\n'.join(curbuf)
     commdata = {'action': 'submit',
                 'full_message': base64.b64encode(full_request),
-                'tags': ['repeater'],
+                'tags': {'repeater'},
                 'port': int(vim.eval("s:repport")),
                 'host': vim.eval("s:rephost")}
     if vim.eval("s:repisssl") == '1':

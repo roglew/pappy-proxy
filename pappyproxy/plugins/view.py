@@ -5,10 +5,11 @@ import pappyproxy
 import pygments
 import pprint
 import shlex
+import urllib
 
 from pappyproxy.console import load_reqlist, print_table, print_request_rows, get_req_data_row
 from pappyproxy.util import PappyException, utc2local
-from pappyproxy.http import Request
+from pappyproxy.http import Request, repeatable_parse_qs
 from twisted.internet import defer
 from pappyproxy.plugin import main_context_ids
 from pappyproxy.colors import Colors, Styles, verb_color, scode_color, path_formatter, host_color
@@ -97,15 +98,25 @@ def print_tree(tree):
     _print_tree_helper(tree, 0, [])
     
 def pretty_print_body(fmt, body):
-    if fmt.lower() == 'json':
-        try:
+    try:
+        if fmt.lower() == 'json':
             d = json.loads(body.strip())
-        except:
-            raise PappyException('Body could not be parsed as JSON')
-        s = json.dumps(d, indent=4, sort_keys=True)
-        print pygments.highlight(s, JsonLexer(), TerminalFormatter())
-    else:
-        raise PappyException('%s is not a valid format' % fmt)
+            s = json.dumps(d, indent=4, sort_keys=True)
+            print pygments.highlight(s, JsonLexer(), TerminalFormatter())
+        elif fmt.lower() == 'form':
+            qs = repeatable_parse_qs(body)
+            for k, v in qs.all_pairs():
+                s = Colors.GREEN
+                s += '%s: ' % urllib.unquote(k)
+                s += Colors.ENDC
+                s += urllib.unquote(v)
+                print s
+        else:
+            raise PappyException('"%s" is not a valid format' % fmt)
+    except PappyException as e:
+        raise e
+    except:
+        raise PappyException('Body could not be parsed as "%s"' % fmt)
     
 def _get_tree_prefix(depth, print_bars, last):
     if depth == 0:

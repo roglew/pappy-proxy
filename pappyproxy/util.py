@@ -21,9 +21,9 @@ def printable_data(data):
     chars = []
     for c in data:
         if c in string.printable:
-            chars += c
+            chars.append(c)
         else:
-            chars += '.'
+            chars.append('.')
     return ''.join(chars)
 
 def remove_color(s):

@@ -14,6 +14,7 @@ import weakref
 
 from .util import PappyException, printable_data
 from .requestcache import RequestCache
+from .colors import Colors, host_color, path_formatter
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_mimetype, HttpLexer
 from twisted.internet import defer, reactor
@@ -747,8 +748,12 @@ class HTTPMessage(object):
             self.handle_start_line(line)
             self._first_line = False
         else:
-            key, val = line.split(':', 1)
-            val = val.strip()
+            if ':' in line:
+                key, val = line.split(':', 1)
+                val = val.strip()
+            else:
+                key = line
+                val = None
             if self.handle_header(key, val):
                 self.headers.append(key, val, do_callback=False)
 
@@ -784,6 +789,8 @@ class HTTPMessage(object):
         :param key: Header value
         :type line: string
         """
+        if val is None:
+            return True
         stripped = False
         if key.lower() == 'content-encoding':
             if val in ('gzip', 'x-gzip'):
@@ -1104,6 +1111,48 @@ class Request(HTTPMessage):
     @raw_data.setter
     def raw_data(self, val):
         self.body = val
+        
+    def _url_helper(self, colored=False):
+        retstr = ''
+        if self.is_ssl:
+            retstr += 'https://'
+        else:
+            if colored:
+                retstr += Colors.RED
+                retstr += 'http'
+                retstr += Colors.ENDC
+                retstr += '://'
+            else:
+                retstr += 'http://'
+        if colored:
+            retstr += host_color(self.host)
+            retstr += self.host
+            retstr += Colors.ENDC
+        else:
+            retstr += self.host
+        if not ((self.is_ssl and self.port == 443) or \
+                (not self.is_ssl and self.port == 80)):
+            if colored:
+                retstr += ':'
+                retstr += Colors.MAGENTA
+                retstr += str(self.port)
+                retstr += Colors.ENDC
+            else:
+                retstr += ':%d' % self.port
+        if self.path and self.path != '/':
+            if colored:
+                retstr += path_formatter(self.path)
+            else:
+                retstr += self.path
+        if self.url_params:
+            retstr += '?'
+            pairs = []
+            for p in self.url_params.all_pairs():
+                pairs.append('='.join(p))
+            retstr += '&'.join(pairs)
+        if self.fragment:
+            retstr += '#%s' % self.fragment
+        return retstr
 
     @property
     def url(self):
@@ -1117,25 +1166,17 @@ class Request(HTTPMessage):
         :setter: Sets the url of the request and updates metadata
         :type: string
         """
-        if self.is_ssl:
-            retstr = 'https://'
-        else:
-            retstr = 'http://'
-        retstr += self.host
-        if not ((self.is_ssl and self.port == 443) or \
-                (not self.is_ssl and self.port == 80)):
-            retstr += ':%d' % self.port
-        if self.path and self.path != '/':
-            retstr += self.path
-        if self.url_params:
-            retstr += '?'
-            pairs = []
-            for p in self.url_params.all_pairs():
-                pairs.append('='.join(p))
-            retstr += '&'.join(pairs)
-        if self.fragment:
-            retstr += '#%s' % self.fragment
-        return retstr
+        return self._url_helper(False)
+
+    @property
+    def url_color(self):
+        """
+        same as .url, except colored. Used for printing URLs to the terminal.
+
+        :getter: Returns the url of the request
+        :type: string
+        """
+        return self._url_helper(True)
         
     @url.setter
     def url(self, val):
@@ -1235,7 +1276,7 @@ class Request(HTTPMessage):
         data['reqid'] = self.reqid
         if self.response:
             data['response_id'] = self.response.rspid
-        data['tags'] = self.tags
+        data['tags'] = list(self.tags)
         return data
 
     def set_metadata(self, data):
@@ -1248,14 +1289,14 @@ class Request(HTTPMessage):
         if 'port' in data:
             self.port = data['port']
         if 'tags' in data:
-            self.tags = data['tags']
+            self.tags = set(data['tags'])
 
     def reset_metadata(self):
         self.port = 80
         self.is_ssl = False
         self.reqid = None
         self._host = ''
-        self.tags = []
+        self.tags = set()
 
     def get_plugin_dict(self, name):
         """
@@ -1321,6 +1362,7 @@ class Request(HTTPMessage):
             pairs = []
             for k, v in self.post_params.all_pairs():
                 pairs.append('%s=%s' % (k, v))
+            self.headers['Content-Type'] =  'application/x-www-form-urlencoded'
             self.body = '&'.join(pairs)
 
     def update_from_headers(self):
@@ -1410,6 +1452,8 @@ class Request(HTTPMessage):
                 
     def handle_header(self, key, val):
         # We may have duplicate headers
+        if val is None:
+            return True
         keep = HTTPMessage.handle_header(self, key, val)
         if not keep:
             return False
@@ -1451,6 +1495,17 @@ class Request(HTTPMessage):
     #######################
     ## Data store functions
                 
+    def save_in_mem(self, cust_cache=None):
+        if cust_cache:
+            use_cache = cust_cache
+        else:
+            use_cache = Request.cache
+        if not self.reqid:
+            print 'adding'
+            use_cache.add(self)
+        else:
+            print 'else adding'
+    
     @defer.inlineCallbacks
     def async_save(self, cust_dbpool=None, cust_cache=None):
         """
@@ -1785,9 +1840,9 @@ class Request(HTTPMessage):
             """,
             (req.reqid,)
         )
-        req.tags = []
+        req.tags = set()
         for row in rows:
-            req.tags.append(row[0])
+            req.tags.add(row[0])
         defer.returnValue(req)
 
     @staticmethod
@@ -2228,29 +2283,14 @@ class Response(HTTPMessage):
             self._end_after_headers = True
 
     def handle_header(self, key, val):
+        if val is None:
+            return True
         keep = HTTPMessage.handle_header(self, key, val)
         if not keep:
             return False
 
         stripped = False
-        if key.lower() == 'content-encoding':
-            if val in ('gzip', 'x-gzip'):
-                self._encoding_type = ENCODE_GZIP
-            elif val in ('deflate'):
-                self._encoding_type = ENCODE_DEFLATE
-
-            # We send our requests already decoded, so we don't want a header
-            # saying it's encoded
-            if self._encoding_type != ENCODE_NONE:
-                stripped = True
-        elif key.lower() == 'transfer-encoding' and val.lower() == 'chunked':
-            self._data_obj = ChunkedData()
-            self.complete = self._data_obj.complete
-            stripped = True
-        elif key.lower() == 'content-length':
-            # We use our own content length
-            self._data_obj = LengthData(int(val))
-        elif key.lower() == 'set-cookie':
+        if key.lower() == 'set-cookie':
             cookie = ResponseCookie(val)
             self.cookies.append(cookie.key, cookie, do_callback=False)
 

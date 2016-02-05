@@ -443,6 +443,18 @@ def test_message_build_chunked():
                                  'a: b\r\n'
                                  'Content-Length: 100\r\n\r\n')
     assert m.full_message == raw
+    
+def test_message_badheader():
+    raw = ('startline\r\n'
+           'a: b\r\n'
+           'Content-Encoding\r\n'
+           'd: e\r\n'
+           'f:g\r\n'
+           '\r\n')
+    m = http.HTTPMessage(raw)
+    assert m.headers['a'] == 'b'
+    assert m.headers['content-encoding'] is None
+    assert m.headers['f'] == 'g'
 
 ####################
 ## Request tests
@@ -723,7 +735,7 @@ def test_request_to_json():
     r = http.Request()
     r.start_line = 'GET / HTTP/1.1'
     r.headers['content-length'] = 500
-    r.tags = ['foo', 'bar']
+    r.tags = {'foo', 'bar'}
     r.body = 'AAAA'
     r.reqid = '1'
 
@@ -863,6 +875,15 @@ def test_request_modify_header2():
                                'Connection: keep-alive\r\n'
                                '\r\n'
                                'a|b|c|d')
+    r2.post_params['foo'] = 'barr'
+    assert r2.full_message == ('POST /some/path HTTP/1.1\r\n'
+                               'Host: test.host.thing\r\n'
+                               'User-Agent: Moziller/6.9\r\n'
+                               'Content-Length: 8\r\n'
+                               'Connection: keep-alive\r\n'
+                               'Content-Type: application/x-www-form-urlencoded\r\n'
+                               '\r\n'
+                               'foo=barr')
     
 
 ####################

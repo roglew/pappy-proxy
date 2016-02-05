@@ -283,7 +283,7 @@ def macro_from_requests(reqs, short_name='', long_name=''):
 
     loader = FileSystemLoader(config.PAPPY_DIR+'/templates')
     env = Environment(loader=loader)
-    template = env.get_template('macro.py')
+    template = env.get_template('macro.py.template')
     return template.render(zip=zip, **subs)
 
 def gen_imacro(short_name='', long_name=''):
@@ -298,6 +298,6 @@ def gen_imacro(short_name='', long_name=''):
 
     loader = FileSystemLoader(config.PAPPY_DIR+'/templates')
     env = Environment(loader=loader)
-    template = env.get_template('intmacro.py')
+    template = env.get_template('intmacro.py.template')
     return template.render(**subs)
     

@@ -32,7 +32,7 @@ def tag(line):
     for reqid in reqids:
         req = yield Request.load_request(reqid)
         if tag not in req.tags:
-            req.tags.append(tag)
+            req.tags.add(tag)
             if req.saved:
                 yield req.async_save()
         else:
@@ -64,7 +64,7 @@ def untag(line):
     for reqid in reqids:
         req = yield Request.load_request(reqid)
         if tag in req.tags:
-            req.tags.remove(tag)
+            req.tags.discard(tag)
             if req.saved:
                 yield req.async_save()
     if ids:
@@ -84,7 +84,7 @@ def clrtag(line):
 
     for req in reqs:
         if req.tags:
-            req.tags = []
+            req.tags = set()
             print 'Tags cleared from request %s' % (req.reqid)
             if req.saved:
                 yield req.async_save()

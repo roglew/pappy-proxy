@@ -262,7 +262,8 @@ class ProxyCmd(cmd2.Cmd):
     """
 
     def __init__(self, *args, **kwargs):
-        self.prompt = 'pappy' + Colors.YELLOW + '> ' + Colors.ENDC
+        # the \x01/\x02 are to make the prompt behave properly with the readline library
+        self.prompt = 'pappy\x01' + Colors.YELLOW + '\x02> \x01' + Colors.ENDC + '\x02'
         self.debug = True
 
         self._cmds = {}

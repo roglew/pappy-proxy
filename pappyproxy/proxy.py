@@ -35,26 +35,27 @@ def remove_intercepting_macro(key, int_macro_dict):
     del int_macro_dict[key]
 
 def log(message, id=None, symbol='*', verbosity_level=1):
-
-    if config.DEBUG_TO_FILE and not os.path.exists(config.DEBUG_DIR):
-        os.makedirs(config.DEBUG_DIR)
-    if id:
-        debug_str = '[%s](%d) %s' % (symbol, id, message)
-        if config.DEBUG_TO_FILE:
-            with open(config.DEBUG_DIR+'/connection_%d.log' % id, 'a') as f:
-                f.write(debug_str+'\n')
-    else:
-        debug_str = '[%s] %s' % (symbol, message)
-        if config.DEBUG_TO_FILE:
-            with open(config.DEBUG_DIR+'/debug.log', 'a') as f:
-                f.write(debug_str+'\n')
-    if config.DEBUG_VERBOSITY >= verbosity_level:
-        print debug_str
+    if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
+        if config.DEBUG_TO_FILE and not os.path.exists(config.DEBUG_DIR):
+            os.makedirs(config.DEBUG_DIR)
+        if id:
+            debug_str = '[%s](%d) %s' % (symbol, id, message)
+            if config.DEBUG_TO_FILE:
+                with open(config.DEBUG_DIR+'/connection_%d.log' % id, 'a') as f:
+                    f.write(debug_str+'\n')
+        else:
+            debug_str = '[%s] %s' % (symbol, message)
+            if config.DEBUG_TO_FILE:
+                with open(config.DEBUG_DIR+'/debug.log', 'a') as f:
+                    f.write(debug_str+'\n')
+        if config.DEBUG_VERBOSITY >= verbosity_level:
+            print debug_str
     
 def log_request(request, id=None, symbol='*', verbosity_level=3):
-    r_split = request.split('\r\n')
-    for l in r_split:
-        log(l, id, symbol, verbosity_level)
+    if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
+        r_split = request.split('\r\n')
+        for l in r_split:
+            log(l, id, symbol, verbosity_level)
         
 class ClientTLSContext(ssl.ClientContextFactory):
     isClient = 1
@@ -102,10 +103,11 @@ class ProxyClient(LineReceiver):
             self.factory.return_transport.write(data)
         if not self._response_obj.complete:
             if data:
-                s = printable_data(data)
-                dlines = s.split('\n')
-                for l in dlines:
-                    self.log(l, symbol='<rd', verbosity_level=3)
+                if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
+                    s = printable_data(data)
+                    dlines = s.split('\n')
+                    for l in dlines:
+                        self.log(l, symbol='<rd', verbosity_level=3)
             self._response_obj.add_data(data)
 
             if self._response_obj.complete:
@@ -214,7 +216,8 @@ class ProxyClientFactory(ClientFactory):
     @defer.inlineCallbacks
     def return_request_pair(self, request):
         self.end_time = datetime.datetime.utcnow()
-        log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
+        if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
+            log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
 
         request.time_start = self.start_time
         request.time_end = self.end_time
@@ -253,7 +256,7 @@ class ProxyClientFactory(ClientFactory):
                 if self.save_all:
                     yield request.async_deep_save()
 
-            if request.response:
+            if request.response and (config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0):
                 log_request(printable_data(request.response.full_response),
                             id=self.connection_id, symbol='<', verbosity_level=3)
         else:

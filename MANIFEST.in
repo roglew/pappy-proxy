@@ -4,4 +4,5 @@ recursive-include pappyproxy *.json
 recursive-include pappyproxy *.py
 recursive-include pappyproxy *.vim
 recursive-include pappyproxy *.txt
+recursive-include pappyproxy *.template
 include docs/source/overview.rst

@@ -6,6 +6,7 @@ import datetime
 import os
 import schema.update
 import shutil
+import signal
 import sys
 import tempfile
 
@@ -16,6 +17,7 @@ from . import http
 from . import plugin
 from . import proxy
 from . import requestcache
+from . import util
 from .console import ProxyCmd
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, defer
@@ -61,12 +63,19 @@ def delete_datafile():
     print 'Deleting temporary datafile'
     os.remove(config.DATAFILE)
     
+def custom_int_handler(signum, frame):
+    # sorry
+    print "Sorry, we can't kill things partway through otherwise the data file might be left in a corrupt state"
+    
 @defer.inlineCallbacks
 def main():
     global server_factory
     global plugin_loader
     global cons
     settings = parse_args()
+
+    if not os.path.exists(config.DATA_DIR):
+        os.makedirs(config.DATA_DIR)
 
     if settings['lite']:
         conf_settings = config.get_default_config()

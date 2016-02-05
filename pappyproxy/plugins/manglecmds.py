@@ -31,7 +31,7 @@ class MangleInterceptMacro(InterceptMacro):
         self.async_rsp = True
 
     def __repr__(self):
-        return "<MangleInterceptingMacro>" % self.name
+        return "<MangleInterceptingMacro>"
 
     @defer.inlineCallbacks
     def async_mangle_request(self, request):

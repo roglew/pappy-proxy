@@ -446,7 +446,7 @@ def gen_filter_by_headers(args):
         if args[0][0] == 'n':
             return comparer(req.headers) and (not req.response or comparer(req.response.headers))
         else:
-            return comparer(req.headers) and (req.response and comparer(req.response.headers))
+            return comparer(req.headers) or (req.response and comparer(req.response.headers))
     return f
 
 def gen_filter_by_submitted_cookies(args):
@@ -576,7 +576,7 @@ def clear_tag(tag):
     # Remove a tag from every request
     reqs = yield Request.cache.load_by_tag(tag)
     for req in reqs:
-        req.tags.remove(tag)
+        req.tags.discard(tag)
         if req.saved:
             yield req.async_save()
     reset_context_caches()
@@ -595,7 +595,7 @@ def async_set_tag(tag, reqs):
     """
     yield clear_tag(tag)
     for req in reqs:
-        req.tags.append(tag)
+        req.tags.add(tag)
         Request.cache.add(req)
     reset_context_caches()
 

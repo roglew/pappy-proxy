@@ -100,7 +100,7 @@ class CommServer(LineReceiver):
         message = base64.b64decode(data['full_message'])
         req = yield Request.submit_new(data['host'], data['port'], data['is_ssl'], message)
         if 'tags' in data:
-            req.tags = data['tags']
+            req.tags = set(data['tags'])
         yield req.async_deep_save()
 
         retdata = {}

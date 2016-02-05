@@ -2,12 +2,60 @@ import crochet
 import pappyproxy
 import shlex
 
+from pappyproxy.colors import Colors, Styles, path_formatter, host_color, scode_color, verb_color
 from pappyproxy.console import confirm, load_reqlist, Capturing
 from pappyproxy.util import PappyException, remove_color
+from pappyproxy.macros import InterceptMacro
 from pappyproxy.requestcache import RequestCache
 from pappyproxy.pappy import cons
+from pappyproxy.plugin import add_intercepting_macro, remove_intercepting_macro
 from twisted.internet import defer
 from twisted.enterprise import adbapi
+
+class PrintStreamInterceptMacro(InterceptMacro):
+    """
+    Intercepting macro that prints requests and responses as they go through
+    the proxy
+    """
+
+    def __init__(self):
+        InterceptMacro.__init__(self)
+        self.name = 'Pappy Interceptor Macro'
+        self.intercept_requests = False
+        self.intercept_responses = False
+        self.async_req = False
+        self.async_rsp = False
+
+    def __repr__(self):
+        return "<PrintStreamInterceptingMacro>"
+
+    @staticmethod
+    def _print_request(req):
+        s = verb_color(req.verb)+'> '+req.verb+' '+Colors.ENDC
+        s += req.url_color
+        s += ', len=' + str(len(req.body))
+        print s
+
+    @staticmethod
+    def _print_response(req):
+        response_code = str(req.response.response_code) + \
+            ' ' + req.response.response_text
+        s = scode_color(response_code)
+        s += '< '
+        s += response_code
+        s += Colors.ENDC
+        s += ' '
+        s += req.url_color
+        s += ', len=' + str(len(req.response.body))
+        print s
+
+    def mangle_request(self, request):
+        PrintStreamInterceptMacro._print_request(request)
+        return request
+
+    def mangle_response(self, request):
+        PrintStreamInterceptMacro._print_response(request)
+        return request.response
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -115,6 +163,20 @@ def merge_datafile(line):
     finally:
         other_dbpool.close()
         
+def watch_proxy(line):
+    print 'Watching proxy... press ENTER to exit'
+    macro = PrintStreamInterceptMacro()
+    macro.intercept_requests = True
+    macro.intercept_responses = True
+    try:
+        add_intercepting_macro('pappy_watch_proxy', macro)
+        raw_input()
+    finally:
+        try:
+            remove_intercepting_macro('pappy_watch_proxy')
+        except PappyException:
+            pass
+        
 def run_without_color(line):
     with Capturing() as output:
        cons.onecmd(line.strip())
@@ -129,6 +191,7 @@ def load_cmds(cmd):
         'log': (log, None),
         'merge': (merge_datafile, None),
         'nocolor': (run_without_color, None),
+        'watch': (watch_proxy, None),
     })
     cmd.add_aliases([
         #('rpy', ''),
