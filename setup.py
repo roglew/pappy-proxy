@@ -3,7 +3,7 @@
 import pkgutil
 from setuptools import setup, find_packages
 
-VERSION = '0.2.6'
+VERSION = '0.2.7'
 
 setup(name='pappyproxy',
       version=VERSION,
@@ -33,6 +33,7 @@ setup(name='pappyproxy',
           'pytest>=2.8.3',
           'service_identity>=14.0.0',
           'twisted>=15.4.0',
+          'txsocksx>=1.15.0.2'
           ],
       classifiers=[
           'Intended Audience :: Developers',

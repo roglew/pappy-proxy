@@ -66,7 +66,10 @@ def clrmem(line):
     """
     to_delete = list(pappyproxy.http.Request.cache.inmem_reqs)
     for r in to_delete:
-        yield r.deep_delete()
+        try:
+            yield r.deep_delete()
+        except PappyException as e:
+            print str(e)
 
 def gencerts(line):
     """

@@ -13,6 +13,7 @@ import stat
 
 from .proxy import add_intercepting_macro as proxy_add_intercepting_macro
 from .proxy import remove_intercepting_macro as proxy_remove_intercepting_macro
+from .colors import Colors
 from .util import PappyException
 
 from twisted.internet import defer
@@ -93,7 +94,8 @@ def add_intercepting_macro(name, macro):
     only use this if you may need to modify messages before they are
     passed along.
     """
-    proxy_add_intercepting_macro(name, macro, pappyproxy.pappy.server_factory.intercepting_macros)
+    for factory in pappyproxy.pappy.server_factories:
+        proxy_add_intercepting_macro(name, macro, factory.intercepting_macros)
     
 def remove_intercepting_macro(name):
     """
@@ -102,14 +104,18 @@ def remove_intercepting_macro(name):
     :func:`pappyproxy.plugin.add_intercepting_macro` to identify which
     macro you would like to stop.
     """
-    proxy_remove_intercepting_macro(name, pappyproxy.pappy.server_factory.intercepting_macros)
+    for factory in pappyproxy.pappy.server_factories:
+        proxy_remove_intercepting_macro(name, factory.intercepting_macros)
     
 def active_intercepting_macros():
     """
     Returns a list of the active intercepting macro objects. Modifying
     this list will not affect which macros are active.
     """
-    return [v for k, v in pappyproxy.pappy.server_factory.intercepting_macros.iteritems() ]
+    ret = []
+    for factory in pappyproxy.pappy.server_factories:
+        ret += [v for k, v in factory.intercepting_macros.iteritems() ]
+    return ret
 
 def in_memory_reqs():
     """
@@ -158,3 +164,33 @@ def run_cmd(cmd):
     existing APIs to do what you want before using this.
     """
     pappyproxy.pappy.cons.onecmd(cmd)
+
+def require_modules(*largs):
+    """
+    A wrapper to make sure that plugin dependencies are installed. For example,
+    if a command requires the ``psutil`` and ``objgraph`` package, you should
+    format your command like::
+
+        @require_modules('psutil', 'objgraph')
+        def my_command(line):
+            import objgraph
+            import psutil
+            # ... rest of command ...
+
+    If you try to run the command without being able to import all of the required
+    modules, the command will print an error and not run the command.
+    """
+    def wr(func):
+        def wr2(*args, **kwargs):
+            missing = []
+            for l in largs:
+                try:
+                    imp.find_module(l)
+                except ImportError:
+                    missing.append(l)
+            if missing:
+                print 'Command requires %s module(s)' % (', '.join([Colors.RED+m+Colors.ENDC for m in missing]))
+            else:
+                return func(*args, **kwargs)
+        return wr2
+    return wr

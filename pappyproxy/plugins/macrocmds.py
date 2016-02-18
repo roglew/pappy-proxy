@@ -96,9 +96,13 @@ def run_int_macro(line):
     if args[0] not in int_macro_dict:
         raise PappyException('%s not a loaded intercepting macro' % line)
     macro = int_macro_dict[args[0]]
-    macro.init(args[1:])
-    add_intercepting_macro(macro.name, macro)
-    print '"%s" started' % macro.name
+    try:
+        macro.init(args[1:])
+        add_intercepting_macro(macro.name, macro)
+        print '"%s" started' % macro.name
+    except Exception as e:
+        print 'Error initializing macro:'
+        raise e
 
 def stop_int_macro(line):
     """

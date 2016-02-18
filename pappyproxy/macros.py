@@ -73,10 +73,8 @@ class InterceptMacro(object):
         self.intercept_requests = False
         self.intercept_responses = False
 
-        self.do_req = False
-        self.do_rsp = False
-        self.do_async_req = False
-        self.do_async_rsp = False
+        self.async_req = False
+        self.async_rsp = False
 
     def __repr__(self):
         return "<InterceptingMacro (%s)>" % self.name
@@ -301,3 +299,79 @@ def gen_imacro(short_name='', long_name=''):
     template = env.get_template('intmacro.py.template')
     return template.render(**subs)
     
+@defer.inlineCallbacks
+def mangle_request(request, intmacros):
+    """
+    Mangle a request with a list of intercepting macros.
+    Returns a tuple that contains the resulting request (with its unmangled
+    value set if needed) and a bool that states whether the request was modified
+    Returns (None, True) if the request was dropped.
+    
+    :rtype: (Request, Bool)
+    """
+    # Mangle requests with list of intercepting macros
+    if not intmacros:
+        defer.returnValue((request, False))
+
+    cur_req = request.copy()
+    for k, macro in intmacros.iteritems():
+        if macro.intercept_requests:
+            if macro.async_req:
+                cur_req = yield macro.async_mangle_request(cur_req.copy())
+            else:
+                cur_req = macro.mangle_request(cur_req.copy())
+
+            if cur_req is None:
+                defer.returnValue((None, True))
+
+    mangled = False
+    if not cur_req == request or \
+       not cur_req.host == request.host or \
+       not cur_req.port == request.port:
+        # copy unique data to new request and clear it off old one
+        cur_req.unmangled = request
+        cur_req.unmangled.is_unmangled_version = True
+        if request.response:
+            cur_req.response = request.response
+            request.response = None
+        mangled = True
+    else:
+        # return the original request
+        cur_req = request
+    defer.returnValue((cur_req, mangled))
+
+@defer.inlineCallbacks
+def mangle_response(request, intmacros):
+    """
+    Mangle a request's response with a list of intercepting macros.
+    Returns a bool stating whether the request's response was modified.
+    Unmangled values will be updated as needed.
+    
+    :rtype: Bool
+    """
+    if not intmacros:
+        defer.returnValue(False)
+
+    old_rsp = request.response
+    # We copy so that changes to request.response doesn't mangle the original response
+    request.response = request.response.copy()
+    for k, macro in intmacros.iteritems():
+        if macro.intercept_responses:
+            if macro.async_rsp:
+                request.response = yield macro.async_mangle_response(request)
+            else:
+                request.response = macro.mangle_response(request)
+
+            if request.response is None:
+                defer.returnValue(True)
+
+    mangled = False
+    if not old_rsp == request.response:
+        request.response.rspid = old_rsp
+        old_rsp.rspid = None
+        request.response.unmangled = old_rsp
+        request.response.unmangled.is_unmangled_version = True
+        mangled = True
+    else:
+        request.response = old_rsp
+    defer.returnValue(mangled)

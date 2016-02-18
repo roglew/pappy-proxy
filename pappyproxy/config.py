@@ -46,6 +46,20 @@ The configuration settings for the proxy.
     
     :Default: ``[(8000, '127.0.0.1')]``
 
+.. data: SOCKS_PROXY
+
+    Details for a SOCKS proxy. It is a dict with the following key/values::
+
+      host: The SOCKS proxy host
+      port: The proxy port
+      username: Username (optional)
+      password: Password (optional)
+
+    If null, no proxy will be used.
+
+    :Default: ``null``
+
+
 .. data: PLUGIN_DIRS
 
     List of directories that plugins are loaded from. Not modifiable.
@@ -87,6 +101,7 @@ DEBUG_TO_FILE = False
 DEBUG_VERBOSITY = 0
 
 LISTENERS = [(8000, '127.0.0.1')]
+SOCKS_PROXY = None
 
 SSL_CA_FILE  = 'certificate.crt'
 SSL_PKEY_FILE = 'private.key'
@@ -112,6 +127,7 @@ def load_settings(proj_config):
     global DEBUG_TO_FILE
     global DEBUG_VERBOSITY
     global LISTENERS
+    global SOCKS_PROXY
     global PAPPY_DIR
     global DATA_DIR
     global SSL_CA_FILE 
@@ -141,7 +157,30 @@ def load_settings(proj_config):
     if "proxy_listeners" in proj_config:
         LISTENERS = []
         for l in proj_config["proxy_listeners"]:
-            LISTENERS.append((l['port'], l['interface']))
+            ll = {}
+            if 'forward_host_ssl' in l:
+                l['forward_host_ssl'] = l['forward_host_ssl'].encode('utf-8')
+            if 'forward_host' in l:
+                l['forward_host'] = l['forward_host'].encode('utf-8')
+            LISTENERS.append(l)
+
+    # SOCKS proxy settings
+    if "socks_proxy" in proj_config:
+        SOCKS_PROXY = None
+        if proj_config['socks_proxy'] is not None:
+            conf = proj_config['socks_proxy']
+            if 'host' in conf and 'port' in conf:
+                SOCKS_PROXY = {}
+                SOCKS_PROXY['host'] = conf['host'].encode('utf-8')
+                SOCKS_PROXY['port'] = conf['port']
+                if 'username' in conf:
+                    if 'password' in conf:
+                        SOCKS_PROXY['username'] = conf['username'].encode('utf-8')
+                        SOCKS_PROXY['password'] = conf['password'].encode('utf-8')
+                    else:
+                        print 'SOCKS proxy has a username but no password. Ignoring creds.'
+            else:
+                print 'Host is missing host/port.'
 
     # History saving settings
     if "history_size" in proj_config:

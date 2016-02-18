@@ -63,6 +63,8 @@ class Styles:
     KV_KEY = Colors.GREEN
     KV_VAL = Colors.ENDC
 
+    UNPRINTABLE_DATA = Colors.CYAN
+
     
 def verb_color(verb):
     if verb and verb == 'GET':

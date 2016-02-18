@@ -26,7 +26,7 @@ from twisted.internet.protocol import ServerFactory
 from twisted.internet.threads import deferToThread
 
 crochet.no_setup()
-server_factory = None
+server_factories = []
 main_context = context.Context()
 all_contexts = [main_context]
 plugin_loader = None
@@ -69,7 +69,7 @@ def custom_int_handler(signum, frame):
     
 @defer.inlineCallbacks
 def main():
-    global server_factory
+    global server_factories
     global plugin_loader
     global cons
     settings = parse_args()
@@ -116,17 +116,24 @@ def main():
     if config.DEBUG_DIR and os.path.exists(config.DEBUG_DIR):
         shutil.rmtree(config.DEBUG_DIR)
         print 'Removing old debugging output'
-    server_factory = proxy.ProxyServerFactory(save_all=True)
     listen_strs = []
     ports = []
     for listener in config.LISTENERS:
+        server_factory = proxy.ProxyServerFactory(save_all=True)
         try:
-            port = reactor.listenTCP(listener[0], server_factory, interface=listener[1])
-            listener_str = 'port %d' % listener[0]
-            if listener[1] not in ('127.0.0.1', 'localhost'):
-                listener_str += ' (bound to %s)' % listener[1]
+            if 'forward_host_ssl' in listener and listener['forward_host_ssl']:
+                server_factory.force_ssl = True
+                server_factory.forward_host = listener['forward_host_ssl']
+            elif 'forward_host' in listener and listener['forward_host']:
+                server_factory.force_ssl = False
+                server_factory.forward_host = listener['forward_host']
+            port = reactor.listenTCP(listener['port'], server_factory, interface=listener['interface'])
+            listener_str = 'port %d' % listener['port']
+            if listener['interface'] not in ('127.0.0.1', 'localhost'):
+                listener_str += ' (bound to %s)' % listener['interface']
             listen_strs.append(listener_str)
             ports.append(port)
+            server_factories.append(server_factory)
         except CannotListenError as e:
             print repr(e)
     if listen_strs:

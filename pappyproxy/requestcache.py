@@ -186,8 +186,8 @@ class RequestCache(object):
                     break
 
     @defer.inlineCallbacks
-    def load_by_tag(tag):
-        reqs = yield load_requests_by_tag(tag, cust_cache=self, cust_dbpool=self.dbpool)
+    def load_by_tag(self, tag):
+        reqs = yield pappyproxy.http.Request.load_requests_by_tag(tag, cust_cache=self, cust_dbpool=self.dbpool)
         for req in reqs:
             self.add(req)
         defer.returnValue(reqs)

@@ -541,14 +541,21 @@ class HTTPMessage(object):
         # Initializes instance variables too
         self.clear()
 
+        self.metadata_unique_keys = tuple()
         if full_message is not None:
             self._from_full_message(full_message, update_content_length)
 
     def __eq__(self, other):
-        # TODO check meta
         if self.full_message != other.full_message:
             return False
-        if self.get_metadata() != other.get_metadata():
+        m1 = self.get_metadata()
+        m2 = other.get_metadata()
+        for k in self.metadata_unique_keys:
+            if k in m1:
+                del m1[k]
+            if k in m2:
+                del m2[k]
+        if m1 != m2:
             return False
         return True
 
@@ -556,7 +563,7 @@ class HTTPMessage(object):
         if not self.complete:
             raise PappyException("Cannot copy incomplete http messages")
         retmsg = self.__class__(self.full_message)
-        retmsg.set_metadata(self.get_metadata())
+        retmsg.set_metadata(self.get_metadata(include_unique=False))
         return retmsg
 
     def copy(self):
@@ -840,8 +847,13 @@ class HTTPMessage(object):
         """
         Called when the body of the message is complete
         """
-        self.body = _decode_encoded(self._data_obj.body,
-                                    self._encoding_type)
+        try:
+            self.body = _decode_encoded(self._data_obj.body,
+                                        self._encoding_type)
+        except IOError as e:
+            # Screw handling it gracefully, this is the server's fault.
+            print 'Error decoding request, storing raw data in body instead'
+            self.body = self._data_obj.body
 
     def update_from_body(self):
         """
@@ -981,6 +993,9 @@ class Request(HTTPMessage):
         # Called after instance vars since some callbacks depend on
         # instance vars
         HTTPMessage.__init__(self, full_request, update_content_length)
+
+        # metadata that is unique to a specific Request instance
+        self.metadata_unique_keys = ('reqid',)
 
         # After message init so that other instance vars are initialized
         self._set_dict_callbacks()
@@ -1267,7 +1282,7 @@ class Request(HTTPMessage):
     ###########
     ## Metadata
 
-    def get_metadata(self):
+    def get_metadata(self, include_unique=True):
         data = {}
         if self.port is not None:
             data['port'] = self.port
@@ -1277,6 +1292,10 @@ class Request(HTTPMessage):
         if self.response:
             data['response_id'] = self.response.rspid
         data['tags'] = list(self.tags)
+        if not include_unique:
+            for k in self.metadata_unique_keys:
+                if k in data:
+                    del data[k]
         return data
 
     def set_metadata(self, data):
@@ -1344,7 +1363,7 @@ class Request(HTTPMessage):
         # Updates metadata that's based off of data
         HTTPMessage.update_from_body(self)
         if 'content-type' in self.headers:
-            if self.headers['content-type'] == 'application/x-www-form-urlencoded':
+            if 'application/x-www-form-urlencoded' in self.headers['content-type']:
                 self.post_params = repeatable_parse_qs(self.body)
                 self._set_dict_callbacks()
 
@@ -1501,10 +1520,7 @@ class Request(HTTPMessage):
         else:
             use_cache = Request.cache
         if not self.reqid:
-            print 'adding'
             use_cache.add(self)
-        else:
-            print 'else adding'
     
     @defer.inlineCallbacks
     def async_save(self, cust_dbpool=None, cust_cache=None):
@@ -2035,17 +2051,21 @@ class Request(HTTPMessage):
         :type full_request: string
         :rtype: Twisted deferred that calls back with a Request
         """
-        from .proxy import ProxyClientFactory, get_next_connection_id, ClientTLSContext
+        from .proxy import ProxyClientFactory, get_next_connection_id, ClientTLSContext, get_endpoint
+        from .config import SOCKS_PROXY
 
         new_req = Request(full_request)
         new_req.is_ssl = is_ssl
         new_req.port = port
-        factory = ProxyClientFactory(new_req, save_all=False)
+        new_req._host = host
+
+        factory = ProxyClientFactory(new_req, save_all=False, stream_response=False, return_transport=None)
+        factory.intercepting_macros = {}
         factory.connection_id = get_next_connection_id()
-        if is_ssl:
-            reactor.connectSSL(host, port, factory, ClientTLSContext())
-        else:
-            reactor.connectTCP(host, port, factory)
+        yield factory.prepare_request()
+        endpoint = get_endpoint(host, port, is_ssl,
+                                socks_config=SOCKS_PROXY)
+        yield endpoint.connect(factory)
         new_req = yield factory.data_defer
         defer.returnValue(new_req)
 
@@ -2099,11 +2119,14 @@ class Response(HTTPMessage):
     def __init__(self, full_response=None, update_content_length=True):
         # Resets instance variables
         self.clear()
-        
+
         # Called after instance vars since some callbacks depend on
         # instance vars
         HTTPMessage.__init__(self, full_response, update_content_length)
 
+        # metadata that is unique to a specific Response instance
+        self.metadata_unique_keys = ('rspid',)
+        
         # After message init so that other instance vars are initialized
         self._set_dict_callbacks()
 
@@ -2190,9 +2213,13 @@ class Response(HTTPMessage):
     ###########
     ## Metadata
 
-    def get_metadata(self):
+    def get_metadata(self, include_unique=True):
         data = {}
         data['rspid'] = self.rspid
+        if not include_unique:
+            for k in self.metadata_unique_keys:
+                if k in data:
+                    del data[k]
         return data
 
     def set_metadata(self, data):

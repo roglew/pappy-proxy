@@ -74,9 +74,10 @@ def print_request_extended(request):
     print_pairs = []
     print_pairs.append(('Made on', time_made_str))
     print_pairs.append(('ID', request.reqid))
-    print_pairs.append(('Verb', verb))
+    print_pairs.append(('URL', request.url_color))
     print_pairs.append(('Host', host))
     print_pairs.append(('Path', path_formatter(request.full_path)))
+    print_pairs.append(('Verb', verb))
     print_pairs.append(('Status Code', response_code))
     print_pairs.append(('Request Length', reqlen))
     print_pairs.append(('Response Length', rsplen))
@@ -97,6 +98,14 @@ def print_tree(tree):
     # Prints a tree. Takes in a sorted list of path tuples
     _print_tree_helper(tree, 0, [])
     
+def guess_pretty_print_fmt(msg):
+    if 'content-type' in msg.headers:
+        if 'json' in msg.headers['content-type']:
+            return 'json'
+        elif 'www-form' in msg.headers['content-type']:
+            return 'form'
+    return 'text'
+    
 def pretty_print_body(fmt, body):
     try:
         if fmt.lower() == 'json':
@@ -111,6 +120,8 @@ def pretty_print_body(fmt, body):
                 s += Colors.ENDC
                 s += urllib.unquote(v)
                 print s
+        elif fmt.lower() == 'text':
+            print body
         else:
             raise PappyException('"%s" is not a valid format' % fmt)
     except PappyException as e:
@@ -165,8 +176,59 @@ def _print_tree_helper(tree, depth, print_bars):
         curkey = '/'
     print _get_tree_prefix(depth, print_bars, True) + curkey
     _print_tree_helper(subtree, depth+1, print_bars + [False])
-            
 
+def print_params(req, params=None):
+    if not req.url_params.all_pairs() and not req.body:
+        print 'Request %s has no url or data parameters' % req.reqid
+        print ''
+    if req.url_params.all_pairs():
+        print Styles.TABLE_HEADER + "Url Params" + Colors.ENDC
+        for k, v in req.url_params.all_pairs():
+            if params is None or (params and k in params):
+                print Styles.KV_KEY+str(k)+': '+Styles.KV_VAL+str(v)
+        print ''
+    if req.body:
+        print Styles.TABLE_HEADER + "Body/POST Params" + Colors.ENDC
+        pretty_print_body(guess_pretty_print_fmt(req), req.body)
+        print ''
+    if req.cookies.all_pairs():
+        print Styles.TABLE_HEADER + "Cookies" + Colors.ENDC
+        for k, v in req.cookies.all_pairs():
+            if params is None or (params and k in params):
+                print Styles.KV_KEY+str(k)+': '+Styles.KV_VAL+str(v)
+        print ''
+    # multiform request when we support it
+
+def add_param(found_params, kind, k, v, reqid):
+    if not k in found_params:
+        found_params[k] = {}
+    if kind in found_params[k]:
+        found_params[k][kind].append((reqid, v))
+    else:
+        found_params[k][kind] = [(reqid, v)]
+        
+def print_param_info(param_info):
+    for k, d in param_info.iteritems():
+        print Styles.TABLE_HEADER + k + Colors.ENDC
+        for param_type, valpairs in d.iteritems():
+            print param_type
+            value_ids = {}
+            for reqid, val in valpairs:
+                ids = value_ids.get(val, [])
+                ids.append(reqid)
+                value_ids[val] = ids
+            for val, ids in value_ids.iteritems():
+                if len(ids) <= 15:
+                    idstr = ', '.join(ids)
+                else:
+                    idstr = ', '.join(ids[:15]) + '...'
+                if val == '':
+                    printstr = (Colors.RED + 'BLANK' + Colors.ENDC + 'x%d (%s)') % (len(ids), idstr)
+                else:
+                    printstr = (Colors.GREEN + '%s' + Colors.ENDC + 'x%d (%s)') % (val, len(ids), idstr)
+                print printstr
+        print ''
+    
 ####################
 ## Command functions
     
@@ -361,6 +423,70 @@ def pretty_print_response(line):
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
+def print_params_cmd(line):
+    """
+    View the headers of the request
+    Usage: view_request_headers <reqid(s)>
+    """
+    args = shlex.split(line)
+    reqid = args[0]
+    if len(args) > 1:
+        keys = args[1:]
+    else:
+        keys = None
+
+    reqs = yield load_reqlist(reqid)
+    for req in reqs:
+        if len(reqs) > 1:
+            print 'Request %s:' % req.reqid
+        print_params(req, keys)
+        if len(reqs) > 1:
+            print '-'*30
+            
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def get_param_info(line):
+    args = shlex.split(line)
+    if args and args[0] == 'ct':
+        contains = True
+        args = args[1:]
+    else:
+        contains = False
+
+    if args:
+        params = tuple(args)
+    else:
+        params = None
+
+    def check_key(k, params, contains):
+        if contains:
+            for p in params:
+                if p.lower() in k.lower():
+                    return True
+        else:
+            if params is None or k in params:
+                return True
+        return False
+
+    found_params = {}
+
+    ids = yield main_context_ids()
+    for i in ids:
+        req = yield Request.load_request(i)
+        for k, v in req.url_params.all_pairs():
+            if check_key(k, params, contains):
+                add_param(found_params, 'Url Parameter', k, v, req.reqid)
+        for k, v in req.post_params.all_pairs():
+            if check_key(k, params, contains):
+                add_param(found_params, 'POST Parameter', k, v, req.reqid)
+        for k, v in req.cookies.all_pairs():
+            if check_key(k, params, contains):
+                add_param(found_params, 'Cookie', k, v, req.reqid)
+    print_param_info(found_params)
+
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
 def dump_response(line):
     """
     Dump the data of the response to a file.
@@ -387,6 +513,11 @@ def site_map(line):
     Print the site map. Only includes requests in the current context.
     Usage: site_map
     """
+    args = shlex.split(line)
+    if len(args) > 0 and args[0] == 'p':
+        paths = True
+    else:
+        paths = False
     ids = yield main_context_ids()
     paths_set = set()
     for reqid in ids:
@@ -394,7 +525,11 @@ def site_map(line):
         if req.response and req.response.response_code != 404:
             paths_set.add(req.path_tuple)
     tree = sorted(list(paths_set))
-    print_tree(tree)
+    if paths:
+        for p in tree:
+            print ('/'.join(list(p)))
+    else:
+        print_tree(tree)
 
     
 ###############
@@ -412,6 +547,8 @@ def load_cmds(cmd):
         'view_full_response': (view_full_response, None),
         'view_response_bytes': (view_response_bytes, None),
         'pretty_print_response': (pretty_print_response, None),
+        'print_params': (print_params_cmd, None),
+        'param_info': (get_param_info, None),
         'site_map': (site_map, None),
         'dump_response': (dump_response, None),
     })
@@ -420,12 +557,16 @@ def load_cmds(cmd):
         ('view_request_info', 'viq'),
         ('view_request_headers', 'vhq'),
         ('view_full_request', 'vfq'),
+        ('view_full_request', 'kjq'),
         ('view_request_bytes', 'vbq'),
         ('pretty_print_request', 'ppq'),
         ('view_response_headers', 'vhs'),
         ('view_full_response', 'vfs'),
+        ('view_full_response', 'kjs'),
         ('view_response_bytes', 'vbs'),
         ('pretty_print_response', 'pps'),
+        ('print_params', 'pprm'),
+        ('param_info', 'pri'),
         ('site_map', 'sm'),
         #('dump_response', 'dr'),
     ])

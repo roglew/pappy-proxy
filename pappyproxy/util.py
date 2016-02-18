@@ -3,6 +3,8 @@ import string
 import time
 import datetime
 
+from .colors import Colors, Styles
+
 class PappyException(Exception):
     """
     The exception class for Pappy. If a plugin command raises one of these, the
@@ -19,10 +21,17 @@ def printable_data(data):
     :rtype: String
     """
     chars = []
+    colored = False
     for c in data:
         if c in string.printable:
+            if colored:
+                chars.append(Colors.ENDC)
+                colored = False
             chars.append(c)
         else:
+            if not colored:
+                chars.append(Styles.UNPRINTABLE_DATA)
+                colored = True
             chars.append('.')
     return ''.join(chars)
 
@@ -43,6 +52,6 @@ def hexdump(src, length=16):
     for c in xrange(0, len(src), length):
         chars = src[c:c+length]
         hex = ' '.join(["%02x" % ord(x) for x in chars])
-        printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or '.') for x in chars])
+        printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or Styles.UNPRINTABLE_DATA+'.'+Colors.ENDC) for x in chars])
         lines.append("%04x  %-*s  %s\n" % (c, length*3, hex, printable))
     return ''.join(lines)

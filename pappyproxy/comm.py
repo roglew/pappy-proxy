@@ -1,3 +1,4 @@
+import sys
 import base64
 import json
 
@@ -20,6 +21,7 @@ def set_comm_port(port):
     comm_port = port
 
 class CommServer(LineReceiver):
+    MAX_LENGTH=sys.maxint
 
     def __init__(self):
         self.delimiter = '\n'
@@ -32,6 +34,7 @@ class CommServer(LineReceiver):
 
     def lineReceived(self, line):
         from .http import Request, Response
+        line = line.strip()
 
         if line == '':
             return
@@ -98,7 +101,7 @@ class CommServer(LineReceiver):
     @defer.inlineCallbacks
     def action_submit_request(self, data):
         message = base64.b64decode(data['full_message'])
-        req = yield Request.submit_new(data['host'], data['port'], data['is_ssl'], message)
+        req = yield Request.submit_new(data['host'].encode('utf-8'), data['port'], data['is_ssl'], message)
         if 'tags' in data:
             req.tags = set(data['tags'])
         yield req.async_deep_save()

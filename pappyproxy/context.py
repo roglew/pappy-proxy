@@ -122,15 +122,19 @@ class Filter(object):
 
     @staticmethod
     @defer.inlineCallbacks
-    def from_filter_string(filter_string):
+    def from_filter_string(filter_string=None, parsed_args=None):
         """
         from_filter_string(filter_string)
 
-        Create a filter from a filter string.
+        Create a filter from a filter string. If passed a list of arguments, they
+        will be used instead of parsing the string.
 
         :rtype: Deferred that returns a :class:`pappyproxy.context.Filter`
         """
-        args = shlex.split(filter_string)
+        if parsed_args is not None:
+            args = parsed_args
+        else:
+            args = shlex.split(filter_string)
         if len(args) == 0:
             raise PappyException('Field is required')
         field = args[0]
@@ -145,12 +149,20 @@ class Filter(object):
             new_filter = gen_filter_by_path(field_args)
         elif field in ("body", "bd", "data", "dt"):
             new_filter = gen_filter_by_body(field_args)
+        elif field in ("reqbody", "qbd", "reqdata", "qdt"):
+            new_filter = gen_filter_by_req_body(field_args)
+        elif field in ("rspbody", "sbd", "qspdata", "sdt"):
+            new_filter = gen_filter_by_rsp_body(field_args)
         elif field in ("verb", "vb"):
             new_filter = gen_filter_by_verb(field_args)
         elif field in ("param", "pm"):
             new_filter = gen_filter_by_params(field_args)
         elif field in ("header", "hd"):
             new_filter = gen_filter_by_headers(field_args)
+        elif field in ("reqheader", "qhd"):
+            new_filter = gen_filter_by_request_headers(field_args)
+        elif field in ("rspheader", "shd"):
+            new_filter = gen_filter_by_response_headers(field_args)
         elif field in ("rawheaders", "rh"):
             new_filter = gen_filter_by_raw_headers(field_args)
         elif field in ("sentcookie", "sck"):
@@ -169,6 +181,8 @@ class Filter(object):
             new_filter = yield gen_filter_by_before(field_args)
         elif field in ("after", "af"):
             new_filter = yield gen_filter_by_after(field_args)
+        elif field in ("inv",):
+            new_filter = yield gen_filter_by_inverse(field_args)
         else:
             raise FilterParseError("%s is not a valid field" % field)
 
@@ -181,33 +195,53 @@ class Filter(object):
         defer.returnValue(new_filter)
 
 def cmp_is(a, b):
+    if a is None or b is None:
+        return False
     return str(a) == str(b)
 
 def cmp_contains(a, b):
+    if a is None or b is None:
+        return False
     return (b.lower() in a.lower())
 
 def cmp_exists(a, b=None):
+    if a is None or b is None:
+        return False
     return (a is not None and a != [])
 
 def cmp_len_eq(a, b):
+    if a is None or b is None:
+        return False
     return (len(a) == int(b))
 
 def cmp_len_gt(a, b):
+    if a is None or b is None:
+        return False
     return (len(a) > int(b))
 
 def cmp_len_lt(a, b):
+    if a is None or b is None:
+        return False
     return (len(a) < int(b))
 
 def cmp_eq(a, b):
+    if a is None or b is None:
+        return False
     return (int(a) == int(b))
 
 def cmp_gt(a, b):
+    if a is None or b is None:
+        return False
     return (int(a) > int(b))
 
 def cmp_lt(a, b):
+    if a is None or b is None:
+        return False
     return (int(a) < int(b))
 
 def cmp_containsr(a, b):
+    if a is None or b is None:
+        return False
     try:
         if re.search(b, a):
             return True
@@ -328,38 +362,50 @@ def compval_from_args_repdict(args):
     return retfunc
 
 def gen_filter_by_all(args):
-    compval_from_args(args) # try and throw an error
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
         if args[0][0] == 'n':
-            return compval(req.full_message) and (not req.response or compval(req.response.full_message))
+            return compval(req.full_message) and ((not req.response) or compval(req.response.full_message))
         else:
             return compval(req.full_message) or (req.response and compval(req.response.full_message))
     return f
 
 def gen_filter_by_host(args):
-    compval_from_args(args) # try and throw an error
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
         return compval(req.host)
     return f
 
 def gen_filter_by_body(args):
-    compval_from_args(args) # try and throw an error
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
         if args[0][0] == 'n':
-            return compval(req.body) and (not req.response or compval(req.response.body))
+            return compval(req.body) and ((not req.response) or compval(req.response.body))
         else:
             return compval(req.body) or (req.response and compval(req.response.body))
     return f
 
-def gen_filter_by_raw_headers(args):
-    compval_from_args(args) # try and throw an error
+def gen_filter_by_req_body(args):
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
+        return compval(req.body)
+    return f
+
+def gen_filter_by_rsp_body(args):
+    compval = compval_from_args(args)
+    def f(req):
         if args[0][0] == 'n':
-            return compval(req.headers_section) and (not req.response or compval(req.response.headers_section))
+            return (not req.response) or compval(req.response.body)
+        else:
+            return req.response and compval(req.response.body)
+    return f
+
+def gen_filter_by_raw_headers(args):
+    compval = compval_from_args(args)
+    def f(req):
+        if args[0][0] == 'n':
+            # compval already negates comparison
+            return compval(req.headers_section) and ((not req.response) or compval(req.response.headers_section))
         else:
             return compval(req.headers_section) or (req.response and compval(req.response.headers_section))
     return f
@@ -374,30 +420,26 @@ def gen_filter_by_response_code(args):
     return f
         
 def gen_filter_by_path(args):
-    compval_from_args(args)
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
         return compval(req.path)
     return f
 
 def gen_filter_by_responsetime(args):
-    compval_from_args(args)
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
         return compval(req.rsptime)
     return f
 
 def gen_filter_by_verb(args):
-    compval_from_args(args)
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
         return compval(req.verb)
     return f
 
 def gen_filter_by_tag(args):
-    compval_from_args(args)
+    compval = compval_from_args(args)
     def f(req):
-        compval = compval_from_args(args)
         for tag in req.tags:
             if compval(tag):
                 return True
@@ -418,7 +460,7 @@ def gen_filter_by_saved(args):
 def gen_filter_by_before(args):
     if len(args) != 1:
         raise PappyException('Invalid number of arguments')
-    r = yield http.Request.load_request(args[0])
+    r = yield Request.load_request(args[0])
     def f(req):
         if req.time_start is None:
             return False
@@ -431,7 +473,7 @@ def gen_filter_by_before(args):
 def gen_filter_by_after(reqid, negate=False):
     if len(args) != 1:
         raise PappyException('Invalid number of arguments')
-    r = yield http.Request.load_request(args[0])
+    r = yield Request.load_request(args[0])
     def f(req):
         if req.time_start is None:
             return False
@@ -444,9 +486,24 @@ def gen_filter_by_headers(args):
     comparer = compval_from_args_repdict(args)
     def f(req):
         if args[0][0] == 'n':
-            return comparer(req.headers) and (not req.response or comparer(req.response.headers))
+            return comparer(req.headers) and ((not req.response) or comparer(req.response.headers))
         else:
             return comparer(req.headers) or (req.response and comparer(req.response.headers))
+    return f
+
+def gen_filter_by_request_headers(args):
+    comparer = compval_from_args_repdict(args)
+    def f(req):
+        return comparer(req.headers)
+    return f
+
+def gen_filter_by_response_headers(args):
+    comparer = compval_from_args_repdict(args)
+    def f(req):
+        if args[0][0] == 'n':
+            return (not req.response) or comparer(req.response.headers)
+        else:
+            return req.response and comparer(req.response.headers)
     return f
 
 def gen_filter_by_submitted_cookies(args):
@@ -483,6 +540,13 @@ def gen_filter_by_params(args):
     def f(req):
         return comparer(req.url_params) or comparer(req.post_params)
     return f
+
+@defer.inlineCallbacks
+def gen_filter_by_inverse(args):
+    filt = yield Filter.from_filter_string(parsed_args=args)
+    def f(req):
+        return not filt(req)
+    defer.returnValue(f)
 
 @defer.inlineCallbacks
 def filter_reqs(reqids, filters):

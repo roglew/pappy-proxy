@@ -219,16 +219,18 @@ The following commands can be used to view requests and responses
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
 | `ls [a|<num>`]| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
-| `sm` | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. |
+| `sm` [p] | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. If the `p` option is given, it will print the paths as paths rather than as a tree. |
 | `viq <id(s)>` | view_request_info, viq | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information. |
-| `vfq <id(s)>` | view_full_request, vfq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. |
+| `vfq <id(s)>` | view_full_request, vfq, kjq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. |
 | `vbq <id(s)>` | view_request_bytes, vbq | [V]iew [B]ytes of Re[Q]uest, prints the full request including headers and data without coloring or additional newlines. Use this if you want to write a request to a file. |
-| `ppq <id(s)> [format]` | pretty_print_request, ppq | Pretty print a request. If a format is given, it will try and print the body of the request with that format. Otherwise it will make a guess based off of the Content-Type header. |
+| `ppq <format> <id(s)> ` | pretty_print_request, ppq | Pretty print a request with a specific format. See the table below for a list of formats. |
 | `vhq <id(s)>` | view_request_headers, vhq | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request. |
-| `vfs <id(s)>` | view_full_response, vfs |[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data. |
+| `vfs <id(s)>` | view_full_response, vfs, kjs |[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data. |
 | `vhs <id(s)>` | view_response_headers, vhs | [V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request. |
 | `vbs <id(s)>` | view_response_bytes, vbs | [V]iew [B]ytes of Re[S]ponse, prints the full response including headers and data without coloring or additional newlines. Use this if you want to write a response to a file. |
-| `pps <id(s)> [format]` | pretty_print_response, pps | Pretty print a response. If a format is given, it will try and print the body of the response with that format. Otherwise it will make a guess based off of the Content-Type header. |
+| `pps <format> <id(s)>` | pretty_print_response, pps | Pretty print a response with a specific format. See the table below for a list of formats. |
+| `pprm <id(s)>` | print_params, pprm | Print a summary of the parameters submitted with the request. It will include URL params, POST params, and/or cookies |
+| `pri [ct] [key(s)] | param_info, pri | Print a summary of the parameters and values submitted by in-context requests. You can pass in keys to limit which values will be shown. If you also provide `ct` as the first argument, it will include any keys that are passed as arguments. |
 | `watch` | watch | Print requests and responses in real time as they pass through the proxy. |
 
 Available formats for `ppq` and `pps` commands:
@@ -362,9 +364,13 @@ Matches both A and B but not C
 | host | host, domain, hs, dm | The target host (ie www.target.com) | String |
 | path | path, pt | The path of the url (ie /path/to/secrets.php) | String |
 | body | body, data, bd, dt | The body (data section) of either the request or the response | String |
+| reqbody | qbody, qdata, qbd, qdt | The body (data section) of th request | String |
+| rspbody | sbody, sdata, sbd, sdt | The body (data section) of th response | String |
 | verb | verb, vb | The HTTP verb of the request (ie GET, POST) | String |
 | param | param, pm | Either the get or post parameters | Key/Value |
 | header | header, hd | An HTTP header (ie User-Agent, Basic-Authorization) in the request or response | Key/Value |
+| reqheader | reqheader, qhd | An HTTP header in the request | Key/Value |
+| rspheader | rspheader, shd | An HTTP header in the response | Key/Value |
 | rawheaders | rawheaders, rh | The entire header section (as one string) of either the head or the response | String |
 | sentcookie | sentcookie, sck | A cookie sent in a request | Key/Value |
 | setcookie | setcookie, stck | A cookie set by a response | Key/Value |
@@ -392,6 +398,20 @@ A few filters don't conform to the field, comparer, value format. You can still 
 |:--|:--|:--|
 | before <reqid> | before, bf, b4 | Filters out any request that is not before the given request. Filters out any request without a time. |
 | after <reqid> | after, af | Filters out any request that is not before the given request. Filters out any request without a time. |
+| inv <filter string> | inf | Inverts a filter string. Anything that matches the filter string will not pass the filter. |
+
+Examples:
+
+```
+Only show requests before request 1234
+  f b4 1234
+
+Only show requests after request 1234
+  f af 1234
+
+Show requests without a csrf parameter
+  f inv param ct csrf
+```
 
 Scope
 -----
@@ -463,6 +483,7 @@ The following commands can be used to encode/decode strings:
 |`url_encode_raw`|`url_encode_raw`, `urler` | Same as `url_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
 |`gzip_decode_raw`|`gzip_decode_raw`, `gzdr` | Same as `gzip_decode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
 |`gzip_encode_raw`|`gzip_encode_raw`, `gzer` | Same as `gzip_encode` but will not print a hexdump if it contains non-printable characters. It is suggested you use `>` to redirect the output to a file. |
+|`unixtime_decode`| `unixtime_decode`, `uxtd` | Take in a unix timestamp and print a human readable timestamp |
 
 Interceptor
 -----------
@@ -923,6 +944,75 @@ Settings included in `~/.pappy/global_config.json`:
 |:--------|:------------|
 | cache_size | The number of requests from history that will be included in memory at any given time. Set to -1 to keep everything in memory. See the request cache section for more info. |
 
+Using a SOCKS Server
+--------------------
+Pappy allows you to use an upstream SOCKS server. You can do this by adding a `socks_proxy` value to config.json. You can use the following for anonymous access to the proxy:
+
+```
+    "socks_proxy": {"host":"socks.proxy.host", "port":5555}
+```
+
+To use credentials you add a `username` and `password` value to the dictionary:
+
+```
+    "socks_proxy": {"host":"socks.proxy.host", "port":5555, "username": "mario", "password":"ilovemushrooms"}
+```
+
+Anything that passes through any of the active listeners will use the proxy.
+
+Transparent Host Redirection
+----------------------------
+Sometimes you get a frustrating thick client that doesn’t let you mess with proxy settings to get it to go through a proxy. However, if you can redirect where it sends its traffic to localhost, you can get Pappy to take that traffic and redirect it to go where it should.
+
+It takes root permissions to listen on low numbered ports. As a result, we’ll need to do some root stuff to listen on ports 80 and 443 and get the data to Pappy. There are two ways to get the traffic to Pappy. The first is to set up port forwarding as root to send traffic from localhost:80 to localhost:8080 and localhost:443 to localhost:8443 (since we can listen on 8080 and 8443 without root). Or you can YOLO, run Pappy as root and just have it listen on 80 and 443.
+
+According to Google you can use the following command to forward port 80 on localhost to 8080 on Linux:
+
+```
+iptables -t nat -A PREROUTING -i ppp0 -p tcp --dport 80 -j REDIRECT --to-ports 8080
+```
+
+Then to route 443 to 8443:
+
+```
+iptables -t nat -A PREROUTING -i ppp0 -p tcp --dport 443 -j REDIRECT --to-ports 8443
+```
+
+Of course, both of these need to be run as root.
+
+Then on mac it’s
+
+```
+echo "
+rdr pass inet proto tcp from any to any port 80 -> 127.0.0.1 port 8080
+rdr pass inet proto tcp from any to any port 443 -> 127.0.0.1 port 8443
+" | sudo pfctl -ef -
+Then to turn it off on mac it’s
+sudo pfctl -F all -f /etc/pf.conf
+```
+
+Then modify the listener settings in the project’s config.json to be:
+
+```
+"proxy_listeners": [
+        {"port": 8080, "interface": "127.0.0.1", "forward_host": "www.example.faketld"},
+        {"port": 8443, "interface": "127.0.0.1", "forward_host_ssl": "www.example.faketld"},
+    ]
+```
+
+This configuration will cause Pappy to open a port on 8080 that will accept connections normally and a port on 8443 which will accept SSL connections. The forward_host setting tells Pappy to redirect any requests sent to the port to the given host. It will also update the request’s host header. forward_host_ssl does the same thing, but it listens for SSL connections and forces the connection to use SSL.
+
+Or if you’re going to YOLO it do the same thing then listen on port 80/443 directly. I do not suggest you do this.
+
+```
+"proxy_listeners": [
+        {"port": 80, "interface": "127.0.0.1", "forward_host": "www.example.faketld"},
+        {"port": 443, "interface": "127.0.0.1", "forward_host_ssl": "www.example.faketld"},
+    ]
+```
+
+Pappy will automatically use this host to make the connection and forward the request to the new server.
+
 FAQ
 ---
 
@@ -954,6 +1044,16 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.7
+    * boring unit tests
+    * should make future releases more stable I guess
+    * Support for upstream SOCKS servers
+    * `print_params` command
+    * `inv` filter
+    * `param_info` command
+    * Filters by request/response only headers/body
+    * Transparent host redirection
+    * Some easier to type aliases for common commands
 * 0.2.6
     * Fix pip being dumb
     * `watch` command to watch requests/responses in real time

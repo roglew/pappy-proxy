@@ -2,12 +2,13 @@ import HTMLParser
 import StringIO
 import base64
 import clipboard
+import datetime
 import gzip
 import shlex
 import string
 import urllib
 
-from pappyproxy.util import PappyException, hexdump
+from pappyproxy.util import PappyException, hexdump, printable_data
 
 def print_maybe_bin(s):
     binary = False
@@ -231,6 +232,14 @@ def gzip_encode_raw(line):
     to a file.
     """
     print _code_helper(line, gzip_encode_helper, copy=False)
+    
+def unix_time_decode_helper(line):
+    unix_time = int(line.strip())
+    dtime = datetime.datetime.fromtimestamp(unix_time)
+    return dtime.strftime('%Y-%m-%d %H:%M:%S')
+
+def unix_time_decode(line):
+    print _code_helper(line, unix_time_decode_helper)
         
 def load_cmds(cmd):
     cmd.set_cmds({
@@ -254,6 +263,7 @@ def load_cmds(cmd):
         'html_encode_raw': (html_encode_raw, None),
         'gzip_decode_raw': (gzip_decode_raw, None),
         'gzip_encode_raw': (gzip_encode_raw, None),
+        'unixtime_decode': (unix_time_decode, None),
     })
     cmd.add_aliases([
         ('base64_decode', 'b64d'),
@@ -276,4 +286,5 @@ def load_cmds(cmd):
         ('html_encode_raw', 'htmler'),
         ('gzip_decode_raw', 'gzdr'),
         ('gzip_encode_raw', 'gzer'),
+        ('unixtime_decode', 'uxtd'),
     ])

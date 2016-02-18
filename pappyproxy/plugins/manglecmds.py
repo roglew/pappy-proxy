@@ -58,6 +58,7 @@ class MangleInterceptMacro(InterceptMacro):
             defer.returnValue(None)
 
         mangled_req = Request(text, update_content_length=True)
+        mangled_req._host = request.host
         mangled_req.port = request.port
         mangled_req.is_ssl = request.is_ssl
 
@@ -126,7 +127,6 @@ def check_reqid(reqid):
 
 def start_editor(reqid):
     script_loc = os.path.join(config.PAPPY_DIR, "plugins", "vim_repeater", "repeater.vim")
-    #print "RepeaterSetup %d %d"%(reqid, comm_port)
     subprocess.call(["vim", "-S", script_loc, "-c", "RepeaterSetup %s %d"%(reqid, comm.comm_port)])
     
 ####################

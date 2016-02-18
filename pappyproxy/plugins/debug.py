@@ -11,6 +11,7 @@ from pappyproxy.util import PappyException
 from pappyproxy.requestcache import RequestCache
 from pappyproxy.console import print_requests
 from pappyproxy.pappy import heapstats, cons
+from pappyproxy.plugin import require_modules
 from twisted.internet import defer
 
 def cache_info(line):
@@ -23,19 +24,16 @@ def cache_info(line):
         rs = sorted(rl, key=lambda r: Request.cache._last_used[r.reqid], reverse=True)
         print_requests(rs)
         
+@require_modules('psutil')
 def memory_info(line):
-    try:
-        import psutil
-    except ImportError:
-        raise PappyException('This command requires the psutil package')
+    import psutil
     proc = psutil.Process(os.getpid())
     mem = proc.memory_info().rss
     megabyte = (float(mem)/1024)/1024
     print 'Memory usage: {0:.2f} Mb ({1} bytes)'.format(megabyte, mem)
 
+@require_modules('guppy')
 def heap_info(line):
-    if heapstats is None:
-        raise PappyException('Command requires the guppy library')
     size = heapstats.heap().size
     print 'Heap usage: {0:.2f} Mb'.format(size/(1024.0*1024.0))
     print heapstats.heap()
@@ -54,11 +52,9 @@ def limit_info(line):
         print 'Soft limit is now:', soft
         print 'Hard limit is now:', hard
         
+@require_modules('objgraph')
 def graph_randobj(line):
-    try:
-        import objgraph
-    except ImportError:
-        raise PappyException('This command requires the objgraph library')
+    import objgraph
     args = shlex.split(line)
     if len(args) > 1:
         fname = args[1]

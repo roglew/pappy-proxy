@@ -1,3 +1,4 @@
+import collections
 import copy
 import datetime
 import os
@@ -8,6 +9,7 @@ from OpenSSL import crypto
 from pappyproxy import config
 from pappyproxy import context
 from pappyproxy import http
+from pappyproxy import macros
 from pappyproxy.util import PappyException, printable_data
 from twisted.internet import defer
 from twisted.internet import reactor, ssl
@@ -56,6 +58,34 @@ def log_request(request, id=None, symbol='*', verbosity_level=3):
         r_split = request.split('\r\n')
         for l in r_split:
             log(l, id, symbol, verbosity_level)
+            
+def get_endpoint(target_host, target_port, target_ssl, socks_config=None):
+
+    # Imports go here to allow mocking for tests
+    from twisted.internet.endpoints import SSL4ClientEndpoint, TCP4ClientEndpoint
+    from txsocksx.client import SOCKS5ClientEndpoint
+    from txsocksx.tls import TLSWrapClientEndpoint
+    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
+
+    if socks_config is not None:
+        sock_host = socks_config['host']
+        sock_port = int(socks_config['port'])
+        methods = {'anonymous': ()}
+        if 'username' in socks_config and 'password' in socks_config:
+            methods['login'] = (socks_config['username'], socks_config['password'])
+        tcp_endpoint = TCP4ClientEndpoint(reactor, sock_host, sock_port)
+        socks_endpoint = SOCKS5ClientEndpoint(target_host, target_port, tcp_endpoint, methods=methods)
+        if target_ssl:
+            endpoint = TLSWrapClientEndpoint(ClientTLSContext(), socks_endpoint)
+        else:
+            endpoint = socks_endpoint
+    else:
+        if target_ssl:
+            endpoint = SSL4ClientEndpoint(reactor, target_host, target_port,
+                                          ClientTLSContext())
+        else:
+            endpoint = TCP4ClientEndpoint(reactor, target_host, target_port)
+    return endpoint
         
 class ClientTLSContext(ssl.ClientContextFactory):
     isClient = 1
@@ -71,6 +101,7 @@ class ProxyClient(LineReceiver):
         self._sent = False
         self.request = request
         self.data_defer = defer.Deferred()
+        self.completed = False
 
         self._response_obj = http.Response()
 
@@ -83,24 +114,12 @@ class ProxyClient(LineReceiver):
             line = ''
         self._response_obj.add_line(line)
         self.log(line, symbol='r<', verbosity_level=3)
-        if self.factory.stream_response:
-            self.log('Returning line back through stream')
-            self.factory.return_transport.write(line+'\r\n')
-        else:
-            self.log('Not streaming, not returning')
-            self.log(self.factory.stream_response)
         if self._response_obj.headers_complete:
-            if self._response_obj.complete:
-                self.handle_response_end()
-                return
-            self.log("Headers end, length given, waiting for data", verbosity_level=3)
             self.setRawMode()
 
     def rawDataReceived(self, *args, **kwargs):
         data = args[0]
         self.log('Returning data back through stream')
-        if self.factory.stream_response:
-            self.factory.return_transport.write(data)
         if not self._response_obj.complete:
             if data:
                 if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
@@ -110,71 +129,21 @@ class ProxyClient(LineReceiver):
                         self.log(l, symbol='<rd', verbosity_level=3)
             self._response_obj.add_data(data)
 
+    def dataReceived(self, data):
+        if self.factory.stream_response:
+            self.factory.return_transport.write(data)
+        LineReceiver.dataReceived(self, data)
+        if not self.completed:
             if self._response_obj.complete:
+                self.completed = True
                 self.handle_response_end()
-            
+        
     def connectionMade(self):
-        self._connection_made()
-
-    @defer.inlineCallbacks
-    def _connection_made(self):
-        self.log('Connection established, sending request...', verbosity_level=3)
-        # Make sure to add errback
+        self.log("Connection made, sending request", verbosity_level=3)
         lines = self.request.full_request.splitlines()
         for l in lines:
             self.log(l, symbol='>r', verbosity_level=3)
-
-        sendreq = self.request
-        if context.in_scope(sendreq):
-            to_mangle = copy.copy(self.factory.intercepting_macros).iteritems()
-            if self.factory.save_all:
-                # It isn't the actual time, but this should work in case
-                # we do an 'ls' before it gets a real time saved
-                self.request.time_start = datetime.datetime.utcnow()
-                if self.factory.stream_response and not to_mangle:
-                    self.request.async_deep_save()
-                else:
-                    yield self.request.async_deep_save()
-
-            ## Run intercepting macros
-            # if we don't copy it, when we delete a macro from the console,
-            # we get a crash. We do a shallow copy to keep the macro
-            # instances the same.
-            for k, macro in to_mangle:
-                if macro.intercept_requests:
-                    if macro.async_req:
-                        sendreq = yield macro.async_mangle_request(sendreq)
-                    else:
-                        sendreq = macro.mangle_request(sendreq)
-
-                    if sendreq is None:
-                        self.log('Request dropped, losing connection')
-                        self.transport.loseConnection()
-                        self.request = None
-                        self.data_defer.callback(None)
-                        if self.factory.save_all:
-                            yield sendreq.async_deep_save()
-                        defer.returnValue(None)
-
-            if sendreq != self.request:
-                sendreq.unmangled = self.request
-                if self.factory.save_all:
-                    sendreq.time_start = datetime.datetime.utcnow()
-                    yield sendreq.async_deep_save()
-        else:
-            self.log("Request out of scope, passing along unmangled")
-                
-        if not self._sent:
-            self.factory.start_time = datetime.datetime.utcnow()
-            self.transport.write(sendreq.full_request)
-            self.request = sendreq
-            self.request.submitted = True
-            self._sent = True
-            self.data_defer.callback(sendreq)
-        defer.returnValue(None)
-
-    def connectionLost(self, reason):
-        pass
+        self.transport.write(self.request.full_request)
         
     def handle_response_end(self, *args, **kwargs):
         self.log("Remote response finished, returning data to original stream")
@@ -182,7 +151,13 @@ class ProxyClient(LineReceiver):
         self.log('Response ended, losing connection')
         self.transport.loseConnection()
         assert self._response_obj.full_response
-        self.factory.return_request_pair(self.request)
+        self.data_defer.callback(self.request)
+
+    def clientConnectionFailed(self, connector, reason):
+        self.log("Connection with remote server failed: %s" % reason)
+
+    def clientConnectionLost(self, connector, reason):
+        self.log("Connection with remote server lost: %s" % reason)
 
 
 class ProxyClientFactory(ClientFactory):
@@ -202,9 +177,13 @@ class ProxyClientFactory(ClientFactory):
     def log(self, message, symbol='*', verbosity_level=1):
         log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
 
-    def buildProtocol(self, addr):
+    def buildProtocol(self, addr, _do_callback=True):
+        # _do_callback is intended to help with testing and should not be modified
         p = ProxyClient(self.request)
         p.factory = self
+        self.log("Building protocol", verbosity_level=3)
+        if _do_callback:
+            p.data_defer.addCallback(self.return_request_pair)
         return p
 
     def clientConnectionFailed(self, connector, reason):
@@ -214,7 +193,43 @@ class ProxyClientFactory(ClientFactory):
         self.log("Connection lost with remote server: %s" % reason.getErrorMessage())
 
     @defer.inlineCallbacks
+    def prepare_request(self):
+        """
+        Prepares request for submitting
+        
+        Saves the associated request with a temporary start time, mangles it, then
+        saves the mangled version with an update start time.
+        """
+
+        sendreq = self.request
+        if context.in_scope(sendreq):
+            mangle_macros = copy.copy(self.intercepting_macros)
+            self.request.time_start = datetime.datetime.utcnow()
+            if self.save_all:
+                if self.stream_response and not mangle_macros:
+                    self.request.async_deep_save()
+                else:
+                    yield self.request.async_deep_save()
+
+            (sendreq, mangled) = yield macros.mangle_request(sendreq, mangle_macros)
+
+            if sendreq and mangled and self.save_all:
+                self.start_time = datetime.datetime.utcnow()
+                sendreq.time_start = self.start_time
+                yield sendreq.async_deep_save()
+        else:
+            self.log("Request out of scope, passing along unmangled")
+        self.request = sendreq
+        defer.returnValue(self.request)
+
+    @defer.inlineCallbacks
     def return_request_pair(self, request):
+        """
+        If the request is in scope, it saves the completed request,
+        sets the start/end time, mangles the response, saves the
+        mangled version, then writes the response back through the
+        transport.
+        """
         self.end_time = datetime.datetime.utcnow()
         if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
             log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
@@ -222,39 +237,18 @@ class ProxyClientFactory(ClientFactory):
         request.time_start = self.start_time
         request.time_end = self.end_time
         if context.in_scope(request):
-            to_mangle = copy.copy(self.intercepting_macros).iteritems()
+            mangle_macros = copy.copy(self.intercepting_macros)
+
             if self.save_all:
-                if self.stream_response and not to_mangle:
+                if self.stream_response and not mangle_macros:
                     request.async_deep_save()
                 else:
                     yield request.async_deep_save()
 
-            # if we don't copy it, when we delete a macro from the console,
-            # we get a crash. We do a shallow copy to keep the macro
-            # instances the same.
-            old_rsp = request.response
-            for k, macro in to_mangle:
-                if macro.intercept_responses:
-                    if macro.async_rsp:
-                        mangled_rsp = yield macro.async_mangle_response(request)
-                    else:
-                        mangled_rsp = macro.mangle_response(request)
+            mangled = yield macros.mangle_response(request, mangle_macros)
 
-                    if mangled_rsp is None:
-                        request.response = None
-                        self.data_defer.callback(request)
-                        if self.save_all:
-                            yield request.async_deep_save()
-                        self.log("Response dropped, losing connection")
-                        self.transport.loseConnection()
-                        defer.returnValue(None)
-
-                    request.response = mangled_rsp
-
-            if request.response != old_rsp:
-                request.response.unmangled = old_rsp
-                if self.save_all:
-                    yield request.async_deep_save()
+            if mangled and self.save_all:
+                yield request.async_deep_save()
 
             if request.response and (config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0):
                 log_request(printable_data(request.response.full_response),
@@ -267,8 +261,10 @@ class ProxyClientFactory(ClientFactory):
 class ProxyServerFactory(ServerFactory):
 
     def __init__(self, save_all=False):
-        self.intercepting_macros = {}
+        self.intercepting_macros = collections.OrderedDict()
         self.save_all = save_all
+        self.force_ssl = False
+        self.forward_host = None
 
     def buildProtocol(self, addr):
         prot = ProxyServer()
@@ -288,101 +284,167 @@ class ProxyServer(LineReceiver):
         self._connect_response = False
         self._forward = True
         self._connect_uri = None
+        self._connect_host = None
+        self._connect_ssl = None
+        self._connect_port = None
+        self._client_factory = None
 
     def lineReceived(self, *args, **kwargs):
         line = args[0]
         self.log(line, symbol='>', verbosity_level=3)
         self._request_obj.add_line(line)
 
-        if self._request_obj.verb.upper() == 'CONNECT':
-            self._connect_response = True
-            self._forward = False
-            self._connect_uri = self._request_obj.url
-
         if self._request_obj.headers_complete:
             self.setRawMode()
-
-        if self._request_obj.complete:
-            self.setLineMode()
-            try:
-                self.full_request_received()
-            except PappyException as e:
-                print str(e)
             
     def rawDataReceived(self, *args, **kwargs):
         data = args[0]
         self._request_obj.add_data(data)
         self.log(data, symbol='d>', verbosity_level=3)
 
+    def dataReceived(self, *args, **kwargs):
+        # receives the data then checks if the request is complete.
+        # if it is, it calls full_Request_received
+        LineReceiver.dataReceived(self, *args, **kwargs)
+
         if self._request_obj.complete:
             try:
                 self.full_request_received()
             except PappyException as e:
                 print str(e)
         
-    def full_request_received(self, *args, **kwargs):
+    def _start_tls(self, cert_host=None):
+        # Generate a cert for the hostname and start tls
+        if cert_host is None:
+            host = self._request_obj.host
+        else:
+            host = cert_host
+        if not host in cached_certs:
+            log("Generating cert for '%s'" % host,
+                verbosity_level=3)
+            (pkey, cert) = generate_cert(host,
+                                         config.CERT_DIR)
+            cached_certs[host] = (pkey, cert)
+        else:
+            log("Using cached cert for %s" % host, verbosity_level=3)
+            (pkey, cert) = cached_certs[host]
+        ctx = ServerTLSContext(
+            private_key=pkey,
+            certificate=cert,
+        )
+        self.transport.startTLS(ctx, self.factory)
+
+    def _connect_okay(self):
+        self.log('Responding to browser CONNECT request', verbosity_level=3)
+        okay_str = 'HTTP/1.1 200 Connection established\r\n\r\n'
+        self.transport.write(okay_str)
+                
+    def full_request_received(self):
         global cached_certs
         
         self.log('End of request', verbosity_level=3)
 
-        if self._connect_response:
-            self.log('Responding to browser CONNECT request', verbosity_level=3)
-            okay_str = 'HTTP/1.1 200 Connection established\r\n\r\n'
-            self.transport.write(okay_str)
+        forward = True
+        if self._request_obj.verb.upper() == 'CONNECT':
+            self._connect_okay()
+            self._start_tls()
+            self._connect_uri = self._request_obj.url
+            self._connect_host = self._request_obj.host
+            self._connect_ssl = True # do we just assume connect means ssl?
+            self._connect_port = self._request_obj.port
+            self.log('uri=%s, ssl=%s, connect_port=%s' % (self._connect_uri, self._connect_ssl, self._connect_port), verbosity_level=3)
+            forward = False
 
-            # Generate a cert for the hostname
-            if not self._request_obj.host in cached_certs:
-                log("Generating cert for '%s'" % self._request_obj.host,
-                    verbosity_level=3)
-                (pkey, cert) = generate_cert(self._request_obj.host,
-                                             config.CERT_DIR)
-                cached_certs[self._request_obj.host] = (pkey, cert)
-            else:
-                log("Using cached cert for %s" % self._request_obj.host, verbosity_level=3)
-                (pkey, cert) = cached_certs[self._request_obj.host]
-            ctx = ServerTLSContext(
-                private_key=pkey,
-                certificate=cert,
-            )
-            self.transport.startTLS(ctx, self.factory)
+        # if self._request_obj.host == 'pappy':
+        #     self._create_pappy_response()
+        #     forward = False
 
-        if self._forward:
-            self.log("Forwarding to %s on %d" % (self._request_obj.host, self._request_obj.port))
-            if not self.factory.intercepting_macros:
-                stream = True
-            else:
-                # We only want to call send_response_back if we're not streaming
-                stream = False
-            self.log('Creating client factory, stream=%s' % stream)
-            factory = ProxyClientFactory(self._request_obj,
-                                         save_all=self.factory.save_all,
-                                         stream_response=stream,
-                                         return_transport=self.transport)
-            factory.intercepting_macros = self.factory.intercepting_macros
-            factory.connection_id = self.connection_id
-            if not stream:
-                factory.data_defer.addCallback(self.send_response_back)
-            if self._request_obj.is_ssl:
-                self.log("Accessing over SSL...", verbosity_level=3)
-                reactor.connectSSL(self._request_obj.host, self._request_obj.port, factory, ClientTLSContext())
-            else:
-                self.log("Accessing over TCP...", verbosity_level=3)
-                reactor.connectTCP(self._request_obj.host, self._request_obj.port, factory)
-                
-        # Reset per-request variables
+        # if _request_obj.host is a listener, forward = False
+
+        if forward:
+            self._generate_and_submit_client()
+        self._reset()
+        
+    def _reset(self):
+        # Reset per-request variables and have the request default to using
+        # some parameters from the connect request
         self.log("Resetting per-request data", verbosity_level=3)
         self._connect_response = False
-        self._forward = True
         self._request_obj = http.Request()
         if self._connect_uri:
             self._request_obj.url = self._connect_uri
+        if self._connect_host:
+            self._request_obj._host = self._connect_host
+        if self._connect_ssl:
+            self._request_obj.is_ssl = self._connect_ssl
+        if self._connect_port:
+            self._request_obj.port = self._connect_port
         self.setLineMode()
 
+    def _generate_and_submit_client(self):
+        """
+        Sets up self._client_factory with self._request_obj then calls back to
+        submit the request
+        """
+
+        self.log("Forwarding to %s on %d" % (self._request_obj.host, self._request_obj.port))
+        if self.factory.intercepting_macros:
+            stream = False
+        else:
+            stream = True
+        self.log('Creating client factory, stream=%s' % stream)
+        self._client_factory = ProxyClientFactory(self._request_obj,
+                                                  save_all=self.factory.save_all,
+                                                  stream_response=stream,
+                                                  return_transport=self.transport)
+        self._client_factory.intercepting_macros = self.factory.intercepting_macros
+        self._client_factory.connection_id = self.connection_id
+        if not stream:
+            self._client_factory.data_defer.addCallback(self.send_response_back)
+        d = self._client_factory.prepare_request()
+        d.addCallback(self._make_remote_connection)
+        return d
+
+    @defer.inlineCallbacks
+    def _make_remote_connection(self, req):
+        """
+        Creates an endpoint to the target server using the given configuration
+        options then connects to the endpoint using self._client_factory
+        """
+        self._request_obj = req
+
+        # If we have a socks proxy, wrap the endpoint in it
+        if context.in_scope(self._request_obj):
+            # Modify the request connection settings to match settings in the factory
+            if self.factory.force_ssl:
+                self._request_obj.is_ssl = True
+            if self.factory.forward_host:
+                self._request_obj.host = self.factory.forward_host
+
+            # Get connection from the request
+            endpoint = get_endpoint(self._request_obj.host,
+                                    self._request_obj.port,
+                                    self._request_obj.is_ssl,
+                                    socks_config=config.SOCKS_PROXY)
+        else:
+            endpoint = get_endpoint(self._request_obj.host,
+                                    self._request_obj.port,
+                                    self._request_obj.is_ssl)
+
+        # Connect via the endpoint
+        self.log("Accessing using endpoint")
+        yield endpoint.connect(self._client_factory)
+        self.log("Connected")
+        
     def send_response_back(self, response):
         if response is not None:
             self.transport.write(response.response.full_response)
         self.log("Response sent back, losing connection")
         self.transport.loseConnection()
+        
+    def connectionMade(self):
+        if self.factory.force_ssl:
+            self._start_tls(self.factory.forward_host)
                 
     def connectionLost(self, reason):
         self.log('Connection lost with browser: %s' % reason.getErrorMessage())
@@ -425,7 +487,7 @@ def load_certs_from_dir(cert_dir):
         with open(cert_dir+'/'+config.SSL_CA_FILE, 'rt') as f:
             ca_raw = f.read()
     except IOError:
-        raise PappyException("Could not load CA cert!")
+        raise PappyException("Could not load CA cert! Generate certs using the `gencerts` command then add the .crt file to your browser.")
 
     try:
         with open(cert_dir+'/'+config.SSL_PKEY_FILE, 'rt') as f:
