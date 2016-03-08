@@ -9,8 +9,8 @@ import datetime
 from pappyproxy.http import Request, post_request
 from pappyproxy.util import PappyException
 from pappyproxy.requestcache import RequestCache
-from pappyproxy.console import print_requests
-from pappyproxy.pappy import heapstats, cons
+from pappyproxy.util import print_requests
+from pappyproxy.pappy import heapstats, session
 from pappyproxy.plugin import require_modules
 from twisted.internet import defer
 
@@ -97,7 +97,7 @@ def big_fucking_data_file(line):
 def time_cmd(line):
     print 'Timing `%s`...' % line
     start = datetime.datetime.now()
-    cons.onecmd(line.strip())
+    session.cons.onecmd(line.strip())
     end = datetime.datetime.now()
     total_time = (end-start).total_seconds()
     print '`{0}` took {1:.3f} seconds'.format(line, total_time)

@@ -3,9 +3,8 @@ import pappyproxy
 import shlex
 
 from pappyproxy.plugin import active_intercepting_macros, add_intercepting_macro, remove_intercepting_macro
-from pappyproxy.console import load_reqlist
 from pappyproxy.macros import load_macros, macro_from_requests, gen_imacro
-from pappyproxy.util import PappyException
+from pappyproxy.util import PappyException, load_reqlist
 from twisted.internet import defer
 
 loaded_macros = []

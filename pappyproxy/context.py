@@ -1,10 +1,8 @@
 import crochet
-import pappyproxy
 import re
 import shlex
 
 from .http import Request, RepeatableDict
-from .requestcache import RequestCache
 from twisted.internet import defer
 from util import PappyException
 
@@ -100,99 +98,6 @@ class Context(object):
 class FilterParseError(PappyException):
     pass
 
-class Filter(object):
-    """
-    A class representing a filter. Its claim to fame is that you can use
-    :func:`pappyproxy.context.Filter.from_filter_string` to generate a
-    filter from a filter string.
-    """
-
-    def __init__(self, filter_string):
-        self.filter_string = filter_string
-
-    def __call__(self, *args, **kwargs):
-        return self.filter_func(*args, **kwargs)
-
-    def __repr__(self):
-        return '<Filter "%s">' % self.filter_string
-
-    @defer.inlineCallbacks
-    def generate(self):
-        self.filter_func = yield self.from_filter_string(self.filter_string)
-
-    @staticmethod
-    @defer.inlineCallbacks
-    def from_filter_string(filter_string=None, parsed_args=None):
-        """
-        from_filter_string(filter_string)
-
-        Create a filter from a filter string. If passed a list of arguments, they
-        will be used instead of parsing the string.
-
-        :rtype: Deferred that returns a :class:`pappyproxy.context.Filter`
-        """
-        if parsed_args is not None:
-            args = parsed_args
-        else:
-            args = shlex.split(filter_string)
-        if len(args) == 0:
-            raise PappyException('Field is required')
-        field = args[0]
-        new_filter = None
-
-        field_args = args[1:]
-        if field in ("all",):
-            new_filter = gen_filter_by_all(field_args)
-        elif field in ("host", "domain", "hs", "dm"):
-            new_filter = gen_filter_by_host(field_args)
-        elif field in ("path", "pt"):
-            new_filter = gen_filter_by_path(field_args)
-        elif field in ("body", "bd", "data", "dt"):
-            new_filter = gen_filter_by_body(field_args)
-        elif field in ("reqbody", "qbd", "reqdata", "qdt"):
-            new_filter = gen_filter_by_req_body(field_args)
-        elif field in ("rspbody", "sbd", "qspdata", "sdt"):
-            new_filter = gen_filter_by_rsp_body(field_args)
-        elif field in ("verb", "vb"):
-            new_filter = gen_filter_by_verb(field_args)
-        elif field in ("param", "pm"):
-            new_filter = gen_filter_by_params(field_args)
-        elif field in ("header", "hd"):
-            new_filter = gen_filter_by_headers(field_args)
-        elif field in ("reqheader", "qhd"):
-            new_filter = gen_filter_by_request_headers(field_args)
-        elif field in ("rspheader", "shd"):
-            new_filter = gen_filter_by_response_headers(field_args)
-        elif field in ("rawheaders", "rh"):
-            new_filter = gen_filter_by_raw_headers(field_args)
-        elif field in ("sentcookie", "sck"):
-            new_filter = gen_filter_by_submitted_cookies(field_args)
-        elif field in ("setcookie", "stck"):
-            new_filter = gen_filter_by_set_cookies(field_args)
-        elif field in ("statuscode", "sc", "responsecode"):
-            new_filter = gen_filter_by_response_code(field_args)
-        elif field in ("responsetime", "rt"):
-            raise PappyException('Not implemented yet, sorry!')
-        elif field in ("tag", "tg"):
-            new_filter = gen_filter_by_tag(field_args)
-        elif field in ("saved", "svd"):
-            new_filter = gen_filter_by_saved(field_args)
-        elif field in ("before", "b4", "bf"):
-            new_filter = yield gen_filter_by_before(field_args)
-        elif field in ("after", "af"):
-            new_filter = yield gen_filter_by_after(field_args)
-        elif field in ("inv",):
-            new_filter = yield gen_filter_by_inverse(field_args)
-        else:
-            raise FilterParseError("%s is not a valid field" % field)
-
-        if new_filter is None:
-            raise FilterParseError("Error creating filter")
-        # dirty hack to get it to work if we don't generate any deferreds
-        # d = defer.Deferred()
-        # d.callback(None)
-        # yield d
-        defer.returnValue(new_filter)
 
 def cmp_is(a, b):
     if a is None or b is None:
@@ -688,3 +593,127 @@ def reset_context_caches():
     import pappyproxy.pappy
     for c in pappyproxy.pappy.all_contexts:
         c.cache_reset()
+
+class Filter(object):
+    """
+    A class representing a filter. Its claim to fame is that you can use
+    :func:`pappyproxy.context.Filter.from_filter_string` to generate a
+    filter from a filter string.
+    """
+    
+    _filter_functions = {
+        "all": gen_filter_by_all,
+
+        "host": gen_filter_by_host,
+        "domain": gen_filter_by_host,
+        "hs": gen_filter_by_host,
+        "dm": gen_filter_by_host,
+
+        "path": gen_filter_by_path,
+        "pt": gen_filter_by_path,
+        
+        "body": gen_filter_by_body,
+        "bd": gen_filter_by_body,
+        "data": gen_filter_by_body,
+        "dt": gen_filter_by_body,
+        
+        "reqbody": gen_filter_by_req_body,
+        "qbd": gen_filter_by_req_body,
+        "reqdata": gen_filter_by_req_body,
+        "qdt": gen_filter_by_req_body,
+        
+        "rspbody": gen_filter_by_rsp_body,
+        "sbd": gen_filter_by_rsp_body,
+        "qspdata": gen_filter_by_rsp_body,
+        "sdt": gen_filter_by_rsp_body,
+        
+        "verb": gen_filter_by_verb,
+        "vb": gen_filter_by_verb,
+        
+        "param": gen_filter_by_params,
+        "pm": gen_filter_by_params,
+        
+        "header": gen_filter_by_headers,
+        "hd": gen_filter_by_headers,
+        
+        "reqheader": gen_filter_by_request_headers,
+        "qhd": gen_filter_by_request_headers,
+        
+        "rspheader": gen_filter_by_response_headers,
+        "shd": gen_filter_by_response_headers,
+        
+        "rawheaders": gen_filter_by_raw_headers,
+        "rh": gen_filter_by_raw_headers,
+        
+        "sentcookie": gen_filter_by_submitted_cookies,
+        "sck": gen_filter_by_submitted_cookies,
+        
+        "setcookie": gen_filter_by_set_cookies,
+        "stck": gen_filter_by_set_cookies,
+        
+        "statuscode": gen_filter_by_response_code,
+        "sc": gen_filter_by_response_code,
+        "responsecode": gen_filter_by_response_code,
+        
+        "tag": gen_filter_by_tag,
+        "tg": gen_filter_by_tag,
+        
+        "saved": gen_filter_by_saved,
+        "svd": gen_filter_by_saved,
+    }
+
+    _async_filter_functions = {
+        "before": gen_filter_by_before,
+        "b4": gen_filter_by_before,
+        "bf": gen_filter_by_before,
+        
+        "after": gen_filter_by_after,
+        "af": gen_filter_by_after,
+        
+        "inv": gen_filter_by_inverse,
+    }
+
+    def __init__(self, filter_string):
+        self.filter_string = filter_string
+
+    def __call__(self, *args, **kwargs):
+        return self.filter_func(*args, **kwargs)
+
+    def __repr__(self):
+        return '<Filter "%s">' % self.filter_string
+
+    @defer.inlineCallbacks
+    def generate(self):
+        self.filter_func = yield self.from_filter_string(self.filter_string)
+
+    @staticmethod
+    @defer.inlineCallbacks
+    def from_filter_string(filter_string=None, parsed_args=None):
+        """
+        from_filter_string(filter_string)
+
+        Create a filter from a filter string. If passed a list of arguments, they
+        will be used instead of parsing the string.
+
+        :rtype: Deferred that returns a :class:`pappyproxy.context.Filter`
+        """
+        if parsed_args is not None:
+            args = parsed_args
+        else:
+            args = shlex.split(filter_string)
+        if len(args) == 0:
+            raise PappyException('Field is required')
+        field = args[0]
+        new_filter = None
+
+        field_args = args[1:]
+        if field in Filter._filter_functions:
+            new_filter = Filter._filter_functions[field](field_args)
+        elif field in Filter._async_filter_functions:
+            new_filter = yield Filter._async_filter_functions[field](field_args)
+        else:
+            raise FilterParseError("%s is not a valid field" % field)
+
+        if new_filter is None:
+            raise FilterParseError("Error creating filter")
+        defer.returnValue(new_filter)

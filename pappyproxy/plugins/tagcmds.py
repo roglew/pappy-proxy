@@ -3,8 +3,7 @@ import pappyproxy
 import shlex
 
 from pappyproxy.plugin import main_context_ids
-from pappyproxy.console import load_reqlist
-from pappyproxy.util import PappyException
+from pappyproxy.util import PappyException, load_reqlist
 from twisted.internet import defer
 from pappyproxy.http import Request
 

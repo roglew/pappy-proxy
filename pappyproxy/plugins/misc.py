@@ -3,11 +3,10 @@ import pappyproxy
 import shlex
 
 from pappyproxy.colors import Colors, Styles, path_formatter, host_color, scode_color, verb_color
-from pappyproxy.console import confirm, load_reqlist, Capturing
-from pappyproxy.util import PappyException, remove_color
+from pappyproxy.util import PappyException, remove_color, confirm, load_reqlist, Capturing
 from pappyproxy.macros import InterceptMacro
 from pappyproxy.requestcache import RequestCache
-from pappyproxy.pappy import cons
+from pappyproxy.pappy import session
 from pappyproxy.plugin import add_intercepting_macro, remove_intercepting_macro
 from twisted.internet import defer
 from twisted.enterprise import adbapi
@@ -76,7 +75,7 @@ def gencerts(line):
     Generate CA cert and private CA file
     Usage: gencerts [/path/to/put/certs/in]
     """
-    dest_dir = line or pappyproxy.config.CERT_DIR
+    dest_dir = line or pappyproxy.pappy.session.config.cert_dir
     message = "This will overwrite any existing certs in %s. Are you sure?" % dest_dir
     if not confirm(message, 'n'):
         return False
@@ -94,9 +93,9 @@ def log(line):
         verbosity = int(line.strip())
     except:
         verbosity = 1
-    pappyproxy.config.DEBUG_VERBOSITY = verbosity
+    pappyproxy.pappy.session.config.debug_verbosity = verbosity
     raw_input()
-    pappyproxy.config.DEBUG_VERBOSITY = 0
+    pappyproxy.pappy.session.config.debug_verbosity = 0
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -182,7 +181,7 @@ def watch_proxy(line):
         
 def run_without_color(line):
     with Capturing() as output:
-       cons.onecmd(line.strip())
+       session.cons.onecmd(line.strip())
     print remove_color(output.val)
         
 def load_cmds(cmd):

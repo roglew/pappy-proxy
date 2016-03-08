@@ -7,8 +7,7 @@ import pprint
 import shlex
 import urllib
 
-from pappyproxy.console import load_reqlist, print_table, print_request_rows, get_req_data_row
-from pappyproxy.util import PappyException, utc2local
+from pappyproxy.util import PappyException, utc2local, load_reqlist, print_table, print_request_rows, get_req_data_row
 from pappyproxy.http import Request, repeatable_parse_qs
 from twisted.internet import defer
 from pappyproxy.plugin import main_context_ids
@@ -270,6 +269,8 @@ def view_request_info(line):
     Usage: view_request_info <reqid(s)>
     """
     args = shlex.split(line)
+    if not args:
+        raise PappyException("Request id is required")
     reqids = args[0]
 
     reqs = yield load_reqlist(reqids)
@@ -287,6 +288,8 @@ def view_request_headers(line):
     Usage: view_request_headers <reqid(s)>
     """
     args = shlex.split(line)
+    if not args:
+        raise PappyException("Request id is required")
     reqid = args[0]
 
     reqs = yield load_reqlist(reqid)
@@ -307,6 +310,8 @@ def view_full_request(line):
     Usage: view_full_request <reqid(s)>
     """
     args = shlex.split(line)
+    if not args:
+        raise PappyException("Request id is required")
     reqid = args[0]
 
     reqs = yield load_reqlist(reqid)
@@ -326,6 +331,8 @@ def view_request_bytes(line):
     Usage: view_request_bytes <reqid(s)>
     """
     args = shlex.split(line)
+    if not args:
+        raise PappyException("Request id is required")
     reqid = args[0]
 
     reqs = yield load_reqlist(reqid)

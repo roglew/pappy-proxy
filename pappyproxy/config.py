@@ -1,227 +1,234 @@
-"""
-The configuration settings for the proxy.
+import json
+import os
+import shutil
 
-.. data:: CERT_DIR
-
+class PappyConfig(object):
+    """
+    The configuration settings for the proxy. To access the config object for the
+    current session (eg from plugins) use ``pappyproxy.pappy.session.config``.
+    
+    .. data:: cert_dir
+    
     The location of the CA certs that Pappy will use. This can be configured in the
     ``config.json`` file for a project.
     
     :Default: ``{DATADIR}/certs``
-
-.. data:: PAPPY_DIR
-
+    
+    .. data:: pappy_dir
+    
     The file where pappy's scripts are located. Don't write anything here, and you
     probably don't need to write anything here. Use DATA_DIR instead.
     
     :Default: Wherever the scripts are installed
-
-.. data:: DATA_DIR
-
+    
+    .. data:: data_dir
+    
     The data directory. This is where files that have to be read by Pappy every time
     it's run are put. For example, plugins are stored in ``{DATADIR}/plugins`` and
     certs are by default stored in ``{DATADIR}/certs``. This defaults to ``~/.pappy``
     and isn't configurable right now.
     
     :Default: ``~/.pappy``
-
-.. data:: DATAFILE
-
+    
+    .. data:: datafile
+    
     The location of the CA certs that Pappy will use. This can be configured in the
     ``config.json`` file for a project.
     
     :Default: ``data.db``
-
-.. data:: DEBUG_DIR
-
+    
+    .. data:: debug_dir
+    
     The directory to write debug output to. Don't put this outside the project folder
     since it writes all the request data to this directory. You probably won't need
     to use this. Configured in the ``config.json`` file for the project.
     
     :Default: None
-
-.. data: LISTENERS
-
+    
+    .. data: listeners
+    
     The list of active listeners. It is a list of tuples of the format (port, interface)
     Not modifiable after startup. Configured in the ``config.json`` file for the project.
     
     :Default: ``[(8000, '127.0.0.1')]``
-
-.. data: SOCKS_PROXY
-
+    
+    .. data: socks_proxy
+    
     Details for a SOCKS proxy. It is a dict with the following key/values::
-
+    
       host: The SOCKS proxy host
       port: The proxy port
       username: Username (optional)
       password: Password (optional)
+    
+    If null, no proxy will be used.
+    
+    :Default: ``null``
+    
+    .. data: http_proxy
 
+    Details for an upstream HTTP proxy. It is a dict with the following key/values::
+    
+      host: The proxy host
+      port: The proxy port
+      username: Username (optional)
+      password: Password (optional)
+    
     If null, no proxy will be used.
 
-    :Default: ``null``
-
-
-.. data: PLUGIN_DIRS
-
+    .. data: plugin_dirs
+    
     List of directories that plugins are loaded from. Not modifiable.
     
     :Default: ``['{DATA_DIR}/plugins', '{PAPPY_DIR}/plugins']``
-
-.. data: SAVE_HISTORY
-
+    
+    .. data: save_history
+    
     Whether command history should be saved to a file/loaded at startup.
-
+    
     :Default: True
-
-.. data: CONFIG_DICT
-
+    
+    .. data: config_dict
+    
     The dictionary read from config.json. When writing plugins, use this to load
     configuration options for your plugin.
-
-.. data: GLOBAL_CONFIG_DICT
-
+    
+    .. data: global_config_dict
+    
     The dictionary from ~/.pappy/global_config.json. It contains settings for
     Pappy that are specific to the current computer. Avoid putting settings here,
     especially if it involves specific projects.
+    """
 
-"""
+    def __init__(self):
+        self.pappy_dir = os.path.dirname(os.path.realpath(__file__))
+        self.data_dir = os.path.join(os.path.expanduser('~'), '.pappy')
 
-import json
-import os
-import shutil
+        self.cert_dir = os.path.join(self.data_dir, 'certs')
 
-PAPPY_DIR = os.path.dirname(os.path.realpath(__file__))
-DATA_DIR = os.path.join(os.path.expanduser('~'), '.pappy')
+        self.datafile = 'data.db'
 
-CERT_DIR = os.path.join(DATA_DIR, 'certs')
+        self.debug_dir = None
+        self.debug_to_file = False
+        self.debug_verbosity = 0
 
-DATAFILE = 'data.db'
+        self.listeners = [(8000, '127.0.0.1')]
+        self.socks_proxy = None
+        self.http_proxy = None
 
-DEBUG_DIR = None
-DEBUG_TO_FILE = False
-DEBUG_VERBOSITY = 0
+        self.ssl_ca_file  = 'certificate.crt'
+        self.ssl_pkey_file = 'private.key'
 
-LISTENERS = [(8000, '127.0.0.1')]
-SOCKS_PROXY = None
+        self.histsize = 1000
 
-SSL_CA_FILE  = 'certificate.crt'
-SSL_PKEY_FILE = 'private.key'
+        self.plugin_dirs = [os.path.join(self.data_dir, 'plugins'), os.path.join(self.pappy_dir, 'plugins')]
 
-HISTSIZE = 1000
-
-PLUGIN_DIRS = [os.path.join(DATA_DIR, 'plugins'), os.path.join(PAPPY_DIR, 'plugins')]
-
-CONFIG_DICT = {}
-GLOBAL_CONFIG_DICT = {}
-
-def get_default_config():
-    default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                       'default_user_config.json')
-    with open(default_config_file) as f:
-        settings = json.load(f)
-    return settings
-
-def load_settings(proj_config):
-    global CERT_DIR
-    global DATAFILE
-    global DEBUG_DIR
-    global DEBUG_TO_FILE
-    global DEBUG_VERBOSITY
-    global LISTENERS
-    global SOCKS_PROXY
-    global PAPPY_DIR
-    global DATA_DIR
-    global SSL_CA_FILE 
-    global SSL_PKEY_FILE
-    global HISTSIZE
-
-    # Substitution dictionary
-    subs = {}
-    subs['PAPPYDIR'] = PAPPY_DIR
-    subs['DATADIR'] = DATA_DIR
-
-    # Data file settings
-    if 'data_file' in proj_config:
-        DATAFILE = proj_config["data_file"].format(**subs)
-
-    # Debug settings
-    if 'debug_dir' in proj_config:
-        if proj_config['debug_dir']:
-            DEBUG_TO_FILE = True
-            DEBUG_DIR = proj_config["debug_dir"].format(**subs)
-
-    # Cert directory settings
-    if 'cert_dir' in proj_config:
-        CERT_DIR = proj_config["cert_dir"].format(**subs)
-
-    # Listener settings
-    if "proxy_listeners" in proj_config:
-        LISTENERS = []
-        for l in proj_config["proxy_listeners"]:
-            ll = {}
-            if 'forward_host_ssl' in l:
-                l['forward_host_ssl'] = l['forward_host_ssl'].encode('utf-8')
-            if 'forward_host' in l:
-                l['forward_host'] = l['forward_host'].encode('utf-8')
-            LISTENERS.append(l)
-
-    # SOCKS proxy settings
-    if "socks_proxy" in proj_config:
-        SOCKS_PROXY = None
-        if proj_config['socks_proxy'] is not None:
-            conf = proj_config['socks_proxy']
-            if 'host' in conf and 'port' in conf:
-                SOCKS_PROXY = {}
-                SOCKS_PROXY['host'] = conf['host'].encode('utf-8')
-                SOCKS_PROXY['port'] = conf['port']
-                if 'username' in conf:
-                    if 'password' in conf:
-                        SOCKS_PROXY['username'] = conf['username'].encode('utf-8')
-                        SOCKS_PROXY['password'] = conf['password'].encode('utf-8')
-                    else:
-                        print 'SOCKS proxy has a username but no password. Ignoring creds.'
-            else:
-                print 'Host is missing host/port.'
-
-    # History saving settings
-    if "history_size" in proj_config:
-        HISTSIZE = proj_config['history_size']
-
-def load_global_settings(global_config):
-    from .http import Request
-    global CACHE_SIZE
-
-    if "cache_size" in global_config:
-        CACHE_SIZE = global_config['cache_size']
-    else:
-        CACHE_SIZE = 2000
-    Request.cache.resize(CACHE_SIZE)
-
-def load_from_file(fname):
-    global CONFIG_DICT
-    # Make sure we have a config file
-    if not os.path.isfile(fname):
-        print "Copying default config to %s" % fname
+        self.config_dict = {}
+        self.global_config_dict = {}
+    
+    def get_default_config(self):
         default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                        'default_user_config.json')
-        shutil.copyfile(default_config_file, fname)
+                                           'default_user_config.json')
+        with open(default_config_file) as f:
+            settings = json.load(f)
+        return settings
 
-    # Load local project config
-    with open(fname, 'r') as f:
-        CONFIG_DICT = json.load(f)
-    load_settings(CONFIG_DICT)
+    @staticmethod
+    def _parse_proxy_login(conf):
+        proxy = {}
+        if 'host' in conf and 'port' in conf:
+            proxy = {}
+            proxy['host'] = conf['host'].encode('utf-8')
+            proxy['port'] = conf['port']
+            if 'username' in conf:
+                if 'password' in conf:
+                    proxy['username'] = conf['username'].encode('utf-8')
+                    proxy['password'] = conf['password'].encode('utf-8')
+                else:
+                    print 'Proxy has a username but no password. Ignoring creds.'
+        else:
+            print 'Host is missing host/port.'
+            return None
+        return proxy
+    
+    def load_settings(self, proj_config):
+        # Substitution dictionary
+        subs = {}
+        subs['PAPPYDIR'] = self.pappy_dir
+        subs['DATADIR'] = self.data_dir
+    
+        # Data file settings
+        if 'data_file' in proj_config:
+            self.datafile = proj_config["data_file"].format(**subs)
+    
+        # Debug settings
+        if 'debug_dir' in proj_config:
+            if proj_config['debug_dir']:
+                self.debug_to_file = True
+                self.debug_dir = proj_config["debug_dir"].format(**subs)
+    
+        # Cert directory settings
+        if 'cert_dir' in proj_config:
+            self.cert_dir = proj_config["cert_dir"].format(**subs)
+    
+        # Listener settings
+        if "proxy_listeners" in proj_config:
+            self.listeners = []
+            for l in proj_config["proxy_listeners"]:
+                if 'forward_host_ssl' in l:
+                    l['forward_host_ssl'] = l['forward_host_ssl'].encode('utf-8')
+                if 'forward_host' in l:
+                    l['forward_host'] = l['forward_host'].encode('utf-8')
+                self.listeners.append(l)
+    
+        # SOCKS proxy settings
+        self.socks_proxy = None
+        if "socks_proxy" in proj_config:
+            if proj_config['socks_proxy'] is not None:
+                self.socks_proxy = PappyConfig._parse_proxy_login(proj_config['socks_proxy'])
 
-def global_load_from_file():
-    global GLOBAL_CONFIG_DICT
-    global DATA_DIR
-    # Make sure we have a config file
-    fname = os.path.join(DATA_DIR, 'global_config.json')
-    if not os.path.isfile(fname):
-        print "Copying default global config to %s" % fname
-        default_global_config_file = os.path.join(PAPPY_DIR,
-                                                  'default_global_config.json')
-        shutil.copyfile(default_global_config_file, fname)
-
-    # Load local project config
-    with open(fname, 'r') as f:
-        GLOBAL_CONFIG_DICT = json.load(f)
-    load_global_settings(GLOBAL_CONFIG_DICT)
+        # HTTP proxy settings
+        self.http_proxy = None
+        if "http_proxy" in proj_config:
+            if proj_config['http_proxy'] is not None:
+                self.http_proxy = PappyConfig._parse_proxy_login(proj_config['http_proxy'])
+    
+        # History saving settings
+        if "history_size" in proj_config:
+            self.histsize = proj_config['history_size']
+    
+    def load_global_settings(self, global_config):
+        from .http import Request
+    
+        if "cache_size" in global_config:
+            self.cache_size = global_config['cache_size']
+        else:
+            self.cache_size = 2000
+        Request.cache.resize(self.cache_size)
+    
+    def load_from_file(self, fname):
+        # Make sure we have a config file
+        if not os.path.isfile(fname):
+            print "Copying default config to %s" % fname
+            default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                            'default_user_config.json')
+            shutil.copyfile(default_config_file, fname)
+    
+        # Load local project config
+        with open(fname, 'r') as f:
+            self.config_dict = json.load(f)
+        self.load_settings(self.config_dict)
+    
+    def global_load_from_file(self):
+        # Make sure we have a config file
+        fname = os.path.join(self.data_dir, 'global_config.json')
+        if not os.path.isfile(fname):
+            print "Copying default global config to %s" % fname
+            default_global_config_file = os.path.join(self.pappy_dir,
+                                                      'default_global_config.json')
+            shutil.copyfile(default_global_config_file, fname)
+    
+        # Load local project config
+        with open(fname, 'r') as f:
+            self.global_config_dict = json.load(f)
+        self.load_global_settings(self.global_config_dict) 

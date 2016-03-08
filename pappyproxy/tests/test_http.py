@@ -885,6 +885,42 @@ def test_request_modify_header2():
                                '\r\n'
                                'foo=barr')
     
+def test_request_absolute_url():
+    r = http.Request(('GET /foo/path HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    assert r.full_message == ('GET /foo/path HTTP/1.1\r\n'
+                              'Host: www.example.faketld\r\n\r\n')
+    r.path_type = http.PATH_ABSOLUTE
+    assert r.full_message == ('GET http://www.example.faketld/foo/path HTTP/1.1\r\n'
+                              'Host: www.example.faketld\r\n\r\n')
+    r.is_ssl = True
+    assert r.full_message == ('GET https://www.example.faketld/foo/path HTTP/1.1\r\n'
+                              'Host: www.example.faketld\r\n\r\n')
+
+def test_proxy_auth():
+    r = http.Request(('GET /foo/path HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    r.proxy_creds = ('username', 'pass:word')
+    assert r.full_message == ('GET /foo/path HTTP/1.1\r\n'
+                              'Host: www.example.faketld\r\n'
+                              'Proxy-Authorization: Basic dXNlcm5hbWU6cGFzczp3b3Jk\r\n\r\n')
+
+def test_request_connect_request():
+    r = http.Request(('GET /foo/path HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    assert r.connect_request == None
+    r.is_ssl = True
+    assert r.connect_request.full_message == ('CONNECT www.example.faketld:443 HTTP/1.1\r\n'
+                                              'Host: www.example.faketld\r\n\r\n')
+
+def test_request_connect_request_creds():
+    r = http.Request(('GET /foo/path HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    r.is_ssl = True
+    r.proxy_creds = ('username', 'pass:word')
+    assert r.connect_request.full_message == ('CONNECT www.example.faketld:443 HTTP/1.1\r\n'
+                                              'Host: www.example.faketld\r\n'
+                                              'Proxy-Authorization: Basic dXNlcm5hbWU6cGFzczp3b3Jk\r\n\r\n')
 
 ####################
 ## Response tests
@@ -1301,3 +1337,10 @@ def test_response_delete_cookie():
     r.delete_cookie('foo')
     assert r.full_response == ('HTTP/1.1 200 OK\r\n'
                                'Content-Length: 0\r\n\r\n')
+
+def test_response_short_statusline():
+    r = http.Response('HTTP/1.1 407\r\n\r\n')
+    assert r.status_line == 'HTTP/1.1 407'
+    assert r.response_text == ''
+    assert r.version == 'HTTP/1.1'
+    assert r.response_code == 407

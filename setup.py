@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import pkgutil
+import pappyproxy
 from setuptools import setup, find_packages
 
-VERSION = '0.2.7'
+VERSION = pappyproxy.__version__
 
 setup(name='pappyproxy',
       version=VERSION,

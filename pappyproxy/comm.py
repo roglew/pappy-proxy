@@ -5,7 +5,6 @@ import json
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import defer
 from util import PappyException
-from .http import Request, Response
 
 """
 comm.py
@@ -13,12 +12,7 @@ Handles creating a listening server bound to localhost that other processes can
 use to interact with the proxy.
 """
 
-comm_port = 0
 debug = True
-
-def set_comm_port(port):
-    global comm_port
-    comm_port = port
 
 class CommServer(LineReceiver):
     MAX_LENGTH=sys.maxint
@@ -33,7 +27,6 @@ class CommServer(LineReceiver):
         }
 
     def lineReceived(self, line):
-        from .http import Request, Response
         line = line.strip()
 
         if line == '':
@@ -61,12 +54,10 @@ class CommServer(LineReceiver):
     def action_error_handler(self, error, result):
         if debug:
             print error.getTraceback()
-            return_data = {'success': False, 'message': 'Debug mode enabled, traceback on main terminal'}
-        else:
-            return_data = {'success': False, 'message': str(error.getErrorMessage())}
-            result.update(result)
-            self.sendLine(json.dumps(return_data))
-            error.trap(Exception)
+        return_data = {'success': False, 'message': str(error.getErrorMessage())}
+        result.update(result)
+        error.trap(Exception)
+        self.sendLine(json.dumps(return_data))
         return True
 
     def action_ping(self, data):
@@ -74,6 +65,7 @@ class CommServer(LineReceiver):
 
     @defer.inlineCallbacks
     def action_get_request(self, data):
+        from .http import Request
         try:
             reqid = data['reqid']
             req = yield Request.load_request(reqid)
@@ -85,6 +77,7 @@ class CommServer(LineReceiver):
 
     @defer.inlineCallbacks
     def action_get_response(self, data):
+        from .http import Request, Response
         try:
             reqid = data['reqid']
             req = yield Request.load_request(reqid)
@@ -100,8 +93,12 @@ class CommServer(LineReceiver):
 
     @defer.inlineCallbacks
     def action_submit_request(self, data):
+        from .http import Request
         message = base64.b64decode(data['full_message'])
-        req = yield Request.submit_new(data['host'].encode('utf-8'), data['port'], data['is_ssl'], message)
+        try:
+            req = yield Request.submit_new(data['host'].encode('utf-8'), data['port'], data['is_ssl'], message)
+        except Exception:
+            raise PappyException('Error submitting request. Please make sure request is a valid HTTP message.')
         if 'tags' in data:
             req.tags = set(data['tags'])
         yield req.async_deep_save()

@@ -16,8 +16,6 @@ from .proxy import remove_intercepting_macro as proxy_remove_intercepting_macro
 from .colors import Colors
 from .util import PappyException
 
-from twisted.internet import defer
-
 class Plugin(object):
 
     def __init__(self, cmd, fname=None):
@@ -94,7 +92,7 @@ def add_intercepting_macro(name, macro):
     only use this if you may need to modify messages before they are
     passed along.
     """
-    for factory in pappyproxy.pappy.server_factories:
+    for factory in pappyproxy.pappy.session.server_factories:
         proxy_add_intercepting_macro(name, macro, factory.intercepting_macros)
     
 def remove_intercepting_macro(name):
@@ -104,7 +102,7 @@ def remove_intercepting_macro(name):
     :func:`pappyproxy.plugin.add_intercepting_macro` to identify which
     macro you would like to stop.
     """
-    for factory in pappyproxy.pappy.server_factories:
+    for factory in pappyproxy.pappy.session.server_factories:
         proxy_remove_intercepting_macro(name, factory.intercepting_macros)
     
 def active_intercepting_macros():
@@ -113,7 +111,7 @@ def active_intercepting_macros():
     this list will not affect which macros are active.
     """
     ret = []
-    for factory in pappyproxy.pappy.server_factories:
+    for factory in pappyproxy.pappy.session.server_factories:
         ret += [v for k, v in factory.intercepting_macros.iteritems() ]
     return ret
 
@@ -136,15 +134,14 @@ def req_history(num=-1, ids=None, include_unmangled=False):
     ``include_unmangled`` is True, then the iterator will include
     requests which are the unmangled version of other requests.
 
-    An example of using the iterator to print the 10 most recent requests:
-    ```
-    @defer.inlineCallbacks
-    def find_food():
-        for req_d in req_history(10):
-            req = yield req_d
-            print '-'*10
-            print req.full_message_pretty
-    ```
+    An example of using the iterator to print the 10 most recent requests::
+
+        @defer.inlineCallbacks
+        def find_food():
+            for req_d in req_history(10):
+                req = yield req_d
+                print '-'*10
+                print req.full_message_pretty
     """
     return pappyproxy.Request.cache.req_it(num=num, ids=ids, include_unmangled=include_unmangled)
 

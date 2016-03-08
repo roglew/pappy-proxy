@@ -17,13 +17,15 @@ from .requestcache import RequestCache
 from .colors import Colors, host_color, path_formatter
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_mimetype, HttpLexer
-from twisted.internet import defer, reactor
-
-import sys
+from twisted.internet import defer
 
 ENCODE_NONE = 0
 ENCODE_DEFLATE = 1
 ENCODE_GZIP = 2
+
+PATH_RELATIVE = 0
+PATH_ABSOLUTE = 1
+PATH_HOST = 2
 
 dbpool = None
 
@@ -535,7 +537,11 @@ class HTTPMessage(object):
     :ivar start_line: The start line of the message
     :vartype start_line: string
     """
+
     reserved_meta_keys = ['full_message']
+    """
+    Internal class variable. Do not modify.
+    """
 
     def __init__(self, full_message=None, update_content_length=False):
         # Initializes instance variables too
@@ -577,6 +583,8 @@ class HTTPMessage(object):
     def deepcopy(self):
         """
         Returns a deep copy of the message. Implemented by child.
+
+        NOINDEX
         """
         return self.__deepcopy__()
 
@@ -795,6 +803,8 @@ class HTTPMessage(object):
         :type line: string
         :param key: Header value
         :type line: string
+
+        NOINDEX
         """
         if val is None:
             return True
@@ -834,23 +844,29 @@ class HTTPMessage(object):
     def handle_start_line(self, start_line):
         """
         A handler function for the status line.
+
+        NOINDEX
         """
         self.start_line = start_line
 
     def headers_end(self):
         """
         Called when the headers are complete.
+
+        NOINDEX
         """
         pass
 
     def body_complete(self):
         """
         Called when the body of the message is complete
+
+        NOINDEX
         """
         try:
             self.body = _decode_encoded(self._data_obj.body,
                                         self._encoding_type)
-        except IOError as e:
+        except IOError:
             # Screw handling it gracefully, this is the server's fault.
             print 'Error decoding request, storing raw data in body instead'
             self.body = self._data_obj.body
@@ -859,6 +875,8 @@ class HTTPMessage(object):
         """
         Called when the body of the message is modified directly. Should be used
         to update metadata that depends on the body of the message.
+
+        NOINDEX
         """
         if len(self.body) > 0 or 'Content-Length' in self.headers:
             self.headers.update('Content-Length', str(len(self.body)), do_callback=False)
@@ -867,6 +885,8 @@ class HTTPMessage(object):
         """
         Called when a header is modified. Should be used to update metadata that
         depends on the values of headers.
+
+        NOINDEX
         """
         pass
 
@@ -882,6 +902,8 @@ class HTTPMessage(object):
         Get all the metadata of the message in dictionary form.
         Should be implemented in child class.
         Should not be invoked outside of implementation!
+
+        NOINDEX
         """
         pass
 
@@ -893,6 +915,8 @@ class HTTPMessage(object):
 
         :param data: Metadata to apply
         :type line: dict
+
+        NOINDEX
         """
         pass
 
@@ -900,6 +924,8 @@ class HTTPMessage(object):
         """
         Reset meta values to default values. Overridden by child class.
         Should not be invoked outside of implementation!
+
+        NOINDEX
         """
         pass
 
@@ -978,6 +1004,9 @@ class Request(HTTPMessage):
     :vartype tags: List of Strings
     :ivar plugin_data: Data about the request created by plugins. If you modify this, please add your own key to it for your plugin and store all your plugin's data under that key (probably as another dict). For example if you have a plugin called ``foo``, try and store all your data under ``req.plugin_data['foo']``.
     :vartype plugin_data: Dict
+    :ivar path_type: An enum which describes how the path portion of the request should be represented. ``PATH_RELATIVE`` -> normal relative path, ``PATH_ABSOLUTE`` -> The absolute path (including the protocol), ``PATH_HOST`` -> Just the path and the port (Used for CONNECT requests when connecting to an upstream HTTP proxy).
+    :vartype path_type: Enum
+    :ivar explicit_port: A flag to indicate that the port should always be included in the URL
     """
 
     cache = RequestCache(100)
@@ -986,7 +1015,8 @@ class Request(HTTPMessage):
     """
 
     def __init__(self, full_request=None, update_content_length=True,
-                 port=None, is_ssl=None, host=None):
+                 port=None, is_ssl=None, host=None, path_type=None,
+                 proxy_creds=None, explicit_port=False):
         # Resets instance variables
         self.clear()
 
@@ -1007,6 +1037,10 @@ class Request(HTTPMessage):
             self.port = port
         if host:
             self._host = host
+        if path_type:
+            self.path_type = path_type
+        if explicit_port:
+            self.explicit_port = explicit_port
             
     def __copy__(self):
         if not self.complete:
@@ -1046,7 +1080,13 @@ class Request(HTTPMessage):
         """
         if not self.verb and not self.full_path and not self.version:
             return ''
-        return '%s %s %s' % (self.verb, self.full_path, self.version)
+        if self.path_type == PATH_ABSOLUTE:
+            path = self._url_helper(always_have_path=True)
+        elif self.path_type == PATH_HOST:
+            path = ':'.join((self.host, str(self.port)))
+        else:
+            path = self.full_path
+        return '%s %s %s' % (self.verb, path, self.version)
 
     @start_line.setter
     def start_line(self, val):
@@ -1126,8 +1166,65 @@ class Request(HTTPMessage):
     @raw_data.setter
     def raw_data(self, val):
         self.body = val
+
+    @property
+    def connect_request(self):
+        """
+        If the request uses SSL, this will be a request object that can be used
+        with an upstream HTTP server to connect to a server using SSL
+        """
+        if not self.is_ssl:
+            return None
+        ret = Request()
+        ret.status_line = self.status_line
+        ret.host = self.host
+        ret.port = self.port
+        ret.explicit_port = True
+        ret.path_type = PATH_HOST
+        authu, authp = self.proxy_creds
+        ret.verb = 'CONNECT'
+        if authu and authp:
+            ret.proxy_creds = self.proxy_creds
+        return ret
+
+    @property
+    def proxy_creds(self):
+        """
+        A username/password tuple representing the username/password to
+        authenticate to a proxy server. Sets the ``Proxy-Authorization``
+        header. Getter will return (None, None) if no creds exist
+
+        :getter: Returns the username/password tuple used for proxy authorization
+        :setter: Sets the username/password tuple used for proxy authorization
+        :type: Tuple of two strings: (username, password)
+        """
+        if not 'Proxy-Authorization' in self.headers:
+            return (None, None)
+        return Request._parse_basic_auth(self.headers['Proxy-Authorization'])
+
+    @proxy_creds.setter
+    def proxy_creds(self, creds):
+        username, password = creds
+        self.headers['Proxy-Authorization'] = Request._encode_basic_auth(username, password)
+
+    @staticmethod
+    def _parse_basic_auth(header):
+        """
+        Parse a raw basic auth header and return (username, password)
+        """
+        _, creds = header.split(' ', 1)
+        decoded = base64.b64decode(creds)
+        username, password = decoded.split(':', 1)
+        return (username, password)
+
+    @staticmethod
+    def _encode_basic_auth(username, password):
+        decoded = '%s:%s' % (username, password)
+        encoded = base64.b64encode(decoded)
+        header = 'Basic %s' % encoded
+        return header
         
-    def _url_helper(self, colored=False):
+    def _url_helper(self, colored=False, always_have_path=False):
         retstr = ''
         if self.is_ssl:
             retstr += 'https://'
@@ -1146,7 +1243,8 @@ class Request(HTTPMessage):
         else:
             retstr += self.host
         if not ((self.is_ssl and self.port == 443) or \
-                (not self.is_ssl and self.port == 80)):
+                (not self.is_ssl and self.port == 80) or \
+                self.explicit_port):
             if colored:
                 retstr += ':'
                 retstr += Colors.MAGENTA
@@ -1154,7 +1252,7 @@ class Request(HTTPMessage):
                 retstr += Colors.ENDC
             else:
                 retstr += ':%d' % self.port
-        if self.path and self.path != '/':
+        if (self.path and self.path != '/') or always_have_path:
             if colored:
                 retstr += path_formatter(self.path)
             else:
@@ -1343,6 +1441,8 @@ class Request(HTTPMessage):
         self.plugin_data = {}
         self.reset_metadata()
         self.is_unmangled_version = False
+        self.path_type = PATH_RELATIVE
+        self.explicit_port = False
 
     ############################
     ## Internal update functions
@@ -1531,7 +1631,6 @@ class Request(HTTPMessage):
 
         :rtype: twisted.internet.defer.Deferred
         """
-        from .context import Context
         from .pappy import main_context
 
         global dbpool
@@ -1740,7 +1839,7 @@ class Request(HTTPMessage):
             
     @defer.inlineCallbacks
     def delete(self, cust_dbpool=None, cust_cache=None):
-        from .context import Context, reset_context_caches
+        from .context import reset_context_caches
 
         global dbpool
         if cust_dbpool:
@@ -1814,12 +1913,11 @@ class Request(HTTPMessage):
         from .http import Request
 
         global dbpool
+
         if cust_dbpool:
             use_dbpool = cust_dbpool
-            use_cache = cust_cache
         else:
             use_dbpool = dbpool
-            use_cache = Request.cache
 
         req = Request(row[0])
         if row[1]:
@@ -1871,7 +1969,6 @@ class Request(HTTPMessage):
 
         :rtype: twisted.internet.defer.Deferred
         """
-        from .requestcache import RequestCache
         from .http import Request
 
         global dbpool
@@ -1922,10 +2019,8 @@ class Request(HTTPMessage):
         global dbpool
         if cust_dbpool:
             use_dbpool = cust_dbpool
-            use_cache = cust_cache
         else:
             use_dbpool = dbpool
-            use_cache = Request.cache
 
         # tags
         rows = yield use_dbpool.runQuery(
@@ -1959,9 +2054,8 @@ class Request(HTTPMessage):
 
         :rtype: twisted.internet.defer.Deferred
         """
-        from .context import Context
-
         global dbpool
+
         if cust_dbpool:
             use_dbpool = cust_dbpool
             cache_to_use = cust_cache
@@ -2051,8 +2145,8 @@ class Request(HTTPMessage):
         :type full_request: string
         :rtype: Twisted deferred that calls back with a Request
         """
-        from .proxy import ProxyClientFactory, get_next_connection_id, ClientTLSContext, get_endpoint
-        from .config import SOCKS_PROXY
+        from .proxy import ProxyClientFactory, get_next_connection_id, get_endpoint
+        from .pappy import session
 
         new_req = Request(full_request)
         new_req.is_ssl = is_ssl
@@ -2064,7 +2158,7 @@ class Request(HTTPMessage):
         factory.connection_id = get_next_connection_id()
         yield factory.prepare_request()
         endpoint = get_endpoint(host, port, is_ssl,
-                                socks_config=SOCKS_PROXY)
+                                socks_config=session.config.socks_proxy)
         yield endpoint.connect(factory)
         new_req = yield factory.data_defer
         defer.returnValue(new_req)
@@ -2161,7 +2255,10 @@ class Response(HTTPMessage):
         """
         if not self.version and self.response_code == 0 and not self.version:
             return ''
-        return '%s %d %s' % (self.version, self.response_code, self.response_text)
+        if self.response_text == '':
+            return '%s %d' % (self.version, self.response_code)
+        else:
+            return '%s %d %s' % (self.version, self.response_code, self.response_text)
 
     @start_line.setter
     def start_line(self, val):
@@ -2301,8 +2398,12 @@ class Response(HTTPMessage):
             self.response_text = ''
             return
         self._first_line = False
-        self.version, self.response_code, self.response_text = \
-                                            start_line.split(' ', 2)
+        if len(start_line.split(' ')) > 2:
+            self.version, self.response_code, self.response_text = \
+                                                start_line.split(' ', 2)
+        else:
+            self.version, self.response_code = start_line.split(' ', 1)
+            self.response_text = ''
         self.response_code = int(self.response_code)
 
         if self.response_code == 304 or self.response_code == 204 or \
@@ -2376,10 +2477,8 @@ class Response(HTTPMessage):
         global dbpool
         if cust_dbpool:
             use_dbpool = cust_dbpool
-            use_cache = cust_cache
         else:
             use_dbpool = dbpool
-            use_cache = Request.cache
         assert(use_dbpool)
         try:
             # Check for intyness
@@ -2435,7 +2534,7 @@ class Response(HTTPMessage):
     @defer.inlineCallbacks
     def delete(self):
         if self.rspid is not None:
-            row = yield dbpool.runQuery(
+            yield dbpool.runQuery(
                 """
                 DELETE FROM responses WHERE id=?;
                 """,
@@ -2454,10 +2553,8 @@ class Response(HTTPMessage):
         global dbpool
         if cust_dbpool:
             use_dbpool = cust_dbpool
-            use_cache = cust_cache
         else:
             use_dbpool = dbpool
-            use_cache = Request.cache
 
         assert(use_dbpool)
         rows = yield use_dbpool.runQuery(

@@ -2,6 +2,67 @@ The Pappy Proxy
 ===============
 [Documentation](https://roglew.github.io/pappy-proxy/) - [Tutorial](https://roglew.github.io/pappy-proxy/tutorial.html)
 
+Table of Contents
+=================
+
+  * [Overview](#overview)
+    * [Introduction](#introduction)
+    * [Contributing](#contributing)
+    * [I still like Burp, but Pappy looks interesting, can I use both?](#i-still-like-burp-but-pappy-looks-interesting-can-i-use-both)
+  * [How to Use It](#how-to-use-it)
+    * [Installation](#installation)
+    * [Quickstart](#quickstart)
+    * [Lite Mode](#lite-mode)
+    * [Adding The CA Cert to Your Browser](#adding-the-ca-cert-to-your-browser)
+      * [Firefox](#firefox)
+      * [Chrome](#chrome)
+      * [Safari](#safari)
+      * [Internet Explorer](#internet-explorer)
+    * [Configuration](#configuration)
+    * [General Console Techniques](#general-console-techniques)
+      * [Run a shell command](#run-a-shell-command)
+      * [Running Python Code](#running-python-code)
+      * [Redirect Output To File](#redirect-output-to-file)
+    * [Generating Pappy's CA Cert](#generating-pappys-ca-cert)
+    * [Browsing Recorded Requests/Responses](#browsing-recorded-requestsresponses)
+    * [Tags](#tags)
+    * [Request IDs](#request-ids)
+      * [Passing Multiple Request IDs to a Command](#passing-multiple-request-ids-to-a-command)
+    * [Context](#context)
+    * [Filter Strings](#filter-strings)
+      * [List of fields](#list-of-fields)
+      * [List of comparers](#list-of-comparers)
+      * [Special form filters](#special-form-filters)
+    * [Scope](#scope)
+      * [Built-In Filters](#built-in-filters)
+    * [Decoding Strings](#decoding-strings)
+    * [Interceptor](#interceptor)
+    * [Repeater](#repeater)
+    * [Macros](#macros)
+      * [Generating Macros From Requests](#generating-macros-from-requests)
+      * [Request Objects](#request-objects)
+      * [Useful Functions](#useful-functions)
+    * [Intercepting Macros](#intercepting-macros)
+      * [Enabling/Disabling Intercepting Macros](#enablingdisabling-intercepting-macros)
+    * [Logging](#logging)
+    * [Additional Commands and Features](#additional-commands-and-features)
+      * [Response streaming](#response-streaming)
+    * [Viewing Responses In Browser](#viewing-responses-in-browser)
+    * [Plugins](#plugins)
+      * [Should I Write a Plugin or a Macro?](#should-i-write-a-plugin-or-a-macro)
+    * [Global Settings](#global-settings)
+    * [Using an HTTP Proxy](#using-an-http-proxy)
+    * [Using a SOCKS Proxy](#using-a-socks-proxy)
+    * [Transparent Host Redirection](#transparent-host-redirection)
+    * [FAQ](#faq)
+      * [Why does my request have an id of --?!?!](#why-does-my-request-have-an-id-of---)
+    * [Boring, Technical Stuff](#boring-technical-stuff)
+      * [Request Cache / Memory usage](#request-cache--memory-usage)
+    * [Changelog](#changelog)
+
+Overview
+========
+
 Introduction
 ------------
 The Pappy (**P**roxy **A**ttack **P**roxy **P**rox**Y**) Proxy is an intercepting proxy for performing web application security testing. Its features are often similar, or straight up rippoffs from [Burp Suite](https://portswigger.net/burp/). However, Burp Suite is neither open source nor a command line tool, thus making a proxy like Pappy inevitable. The project is still in its early stages, so there are bugs and only the bare minimum features, but it can already do some cool stuff.
@@ -15,6 +76,18 @@ If you're brave and want to try and contribute code, please let me know. Right n
 Another option is to try writing a plugin. It might be a bit easier than contributing code and plugins are extremely easy to integrate as a core feature. So you can also contribute by writing a plugin and letting me know about it. You can find out more by looking at [the official plugin docs](https://roglew.github.io/pappy-proxy/pappyplugins.html).
 
 You can find ideas for features to add on [the contributing page in the docs](https://roglew.github.io/pappy-proxy/contributing.html).
+
+I still like Burp, but Pappy looks interesting, can I use both?
+---------------------------------------------------------------
+Yes! If you don't want to go completely over to Pappy yet, you can configure Burp to use Pappy as an upstream proxy server. That way, traffic will go through both Burp and Pappy and you can use whichever you want to do your testing.
+
+How to have Burp forward traffic through Pappy:
+
+1. Open Burp
+2. Go to `Options -> Connections -> Upstream Proxy Servers`
+3. Click `Add`
+4. Leave `Destination Host` blank, but put `127.0.0.1` in `Proxy Host` and `8000` into `Port` (assuming you're using the default listener)
+5. Configure your browser to use Burp as a proxy
 
 How to Use It
 =============
@@ -45,6 +118,21 @@ $
 ```
 
 And that's it! The proxy will by default be running on port 8000 and bound to localhost (to keep the hackers out). You can modify the port/interface in `config.json`. You can list all your intercepted requests with `ls`, view a full request with `vfq <reqid>` or view a full response with `vfs <reqid>`. Right now, the only command to delete requests is `filter_prune` which deletes all the requests that aren't in the current context (look at the sections on the context/filter strings for more information on that).
+
+Here's everything you need to know to get the basics done:
+
+* This quickstart assumes you've used Burp Suite
+* Make a directory for your project and `cd` into it in the terminal. Type `pappy` into the terminal and hit enter
+* Commands are entered into the prompt that appears
+* The proxy starts listening on port 8000 once the program starts
+* Use `ls` to look at recent requests, `ls a` to look at the entire history
+* You will use the number in the `id` column to perform actions on that request
+* Use `vfq <id>` and `vfs <id>` to view full requests/responses
+* Use `ic` to modify requests with a text editor as they go through the proxy or `ic req rsp` to modify both requests and responses
+* Use `rp <id>` to send a request to the repeater. In the repeater, use `<leader>f` to send the current buffer (you may need to configre a leader key in vim). Use `:qa!` to quit the repeater.
+
+If you want to do more, I highly suggest reading the whole readme!
+
 
 Lite Mode
 ---------
@@ -135,8 +223,8 @@ Type "help", "copyright", "credits" or "license" for more information.
         Non-python commands can be issued with ``cmd("your command")``.
         Run python code from external files with ``run("filename.py")``
 
->>> from pappyproxy import config
->>> config.CONFIG_DICT
+>>> from pappyproxy import pappy
+>>> pappy.session.config.config_dict
 {u'data_file': u'./data.db', u'history_size': 1000, u'cert_dir': u'{DATADIR}/certs', u'proxy_listeners': [{u'interface': u'127.0.0.1', u'port': 8000}]}
 >>> exit()
 pappy>
@@ -218,9 +306,8 @@ The following commands can be used to view requests and responses
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| `ls [a|<num>`]| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
-| `sm` [p] | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. If the `p` option is given, it will print the paths as paths rather than as a tree. |
-| `viq <id(s)>` | view_request_info, viq | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information. |
+| `ls [a|<num>]`| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
+| `sm [p]` | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. If the `p` option is given, it will print the paths as paths rather than as a tree. | | `viq <id(s)>` | view_request_info, viq | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information. |
 | `vfq <id(s)>` | view_full_request, vfq, kjq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. |
 | `vbq <id(s)>` | view_request_bytes, vbq | [V]iew [B]ytes of Re[Q]uest, prints the full request including headers and data without coloring or additional newlines. Use this if you want to write a request to a file. |
 | `ppq <format> <id(s)> ` | pretty_print_request, ppq | Pretty print a request with a specific format. See the table below for a list of formats. |
@@ -230,7 +317,7 @@ The following commands can be used to view requests and responses
 | `vbs <id(s)>` | view_response_bytes, vbs | [V]iew [B]ytes of Re[S]ponse, prints the full response including headers and data without coloring or additional newlines. Use this if you want to write a response to a file. |
 | `pps <format> <id(s)>` | pretty_print_response, pps | Pretty print a response with a specific format. See the table below for a list of formats. |
 | `pprm <id(s)>` | print_params, pprm | Print a summary of the parameters submitted with the request. It will include URL params, POST params, and/or cookies |
-| `pri [ct] [key(s)] | param_info, pri | Print a summary of the parameters and values submitted by in-context requests. You can pass in keys to limit which values will be shown. If you also provide `ct` as the first argument, it will include any keys that are passed as arguments. |
+| `pri [ct] [key(s)]` | param_info, pri | Print a summary of the parameters and values submitted by in-context requests. You can pass in keys to limit which values will be shown. If you also provide `ct` as the first argument, it will include any keys that are passed as arguments. |
 | `watch` | watch | Print requests and responses in real time as they pass through the proxy. |
 
 Available formats for `ppq` and `pps` commands:
@@ -528,7 +615,7 @@ When you're done with repeater, run ":qa!" to avoid having to save changes to no
 
 | Vim Command | Keybinding | Action |
 |:--------|:-----------|:-------|
-| `RepeaterSubmitBuffer` | <leader>f | Submit the current buffer, split the windows vertically, and show the result in the right window |
+| `RepeaterSubmitBuffer` | `<leader>f` | Submit the current buffer, split the windows vertically, and show the result in the right window |
 
 Macros
 ------
@@ -544,42 +631,13 @@ $ ls -l
 -rw-r--r-- 1 scaryhacker wheel     241 Nov 26 17:18 macro_test.py
 ```
 
-In this case we have a `blank`, `hackthensa`, `testgen`, and `test` macro. A macro script is any python script that defines a `run_macro(args)` function and a `MACRO_NAME` variable. For example, a simple macro would be:
+In this case we have a `blank`, `hackthensa`, `testgen`, and `test` macro. A macro script is any python script that defines a `run_macro(args)` function and a `MACRO_NAME` variable. To start with, we'll write a macro to iterate over a numbered image to try and find other images. We will take the following steps to do it:
 
-```
-### macro_print.py
-
-MACRO_NAME = 'Print Macro'
-
-def run_macro(args):
-    if args:
-        print "Hello, %s!" % args[0]
-    else:
-        print "Hello, Pappy!"
-```
-
-You can place this macro in your project directory then load and run it from Pappy. When a macro is run, arguments are passed from the command line. Arguments are separated the same way as they are on the command line, so if you want to use spaces in your argument, you have to put quotes around it.
-
-```
-$ pappy
-Proxy is listening on port 8000
-pappy> lma
-Loaded "<Macro Test Macro (tm/test)>"
-Loaded "<Macro Macro 6494496 (testgen)>"
-Loaded "<Macro Print Macro (print)>"
-Loaded "<Macro Hack the NSA (htnsa/hackthensa)>"
-Loaded "<Macro Macro 62449408 (blank)>"
-pappy> rma print
-Hello, Pappy!
-pappy> rma print NSA
-Hello, NSA!
-pappy> rma print Idiot Slayer
-Hello, Idiot!
-pappy> rma print "Idiot Slayer"
-Hello, Idiot Slayer!
-```
-
-You'll need to run `lma` every time you make a change to the macro in order to reload it. In addition, any code outside of the `run_macro` function will be run when it the macro gets loaded.
+1. Make a request to the image
+2. Generate a macro using the `gma` command
+3. Write a loop to copy the original request, modify it, then submit it with different numbers
+4. Load the macro in Pappy with the `lma` command
+5. Run the macro with the `rma` command
 
 ### Generating Macros From Requests
 
@@ -632,6 +690,18 @@ def run_macro(args):
 ```
 
 If you enter in a value for `SHORT_NAME`, you can use it as a shortcut to run that macro. So if in a macro you set `SHORT_NAME='tm'` you can run it by running `pappy> rma tm`.
+
+### Passing Arguments to Macros
+
+When you run the macro, any additional command line arguments will be passed to the run_macro function in the `args` argument. For example, if you run your macro using
+
+```
+pappy> rma foo thisis an "amazing argument"
+```
+
+The `args` argument of run_macro will be `["thisis", "an", "amazing argument"]`. If no arguments are give, `args` will be an empty list.
+
+### Macro Commands
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
@@ -848,6 +918,10 @@ This is a list of other random stuff you can do that isn't categorized under any
 
 If you don't have any intercepting macros running, Pappy will forward data to the browser as it gets it. However, if you're trying to mangle messages/responses, Pappy will need to download the entire message first.
 
+Viewing Responses In Browser
+----------------------------
+You can view responses in your browser by visiting `http://pappy/rsp/<rspid>` (NOT pappy.com) in your browser while connected to the proxy. For example, if you want to view the response to request 123, you can visit `http://pappy/rsp/123` to view the response. Pappy will return a response with the same body as the original response and will not make a request to the server. The response will not have the same headers as the original response (aside from the Content-Type header). In addition, Pappy doesn't modify any URLs in the page which means your browser will still fetch external resources like images, JavaScript etc from external servers.
+
 Plugins
 -------
 Note that this section is a very quick overview of plugins. For a full description of how to write them, please see [the official docs](https://roglew.github.io/pappy-proxy/pappyplugins.html).
@@ -944,9 +1018,25 @@ Settings included in `~/.pappy/global_config.json`:
 |:--------|:------------|
 | cache_size | The number of requests from history that will be included in memory at any given time. Set to -1 to keep everything in memory. See the request cache section for more info. |
 
-Using a SOCKS Server
---------------------
-Pappy allows you to use an upstream SOCKS server. You can do this by adding a `socks_proxy` value to config.json. You can use the following for anonymous access to the proxy:
+Using an HTTP Proxy
+-------------------
+Pappy allows you to use an upstream HTTP proxy. You can do this by adding an `http_proxy` value to config.json. You can use the following for anonymous access to the proxy:
+
+```
+    "http_proxy": {"host":"httpproxy.proxy.host", "port":5555}
+```
+
+To use credentials you add a `username` and `password` value to the dictionary:
+
+```
+    "http_proxy": {"host":"httpproxy.proxy.host", "port":5555, "username": "mario", "password":"ilovemushrooms"}
+```
+
+At the moment, only basic auth is supported. Anything in-scope that passes through any of the active listeners will use the proxy. Out of scope requests will not be sent through the proxy.
+
+Using a SOCKS Proxy
+-------------------
+Pappy allows you to use an upstream SOCKS proxy. You can do this by adding a `socks_proxy` value to config.json. You can use the following for anonymous access to the proxy:
 
 ```
     "socks_proxy": {"host":"socks.proxy.host", "port":5555}
@@ -958,7 +1048,7 @@ To use credentials you add a `username` and `password` value to the dictionary:
     "socks_proxy": {"host":"socks.proxy.host", "port":5555, "username": "mario", "password":"ilovemushrooms"}
 ```
 
-Anything that passes through any of the active listeners will use the proxy.
+Any in-scope requests that pass through any of the active listeners will use the proxy. Out of scope requests will not be sent through the proxy.
 
 Transparent Host Redirection
 ----------------------------
@@ -1016,17 +1106,6 @@ Pappy will automatically use this host to make the connection and forward the re
 FAQ
 ---
 
-### I still like Burp, but Pappy looks interesting, can I use both?
-Yes! If you don't want to go completely over to Pappy yet, you can configure Burp to use Pappy as an upstream proxy server. That way, traffic will go through both Burp and Pappy and you can use whichever you want to do your testing.
-
-How to have Burp forward traffic through Pappy:
-
-1. Open Burp
-2. Go to `Options -> Connections -> Upstream Proxy Servers`
-3. Click `Add`
-4. Leave `Destination Host` blank, but put `127.0.0.1` in `Proxy Host` and `8000` into `Port` (assuming you're using the default listener)
-5. Configure your browser to use Burp as a proxy
-
 ### Why does my request have an id of `--`?!?!
 You can't do anything with a request/response until it is decoded and saved to disk. In between the time when a request is decoded and when it's saved to disk, it will have an ID of `--`. So just wait a little bit and it will get an ID you can use.
 
@@ -1044,6 +1123,12 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.8
+    * Upstream HTTP proxy support
+    * Usability improvements
+    * Docs docs docs
+    * Bugfixes, unit tests
+    * Add http://pappy functionality to view responses in the browser
 * 0.2.7
     * boring unit tests
     * should make future releases more stable I guess

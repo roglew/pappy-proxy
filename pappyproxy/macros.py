@@ -6,7 +6,7 @@ import re
 import stat
 
 from jinja2 import Environment, FileSystemLoader
-from pappyproxy import config
+from pappyproxy.pappy import session
 from pappyproxy.util import PappyException
 from twisted.internet import defer
 
@@ -279,7 +279,7 @@ def macro_from_requests(reqs, short_name='', long_name=''):
     subs['req_lines'] = req_lines
     subs['req_params'] = req_params
 
-    loader = FileSystemLoader(config.PAPPY_DIR+'/templates')
+    loader = FileSystemLoader(session.config.pappy_dir+'/templates')
     env = Environment(loader=loader)
     template = env.get_template('macro.py.template')
     return template.render(zip=zip, **subs)
@@ -294,7 +294,7 @@ def gen_imacro(short_name='', long_name=''):
 
     subs['short_name'] = short_name
 
-    loader = FileSystemLoader(config.PAPPY_DIR+'/templates')
+    loader = FileSystemLoader(session.config.pappy_dir+'/templates')
     env = Environment(loader=loader)
     template = env.get_template('intmacro.py.template')
     return template.render(**subs)

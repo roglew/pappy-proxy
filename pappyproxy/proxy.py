@@ -6,7 +6,6 @@ import random
 
 from OpenSSL import SSL
 from OpenSSL import crypto
-from pappyproxy import config
 from pappyproxy import context
 from pappyproxy import http
 from pappyproxy import macros
@@ -37,35 +36,37 @@ def remove_intercepting_macro(key, int_macro_dict):
     del int_macro_dict[key]
 
 def log(message, id=None, symbol='*', verbosity_level=1):
-    if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
-        if config.DEBUG_TO_FILE and not os.path.exists(config.DEBUG_DIR):
-            os.makedirs(config.DEBUG_DIR)
+    from pappyproxy.pappy import session
+
+    if session.config.debug_to_file or session.config.debug_verbosity > 0:
+        if session.config.debug_to_file and not os.path.exists(session.config.debug_dir):
+            os.makedirs(session.config.debug_dir)
         if id:
             debug_str = '[%s](%d) %s' % (symbol, id, message)
-            if config.DEBUG_TO_FILE:
-                with open(config.DEBUG_DIR+'/connection_%d.log' % id, 'a') as f:
+            if session.config.debug_to_file:
+                with open(session.config.debug_dir+'/connection_%d.log' % id, 'a') as f:
                     f.write(debug_str+'\n')
         else:
             debug_str = '[%s] %s' % (symbol, message)
-            if config.DEBUG_TO_FILE:
-                with open(config.DEBUG_DIR+'/debug.log', 'a') as f:
+            if session.config.debug_to_file:
+                with open(session.config.debug_dir+'/debug.log', 'a') as f:
                     f.write(debug_str+'\n')
-        if config.DEBUG_VERBOSITY >= verbosity_level:
+        if session.config.debug_verbosity >= verbosity_level:
             print debug_str
     
 def log_request(request, id=None, symbol='*', verbosity_level=3):
-    if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
+    from pappyproxy.pappy import session
+
+    if session.config.debug_to_file or session.config.debug_verbosity > 0:
         r_split = request.split('\r\n')
         for l in r_split:
             log(l, id, symbol, verbosity_level)
             
 def get_endpoint(target_host, target_port, target_ssl, socks_config=None):
-
     # Imports go here to allow mocking for tests
     from twisted.internet.endpoints import SSL4ClientEndpoint, TCP4ClientEndpoint
     from txsocksx.client import SOCKS5ClientEndpoint
     from txsocksx.tls import TLSWrapClientEndpoint
-    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
 
     if socks_config is not None:
         sock_host = socks_config['host']
@@ -102,6 +103,7 @@ class ProxyClient(LineReceiver):
         self.request = request
         self.data_defer = defer.Deferred()
         self.completed = False
+        self.stream_response = True # used so child classes can temporarily turn off response streaming
 
         self._response_obj = http.Response()
 
@@ -112,17 +114,19 @@ class ProxyClient(LineReceiver):
         line = args[0]
         if line is None:
             line = ''
-        self._response_obj.add_line(line)
         self.log(line, symbol='r<', verbosity_level=3)
+        self._response_obj.add_line(line)
         if self._response_obj.headers_complete:
             self.setRawMode()
 
     def rawDataReceived(self, *args, **kwargs):
+        from pappyproxy.pappy import session
+
         data = args[0]
         self.log('Returning data back through stream')
         if not self._response_obj.complete:
             if data:
-                if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
+                if session.config.debug_to_file or session.config.debug_verbosity > 0:
                     s = printable_data(data)
                     dlines = s.split('\n')
                     for l in dlines:
@@ -130,7 +134,7 @@ class ProxyClient(LineReceiver):
             self._response_obj.add_data(data)
 
     def dataReceived(self, data):
-        if self.factory.stream_response:
+        if self.factory.stream_response and self.stream_response:
             self.factory.return_transport.write(data)
         LineReceiver.dataReceived(self, data)
         if not self.completed:
@@ -159,6 +163,68 @@ class ProxyClient(LineReceiver):
     def clientConnectionLost(self, connector, reason):
         self.log("Connection with remote server lost: %s" % reason)
 
+class UpstreamHTTPProxyClient(ProxyClient):
+
+    def __init__(self, request):
+        ProxyClient.__init__(self, request)
+        self.connect_response = False
+        self.proxy_connected = False
+        self.stream_response = False
+        self.creds = None
+
+    def write_proxied_request(self, request):
+        """
+        Takes an unencrypted request and sends it to the proxy server to be
+        forwarded.
+        """
+        sendreq = request.copy()
+        sendreq.path_type = http.PATH_ABSOLUTE
+        if self.creds is not None:
+            sendreq.proxy_creds = self.creds
+        lines = sendreq.full_request.splitlines()
+        for l in lines:
+            self.log(l, symbol='>r', verbosity_level=3)
+        self.transport.write(sendreq.full_message)
+
+    def connectionMade(self):
+        self.log("Connection made to http proxy", verbosity_level=3)
+        if not self.proxy_connected:
+            if self.request.is_ssl:
+                connreq = self.request.connect_request
+                self.connect_response = True
+                if self.creds is not None:
+                    connreq.proxy_creds = self.creds
+                self.transport.write(connreq.full_message)
+            else:
+                self.proxy_connected = True
+                self.stream_response = True
+                self.write_proxied_request(self.request)
+
+    def handle_response_end(self, *args, **kwargs):
+        if self._response_obj.response_code == 407:
+            print "Incorrect credentials for HTTP proxy. Please check your username and password."
+            self.transport.loseConnection()
+            return
+        if self.proxy_connected:
+            self.log("Received request while connected, forwarding to http proxy", verbosity_level=3)
+            self.request.response = self._response_obj
+            self.transport.loseConnection()
+            assert self._response_obj.full_response
+            self.data_defer.callback(self.request)
+        elif self.connect_response:
+            self.log("Response to CONNECT request recieved from http proxy", verbosity_level=3)
+            self.proxy_connected = True
+            self.stream_response = True
+            self._response_obj = http.Response()
+            self.setLineMode()
+            self.completed = False
+            self._sent = False
+
+            self.transport.startTLS(ClientTLSContext())
+            lines = self.request.full_message.splitlines()
+            for l in lines:
+                self.log(l, symbol='>r', verbosity_level=3)
+            self.transport.write(self.request.full_message)
 
 class ProxyClientFactory(ClientFactory):
 
@@ -173,13 +239,22 @@ class ProxyClientFactory(ClientFactory):
         self.stream_response = stream_response
         self.return_transport = return_transport
         self.intercepting_macros = {}
+        self.use_as_proxy = False
 
     def log(self, message, symbol='*', verbosity_level=1):
         log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
 
     def buildProtocol(self, addr, _do_callback=True):
+        from pappyproxy.pappy import session
         # _do_callback is intended to help with testing and should not be modified
-        p = ProxyClient(self.request)
+        if self.use_as_proxy and context.in_scope(self.request):
+            p = UpstreamHTTPProxyClient(self.request)
+            if 'username' in session.config.http_proxy and 'password' in session.config.http_proxy:
+                username = session.config.http_proxy['username']
+                password = session.config.http_proxy['password']
+                p.creds = (username, password)
+        else:
+            p = ProxyClient(self.request)
         p.factory = self
         self.log("Building protocol", verbosity_level=3)
         if _do_callback:
@@ -198,8 +273,10 @@ class ProxyClientFactory(ClientFactory):
         Prepares request for submitting
         
         Saves the associated request with a temporary start time, mangles it, then
-        saves the mangled version with an update start time.
+        saves the mangled version with an update start time. Also updates flags
+        and values needed for submitting the request.
         """
+        from pappyproxy.pappy import session
 
         sendreq = self.request
         if context.in_scope(sendreq):
@@ -217,6 +294,9 @@ class ProxyClientFactory(ClientFactory):
                 self.start_time = datetime.datetime.utcnow()
                 sendreq.time_start = self.start_time
                 yield sendreq.async_deep_save()
+
+            if session.config.http_proxy:
+                self.use_as_proxy = True
         else:
             self.log("Request out of scope, passing along unmangled")
         self.request = sendreq
@@ -227,11 +307,13 @@ class ProxyClientFactory(ClientFactory):
         """
         If the request is in scope, it saves the completed request,
         sets the start/end time, mangles the response, saves the
-        mangled version, then writes the response back through the
-        transport.
+        mangled version, then calls back data_defer with the mangled
+        request
         """
+        from pappyproxy.pappy import session
+
         self.end_time = datetime.datetime.utcnow()
-        if config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0:
+        if session.config.debug_to_file or session.config.debug_verbosity > 0:
             log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
 
         request.time_start = self.start_time
@@ -250,7 +332,7 @@ class ProxyClientFactory(ClientFactory):
             if mangled and self.save_all:
                 yield request.async_deep_save()
 
-            if request.response and (config.DEBUG_TO_FILE or config.DEBUG_VERBOSITY > 0):
+            if request.response and (session.config.debug_to_file or session.config.debug_verbosity > 0):
                 log_request(printable_data(request.response.full_response),
                             id=self.connection_id, symbol='<', verbosity_level=3)
         else:
@@ -261,9 +343,12 @@ class ProxyClientFactory(ClientFactory):
 class ProxyServerFactory(ServerFactory):
 
     def __init__(self, save_all=False):
+        from pappyproxy.site import PappyWebServer
+        
         self.intercepting_macros = collections.OrderedDict()
         self.save_all = save_all
         self.force_ssl = False
+        self.web_server = PappyWebServer()
         self.forward_host = None
 
     def buildProtocol(self, addr):
@@ -308,12 +393,11 @@ class ProxyServer(LineReceiver):
         LineReceiver.dataReceived(self, *args, **kwargs)
 
         if self._request_obj.complete:
-            try:
-                self.full_request_received()
-            except PappyException as e:
-                print str(e)
+            self.full_request_received()
         
     def _start_tls(self, cert_host=None):
+        from pappyproxy.pappy import session
+
         # Generate a cert for the hostname and start tls
         if cert_host is None:
             host = self._request_obj.host
@@ -323,7 +407,7 @@ class ProxyServer(LineReceiver):
             log("Generating cert for '%s'" % host,
                 verbosity_level=3)
             (pkey, cert) = generate_cert(host,
-                                         config.CERT_DIR)
+                                         session.config.cert_dir)
             cached_certs[host] = (pkey, cert)
         else:
             log("Using cached cert for %s" % host, verbosity_level=3)
@@ -339,6 +423,7 @@ class ProxyServer(LineReceiver):
         okay_str = 'HTTP/1.1 200 Connection established\r\n\r\n'
         self.transport.write(okay_str)
                 
+    @defer.inlineCallbacks
     def full_request_received(self):
         global cached_certs
         
@@ -355,9 +440,10 @@ class ProxyServer(LineReceiver):
             self.log('uri=%s, ssl=%s, connect_port=%s' % (self._connect_uri, self._connect_ssl, self._connect_port), verbosity_level=3)
             forward = False
 
-        # if self._request_obj.host == 'pappy':
-        #     self._create_pappy_response()
-        #     forward = False
+        if self._request_obj.host == 'pappy':
+            yield self.factory.web_server.handle_request(self._request_obj)
+            self.transport.write(self._request_obj.response.full_message)
+            forward = False
 
         # if _request_obj.host is a listener, forward = False
 
@@ -411,6 +497,8 @@ class ProxyServer(LineReceiver):
         Creates an endpoint to the target server using the given configuration
         options then connects to the endpoint using self._client_factory
         """
+        from pappyproxy.pappy import session
+
         self._request_obj = req
 
         # If we have a socks proxy, wrap the endpoint in it
@@ -421,11 +509,18 @@ class ProxyServer(LineReceiver):
             if self.factory.forward_host:
                 self._request_obj.host = self.factory.forward_host
 
+            usehost = self._request_obj.host
+            useport = self._request_obj.port
+            usessl = self._request_obj.is_ssl
+            if session.config.http_proxy:
+                usehost = session.config.http_proxy['host']
+                useport = session.config.http_proxy['port']
+                usessl = False # We turn on ssl after CONNECT request if needed
+                self.log("Connecting to http proxy at %s:%d" % (usehost, useport))
+
             # Get connection from the request
-            endpoint = get_endpoint(self._request_obj.host,
-                                    self._request_obj.port,
-                                    self._request_obj.is_ssl,
-                                    socks_config=config.SOCKS_PROXY)
+            endpoint = get_endpoint(usehost, useport, usessl,
+                                    socks_config=session.config.socks_proxy)
         else:
             endpoint = get_endpoint(self._request_obj.host,
                                     self._request_obj.port,
@@ -483,14 +578,15 @@ def generate_cert_serial():
     return random.getrandbits(8*20)
 
 def load_certs_from_dir(cert_dir):
+    from pappyproxy.pappy import session
     try:
-        with open(cert_dir+'/'+config.SSL_CA_FILE, 'rt') as f:
+        with open(cert_dir+'/'+session.config.ssl_ca_file, 'rt') as f:
             ca_raw = f.read()
     except IOError:
         raise PappyException("Could not load CA cert! Generate certs using the `gencerts` command then add the .crt file to your browser.")
 
     try:
-        with open(cert_dir+'/'+config.SSL_PKEY_FILE, 'rt') as f:
+        with open(cert_dir+'/'+session.config.ssl_pkey_file, 'rt') as f:
             ca_key_raw = f.read()
     except IOError:
         raise PappyException("Could not load CA private key!")
@@ -519,6 +615,8 @@ def generate_cert(hostname, cert_dir):
 
 
 def generate_ca_certs(cert_dir):
+    from pappyproxy.pappy import session
+
     # Make directory if necessary
     if not os.path.exists(cert_dir):
         os.makedirs(cert_dir)
@@ -527,7 +625,7 @@ def generate_ca_certs(cert_dir):
     print "Generating private key... ",
     key = crypto.PKey()
     key.generate_key(crypto.TYPE_RSA, 2048)
-    with os.fdopen(os.open(cert_dir+'/'+config.SSL_PKEY_FILE, os.O_WRONLY | os.O_CREAT, 0o0600), 'w') as f:
+    with os.fdopen(os.open(cert_dir+'/'+session.config.ssl_pkey_file, os.O_WRONLY | os.O_CREAT, 0o0600), 'w') as f:
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
     print "Done!"
 
@@ -555,7 +653,7 @@ def generate_ca_certs(cert_dir):
     ])
     cert.set_pubkey(key)
     cert.sign(key, 'sha256')
-    with os.fdopen(os.open(cert_dir+'/'+config.SSL_CA_FILE, os.O_WRONLY | os.O_CREAT, 0o0600), 'w') as f:
+    with os.fdopen(os.open(cert_dir+'/'+session.config.ssl_ca_file, os.O_WRONLY | os.O_CREAT, 0o0600), 'w') as f:
         f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
     print "Done!"
 

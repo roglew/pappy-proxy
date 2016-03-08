@@ -198,7 +198,6 @@ class RequestCache(object):
         """
         # Get the request
         victim_id = self._min_time[0]
-        req = self._cached_reqs[victim_id]
         self.evict(victim_id)
 
     def _update_min(self, updated_reqid=None):

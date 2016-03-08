@@ -3,10 +3,12 @@ import mock
 import random
 import datetime
 import pappyproxy
+import base64
 
 from pappyproxy import http
-from pappyproxy.proxy import ProxyClientFactory, ProxyServerFactory
+from pappyproxy.proxy import ProxyClientFactory, ProxyServerFactory, UpstreamHTTPProxyClient
 from testutil import mock_deferred, func_deleted, TLSStringTransport, freeze, mock_int_macro, no_tcp
+from twisted.internet import defer
 
 @pytest.fixture(autouse=True)
 def proxy_patches(mocker):
@@ -17,8 +19,17 @@ def proxy_patches(mocker):
 def server_factory():
     return gen_server_factory()
 
+@pytest.fixture(autouse=True)
+def mock_config(mocker):
+    c = pappyproxy.config.PappyConfig()
+    s = pappyproxy.pappy.PappySession(c)
+    mocker.patch.object(pappyproxy.pappy, 'session', new=s)
+
 def socks_config(mocker, config):
-    mocker.patch('pappyproxy.config.SOCKS_PROXY', new=config)
+    pappyproxy.pappy.session.config.socks_proxy = config
+
+def http_proxy_config(mocker, config):
+    pappyproxy.pappy.session.config.http_proxy = config
 
 def gen_server_factory(int_macros={}):
     factory = ProxyServerFactory()
@@ -33,16 +44,18 @@ def gen_server_protocol(int_macros={}):
     protocol.makeConnection(tr)
     return protocol
 
-def gen_client_protocol(req, stream_response=False):
+@defer.inlineCallbacks
+def gen_client_protocol(req, stream_response=False, save_all=True):
     return_transport = TLSStringTransport()
     factory = ProxyClientFactory(req,
-                                 save_all=True,
+                                 save_all=save_all,
                                  stream_response=stream_response,
                                  return_transport=return_transport)
+    yield factory.prepare_request()
     protocol = factory.buildProtocol(('127.0.0.1', 0), _do_callback=False)
     tr = TLSStringTransport()
     protocol.makeConnection(tr)
-    return protocol
+    defer.returnValue(protocol)
 
 @pytest.fixture
 def server_protocol():
@@ -51,6 +64,12 @@ def server_protocol():
 def mock_req_async_save(req):
     req.reqid = str(random.randint(1,1000000))
     return mock_deferred()
+
+def mock_mangle_response_side_effect(new_rsp):
+    def f(request, mangle_macros):
+        request.response = new_rsp
+        return mock_deferred(True)
+    return f
 
 ####################
 ## Mock functions
@@ -559,37 +578,284 @@ def test_proxy_client_factory_prepare_mangle_req(mocker, freeze):
 
 ### return_request_pair
 
-# @pytest.inlineCallbacks
-# def test_proxy_client_factory_prepare_mangle_rsp(mocker, freeze):
+@pytest.inlineCallbacks
+def test_proxy_client_factory_return_request_pair_simple(mocker, freeze):
+    """
+    Make sure the proxy doesn't do anything if the request is out of scope
+    """
 
-#     freeze.freeze(datetime.datetime(2015, 1, 1, 3, 30, 15, 50))
-#     rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
-#     mocker.patch('pappyproxy.context.in_scope').return_value = True
+    freeze.freeze(datetime.datetime(2015, 1, 1, 3, 30, 15, 50))
+    rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
+    mocker.patch('pappyproxy.context.in_scope').return_value = False
 
-#     req = http.Request('GET / HTTP/1.1\r\n\r\n')
-#     req.reqid = 1
-#     rsp = http.Response('HTTP/1.1 200 OK\r\n\r\n')
-#     req.response = rsp
+    req = http.Request('GET / HTTP/1.1\r\n\r\n')
+    req.reqid = 1
+    rsp = http.Response('HTTP/1.1 200 OK\r\n\r\n')
+    checkrsp = rsp.copy()
+    req.response = rsp
 
-#     mocker.patch('pappyproxy.macros.mangle_response').return_value = (req, False)
+    mocker.patch('pappyproxy.macros.mangle_response').return_value = mock_deferred(False)
 
-#     cf = ProxyClientFactory(req,
-#                             save_all=False,
-#                             stream_response=False,
-#                             return_transport=None)
-#     result = yield cf.return_request_pair(req)
-#     assert result == req
-#     assert req.time_start == datetime.datetime(2015, 1, 1, 3, 30, 15, 50)
-#     assert len(rsave.mock_calls) == 0
+    cf = ProxyClientFactory(req,
+                            save_all=False,
+                            stream_response=False,
+                            return_transport=None)
+    cf.start_time = datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    cf.return_request_pair(req)
+    result = yield cf.data_defer
+    assert result == req
+    assert result.response == checkrsp
+    assert req.time_start == datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    assert req.time_end == datetime.datetime(2015, 1, 1, 3, 30, 15, 50)
+    assert len(rsave.mock_calls) == 0
 
+@pytest.inlineCallbacks
+def test_proxy_client_factory_return_request_pair_mangle(mocker, freeze):
+    """
+    Make one modification to the response
+    """
+
+    freeze.freeze(datetime.datetime(2015, 1, 1, 3, 30, 15, 50))
+    rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
+    mocker.patch('pappyproxy.context.in_scope').return_value = True
+
+    req = http.Request('GET / HTTP/1.1\r\n\r\n')
+    req.reqid = 1
+    rsp = http.Response('HTTP/1.1 200 OK\r\n\r\n')
+    req.response = rsp
     
+    new_rsp = http.Response('HTTP/1.1 6969 LOLMANGLED\r\n\r\n')
+    checkrsp = new_rsp.copy()
+
+    mocker.patch('pappyproxy.macros.mangle_response',
+                 side_effect=mock_mangle_response_side_effect(new_rsp))
+
+    cf = ProxyClientFactory(req,
+                            save_all=True,
+                            stream_response=False,
+                            return_transport=None)
+    cf.start_time = datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    cf.return_request_pair(req)
+    result = yield cf.data_defer
+    assert result == req
+    assert result.response == checkrsp
+    assert req.time_start == datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    assert req.time_end == datetime.datetime(2015, 1, 1, 3, 30, 15, 50)
+    assert len(rsave.mock_calls) == 2
+
+@pytest.inlineCallbacks
+def test_proxy_client_factory_return_request_pair_no_save_all(mocker, freeze):
+    """
+    Make one modification to the response but don't save it
+    """
+
+    freeze.freeze(datetime.datetime(2015, 1, 1, 3, 30, 15, 50))
+    rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
+    mocker.patch('pappyproxy.context.in_scope').return_value = True
+
+    req = http.Request('GET / HTTP/1.1\r\n\r\n')
+    req.reqid = 1
+    rsp = http.Response('HTTP/1.1 200 OK\r\n\r\n')
+    req.response = rsp
+    
+    new_rsp = http.Response('HTTP/1.1 6969 LOLMANGLED\r\n\r\n')
+    checkrsp = new_rsp.copy()
+
+    mocker.patch('pappyproxy.macros.mangle_response',
+                 side_effect=mock_mangle_response_side_effect(new_rsp)).return_value = mock_deferred(True)
+
+    cf = ProxyClientFactory(req,
+                            save_all=False,
+                            stream_response=False,
+                            return_transport=None)
+    cf.start_time = datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    cf.return_request_pair(req)
+    result = yield cf.data_defer
+    assert result == req
+    assert result.response == checkrsp
+    assert req.time_start == datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    assert req.time_end == datetime.datetime(2015, 1, 1, 3, 30, 15, 50)
+    assert len(rsave.mock_calls) == 0
+
+@pytest.inlineCallbacks
+def test_proxy_client_factory_return_request_pair_save_all_no_mangle(mocker, freeze):
+    """
+    Make one modification to the response but don't save it
+    """
+
+    freeze.freeze(datetime.datetime(2015, 1, 1, 3, 30, 15, 50))
+    rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
+    mocker.patch('pappyproxy.context.in_scope').return_value = True
+
+    req = http.Request('GET / HTTP/1.1\r\n\r\n')
+    req.reqid = 1
+    rsp = http.Response('HTTP/1.1 200 OK\r\n\r\n')
+    checkrsp = rsp.copy()
+    req.response = rsp
+    
+    mocker.patch('pappyproxy.macros.mangle_response').return_value = mock_deferred(False)
+
+    cf = ProxyClientFactory(req,
+                            save_all=True,
+                            stream_response=False,
+                            return_transport=None)
+    cf.start_time = datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    cf.return_request_pair(req)
+    result = yield cf.data_defer
+    assert result == req
+    assert result.response == checkrsp
+    assert req.time_start == datetime.datetime(2015, 1, 1, 3, 30, 14, 50)
+    assert req.time_end == datetime.datetime(2015, 1, 1, 3, 30, 15, 50)
+    assert len(rsave.mock_calls) == 1
+    
+@pytest.inlineCallbacks
+def test_proxy_client_factory_build_protocol_http_proxy(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345})
+    
+    r = http.Request('GET / HTTP/1.1\r\n\r\n')
+    cf = ProxyClientFactory(r,
+                            save_all=False,
+                            stream_response=False,
+                            return_transport=None)
+    yield cf.prepare_request()
+    p = cf.buildProtocol('')
+    assert isinstance(p, UpstreamHTTPProxyClient)
+    assert p.creds is None
+    assert p.proxy_connected == False
+
+@pytest.inlineCallbacks
+def test_proxy_client_factory_build_protocol_http_proxy_username_only(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345, 'username': 'foo'})
+    
+    r = http.Request('GET / HTTP/1.1\r\n\r\n')
+    cf = ProxyClientFactory(r,
+                            save_all=False,
+                            stream_response=False,
+                            return_transport=None)
+    yield cf.prepare_request()
+    p = cf.buildProtocol('')
+    assert p.creds is None
+
+@pytest.inlineCallbacks
+def test_proxy_client_factory_build_protocol_http_proxy_username_only(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345, 'username': 'foo', 'password': 'password'})
+    
+    r = http.Request('GET / HTTP/1.1\r\n\r\n')
+    cf = ProxyClientFactory(r,
+                            save_all=False,
+                            stream_response=False,
+                            return_transport=None)
+    yield cf.prepare_request()
+    p = cf.buildProtocol('')
+    assert p.creds == ('foo', 'password')
+    
+@pytest.inlineCallbacks
+def test_proxy_upstream_client_connection_made(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345})
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    p = yield gen_client_protocol(r, save_all=False)
+    assert isinstance(p, UpstreamHTTPProxyClient)
+    assert p.transport.value() == ('GET http://www.example.faketld/ HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n\r\n')
+
+@pytest.inlineCallbacks
+def test_proxy_upstream_client_connection_made_creds(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345, 'username':'foo', 'password':'password'})
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    p = yield gen_client_protocol(r, save_all=False)
+    assert isinstance(p, UpstreamHTTPProxyClient)
+    assert p.transport.value() == ('GET http://www.example.faketld/ HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n'
+                                   'Proxy-Authorization: Basic %s\r\n\r\n') % base64.b64encode('foo:password')
+
+@pytest.inlineCallbacks
+def test_proxy_upstream_client_connection_made_ssl(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345})
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    r.is_ssl = True
+    p = yield gen_client_protocol(r, save_all=False)
+    assert isinstance(p, UpstreamHTTPProxyClient)
+    assert p.transport.value() == ('CONNECT www.example.faketld:443 HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n\r\n')
+
+@pytest.inlineCallbacks
+def test_proxy_upstream_client_connection_made_ssl_creds(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345, 'username':'foo', 'password':'password'})
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    r.is_ssl = True
+    p = yield gen_client_protocol(r, save_all=False)
+    assert isinstance(p, UpstreamHTTPProxyClient)
+    assert p.transport.value() == ('CONNECT www.example.faketld:443 HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n'
+                                   'Proxy-Authorization: Basic %s\r\n\r\n') % base64.b64encode('foo:password')
+
+@pytest.inlineCallbacks
+def test_proxy_upstream_client_connection_made_ssl(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345})
+    mstarttls = mocker.patch('pappyproxy.tests.testutil.TLSStringTransport.startTLS')
+
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    r.is_ssl = True
+    p = yield gen_client_protocol(r, save_all=False)
+    assert p.transport.value() == ('CONNECT www.example.faketld:443 HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n\r\n')
+    assert not mstarttls.called
+    p.transport.clear()
+    p.dataReceived('HTTP/1.1 200 OK\r\n\r\n')
+    assert mstarttls.called
+    assert p.transport.value() == ('GET / HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n\r\n')
+
+@pytest.inlineCallbacks
+def test_proxy_upstream_client_connection_made_ssl_creds(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345, 'username':'foo', 'password':'password'})
+    mstarttls = mocker.patch('pappyproxy.tests.testutil.TLSStringTransport.startTLS')
+
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    r.is_ssl = True
+    p = yield gen_client_protocol(r, save_all=False)
+    assert p.transport.value() == ('CONNECT www.example.faketld:443 HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n'
+                                   'Proxy-Authorization: Basic %s\r\n\r\n') % base64.b64encode('foo:password')
+    assert not mstarttls.called
+    p.transport.clear()
+    p.dataReceived('HTTP/1.1 200 OK\r\n\r\n')
+    assert mstarttls.called
+    assert p.transport.value() == ('GET / HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n\r\n')
+
+@pytest.inlineCallbacks
+def test_proxy_upstream_client_connection_incorrect_creds(mocker):
+    http_proxy_config(mocker, {'host': '12345', 'port': 12345, 'username':'foo', 'password':'password'})
+    mstarttls = mocker.patch('pappyproxy.tests.testutil.TLSStringTransport.startTLS')
+    closed = mocker.patch('pappyproxy.tests.testutil.TLSStringTransport.loseConnection')
+
+    r = http.Request(('GET / HTTP/1.1\r\n'
+                      'Host: www.example.faketld\r\n\r\n'))
+    r.is_ssl = True
+    p = yield gen_client_protocol(r, save_all=False)
+    assert p.transport.value() == ('CONNECT www.example.faketld:443 HTTP/1.1\r\n'
+                                   'Host: www.example.faketld\r\n'
+                                   'Proxy-Authorization: Basic %s\r\n\r\n') % base64.b64encode('foo:password')
+    p.transport.clear()
+    p.dataReceived('HTTP/1.1 407 YOU DUN FUCKED UP\r\n\r\n')
+    assert not mstarttls.called
+    assert p.transport.value() == ''
+    assert closed.called
+
 ### ProxyClient tests
 
 @pytest.inlineCallbacks
 def test_proxy_client_simple(mocker):
     rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
     req = http.Request('GET / HTTP/1.1\r\n\r\n')
-    client = gen_client_protocol(req, stream_response=False)
+    client = yield gen_client_protocol(req, stream_response=False)
     assert client.transport.value() == 'GET / HTTP/1.1\r\n\r\n'
     client.transport.clear()
     rsp = 'HTTP/1.1 200 OKILE DOKELY\r\n\r\n'
@@ -602,7 +868,7 @@ def test_proxy_client_simple(mocker):
 def test_proxy_client_stream(mocker):
     rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
     req = http.Request('GET / HTTP/1.1\r\n\r\n')
-    client = gen_client_protocol(req, stream_response=True)
+    client = yield gen_client_protocol(req, stream_response=True)
     client.transport.clear()
     client.dataReceived('HTTP/1.1 404 GET FUCKE')
     assert client.factory.return_transport.value() == 'HTTP/1.1 404 GET FUCKE'
@@ -617,7 +883,7 @@ def test_proxy_client_stream(mocker):
 def test_proxy_client_nostream(mocker):
     rsave = mocker.patch.object(pappyproxy.http.Request, 'async_deep_save', autospec=True, side_effect=mock_req_async_save)
     req = http.Request('GET / HTTP/1.1\r\n\r\n')
-    client = gen_client_protocol(req, stream_response=False)
+    client = yield gen_client_protocol(req, stream_response=False)
     client.transport.clear()
     client.dataReceived('HTTP/1.1 404 GET FUCKE')
     assert client.factory.return_transport.value() == ''

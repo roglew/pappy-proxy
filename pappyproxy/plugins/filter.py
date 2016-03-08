@@ -1,8 +1,7 @@
 import crochet
 import pappyproxy
 
-from pappyproxy.console import confirm
-from pappyproxy.util import PappyException
+from pappyproxy.util import PappyException, confirm
 from pappyproxy.http import Request
 from twisted.internet import defer
 

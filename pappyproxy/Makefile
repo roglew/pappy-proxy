@@ -10,3 +10,9 @@ test-verbose:
 
 test-macros:
 	py.test -v -rw --twisted tests/test_macros.py
+
+test-proxy:
+	py.test -v -rw --twisted tests/test_proxy.py
+
+test-comm:
+	py.test -v -rw --twisted tests/test_comm.py

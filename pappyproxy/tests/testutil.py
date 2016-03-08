@@ -15,6 +15,26 @@ class TLSStringTransport(StringTransport):
 
     def startTLS(self, context, factory):
         pass
+    
+class PappySession(object):
+    
+    def setup():
+        """
+        Sets up a console session with a connection to a temporary datafile
+        """
+        pass
+    
+    def cleanup():
+        """
+        Closes connections, deletes temporary datafile
+        """
+        pass
+
+    def run_command(command):
+        """
+        Runs the command then returns the non-colorized output
+        """
+        pass
 
 def func_deleted(*args, **kwargs):
     raise NotImplementedError()

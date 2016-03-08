@@ -1,11 +1,11 @@
 import os
 
-from .config import PAPPY_DIR
+from .pappy import session
 
 def from_file(fname, intro=False):
     # Ignores lines until the first blank line, then returns every non-blank
     # line afterwards
-    full_fname = os.path.join(PAPPY_DIR, 'lists', fname)
+    full_fname = os.path.join(session.config.pappy_dir, 'lists', fname)
     with open(full_fname, 'r') as f:
         d = f.read()
     lines = d.splitlines()

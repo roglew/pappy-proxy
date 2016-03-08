@@ -10,7 +10,7 @@ from pappyproxy.util import PappyException
 from pappyproxy.macros import InterceptMacro
 from pappyproxy.http import Request, Response
 from pappyproxy.plugin import add_intercepting_macro, remove_intercepting_macro
-from pappyproxy import comm, config
+from pappyproxy import pappy
 from twisted.internet import defer
 
 PLUGIN_ID="manglecmds"
@@ -126,8 +126,8 @@ def check_reqid(reqid):
     defer.returnValue(None)
 
 def start_editor(reqid):
-    script_loc = os.path.join(config.PAPPY_DIR, "plugins", "vim_repeater", "repeater.vim")
-    subprocess.call(["vim", "-S", script_loc, "-c", "RepeaterSetup %s %d"%(reqid, comm.comm_port)])
+    script_loc = os.path.join(pappy.session.config.pappy_dir, "plugins", "vim_repeater", "repeater.vim")
+    subprocess.call(["vim", "-S", script_loc, "-c", "RepeaterSetup %s %d"%(reqid, pappy.session.comm_port)])
     
 ####################
 ## Command functions
@@ -163,6 +163,8 @@ def intercept(line):
         intercept_requests = True
     if any(a in rsp_names for a in args):
         intercept_responses = True
+    if not args:
+        intercept_requests = True
 
     if intercept_requests and intercept_responses:
         intercept_str = 'Requests and responses'
