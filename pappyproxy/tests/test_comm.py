@@ -10,6 +10,10 @@ from pappyproxy.comm import CommServer
 from pappyproxy.http import Request, Response
 from testutil import mock_deferred, func_deleted, TLSStringTransport, freeze, mock_int_macro, no_tcp
 
+@pytest.fixture(autouse=True)
+def no_int_macros(mocker):
+    mocker.patch('pappyproxy.plugin.active_intercepting_macros').return_value = {}
+
 @pytest.fixture
 def http_request():
     req = Request('GET / HTTP/1.1\r\n\r\n')
@@ -40,6 +44,13 @@ def test_simple():
 def mock_loader(rsp):
     def f(*args, **kwargs):
         return rsp
+    return classmethod(f)
+
+def mock_submitter(rsp):
+    def f(_, req, *args, **kwargs):
+        req.response = rsp
+        req.reqid = 123
+        return mock_deferred(req)
     return classmethod(f)
 
 def mock_loader_fail():
@@ -80,7 +91,8 @@ def test_get_response_fail(mocker, http_request):
     assert 'message' in v
 
 def test_submit_request(mocker, http_request):
-    mocker.patch.object(pappyproxy.http.Request, 'submit_new', new=mock_loader(http_request))
+    rsp = Response('HTTP/1.1 200 OK\r\n\r\n')
+    mocker.patch.object(pappyproxy.http.Request, 'submit_request', new=mock_submitter(rsp))
     mocker.patch('pappyproxy.http.Request.async_deep_save').return_value = mock_deferred()
 
     comm_data = {"action": "submit"}
@@ -92,14 +104,14 @@ def test_submit_request(mocker, http_request):
     v = perform_comm(json.dumps(comm_data))
 
     expected_data = {}
-    expected_data['request'] = json.loads(http_request.to_json())
-    expected_data['response'] = json.loads(http_request.response.to_json())
-    expected_data['success'] = True
-    expected_data['request']['tags'] = ['footag']
+    expected_data[u'request'] = json.loads(http_request.to_json())
+    expected_data[u'response'] = json.loads(http_request.response.to_json())
+    expected_data[u'success'] = True
+    expected_data[u'request'][u'tags'] = [u'footag']
     assert json.loads(v) == expected_data
 
 def test_submit_request_fail(mocker, http_request):
-    mocker.patch.object(pappyproxy.http.Request, 'submit_new', new=mock_loader_fail())
+    mocker.patch.object(pappyproxy.http.Request, 'submit_request', new=mock_loader_fail())
     mocker.patch('pappyproxy.http.Request.async_deep_save').return_value = mock_deferred()
 
     comm_data = {"action": "submit"}

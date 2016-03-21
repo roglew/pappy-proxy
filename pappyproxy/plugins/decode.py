@@ -1,14 +1,13 @@
 import HTMLParser
 import StringIO
 import base64
-import clipboard
 import datetime
 import gzip
 import shlex
 import string
 import urllib
 
-from pappyproxy.util import PappyException, hexdump, printable_data
+from pappyproxy.util import PappyException, hexdump, printable_data, copy_to_clipboard, clipboard_contents
 
 def print_maybe_bin(s):
     binary = False
@@ -45,6 +44,18 @@ def gzip_decode_helper(s):
     dec_data = dec_data.read()
     return dec_data
 
+def base64_decode_helper(s):
+    try:
+        return base64.b64decode(s)
+    except TypeError:
+        for i in range(1, 5):
+            try:
+                s_padded = base64.b64decode(s + '='*i)
+                return s_padded
+            except:
+                pass
+        raise PappyException("Unable to base64 decode string")
+
 def html_encode_helper(s):
     return ''.join(['&#x{0:x};'.format(ord(c)) for c in s])
 
@@ -54,13 +65,13 @@ def html_decode_helper(s):
 def _code_helper(line, func, copy=True):
     args = shlex.split(line)
     if not args:
-        s = clipboard.paste()
+        s = clipboard_contents()
         print 'Will decode:'
         print printable_data(s)
         s = func(s)
         if copy:
             try:
-                clipboard.copy(s)
+                copy_to_clipboard(s)
             except:
                 print 'Result cannot be copied to the clipboard. Result not copied.'
         return s
@@ -68,7 +79,7 @@ def _code_helper(line, func, copy=True):
         s = func(args[0].strip())
         if copy:
             try:
-                clipboard.copy(s)
+                copy_to_clipboard(s)
             except:
                 print 'Result cannot be copied to the clipboard. Result not copied.'
         return s
@@ -79,7 +90,7 @@ def base64_decode(line):
     If no string is given, will decode the contents of the clipboard.
     Results are copied to the clipboard.
     """
-    print_maybe_bin(_code_helper(line, base64.b64decode))
+    print_maybe_bin(_code_helper(line, base64_decode_helper))
 
 def base64_encode(line):
     """
@@ -159,7 +170,7 @@ def base64_decode_raw(line):
     results will not be copied. It is suggested you redirect the output
     to a file.
     """
-    print _code_helper(line, base64.b64decode, copy=False)
+    print _code_helper(line, base64_decode_helper, copy=False)
 
 def base64_encode_raw(line):
     """

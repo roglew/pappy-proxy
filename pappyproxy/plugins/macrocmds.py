@@ -127,7 +127,7 @@ def list_int_macros(line):
     running = []
     not_running = []
     for macro in loaded_int_macros:
-        if macro.name in [m.name for m in active_intercepting_macros()]:
+        if macro.name in [m.name for k, m in active_intercepting_macros().iteritems()]:
             running.append(macro)
         else:
             not_running.append(macro)

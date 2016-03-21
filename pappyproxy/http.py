@@ -2130,60 +2130,74 @@ class Request(HTTPMessage):
         
     @staticmethod
     @defer.inlineCallbacks
-    def submit_new(host, port, is_ssl, full_request):
+    def submit_request(request,
+                       save_request=False,
+                       intercepting_macros={},
+                       stream_transport=None):
         """
-        submit_new(host, port, is_ssl, full_request)
-        Submits a request with the given parameters and returns a request object
-        with the response.
+        submit_request(request, save_request=False, intercepting_macros={}, stream_transport=None)
 
-        :param host: The host to submit to
-        :type host: string
-        :param port: The port to submit to
-        :type port: Integer
-        :type is_ssl: Whether to use SSL
-        :param full_request: The request data to send
-        :type full_request: string
-        :rtype: Twisted deferred that calls back with a Request
+        Submits the request then sets ``request.response``. Returns a deferred that
+        is called with the request that was submitted.
+
+        :param request: The request to submit
+        :type host: Request
+        :param save_request: Whether to save the request to history
+        :type save_request: Bool
+        :param intercepting_macros: Dictionary of intercepting macros to be applied to the request
+        :type intercepting_macros: Dict or collections.OrderedDict
+        :param stream_transport: Return transport to stream to. Set to None to not stream the response.
+        :type stream_transport: twisted.internet.interfaces.ITransport
         """
+
         from .proxy import ProxyClientFactory, get_next_connection_id, get_endpoint
         from .pappy import session
 
-        new_req = Request(full_request)
-        new_req.is_ssl = is_ssl
-        new_req.port = port
-        new_req._host = host
-
-        factory = ProxyClientFactory(new_req, save_all=False, stream_response=False, return_transport=None)
-        factory.intercepting_macros = {}
+        factory = None
+        if stream_transport is None:
+            factory = ProxyClientFactory(request,
+                                        save_all=save_request,
+                                        stream_response=False,
+                                        return_transport=None)
+        else:
+            factory = ProxyClientFactory(request,
+                                        save_all=save_request,
+                                        stream_response=True,
+                                        return_transport=stream_transport)
+        factory.intercepting_macros = intercepting_macros
         factory.connection_id = get_next_connection_id()
-        yield factory.prepare_request()
-        endpoint = get_endpoint(host, port, is_ssl,
-                                socks_config=session.config.socks_proxy)
-        yield endpoint.connect(factory)
+        factory.connect()
         new_req = yield factory.data_defer
-        defer.returnValue(new_req)
+        request.response = new_req.response
+        defer.returnValue(request)
 
     @defer.inlineCallbacks
-    def async_submit(self):
+    def async_submit(self, mangle=False):
         """
         async_submit()
         Same as :func:`~pappyproxy.http.Request.submit` but generates deferreds.
         Submits the request using its host, port, etc. and updates its response value
         to the resulting response.
 
+        :param mangle: Whether to pass the request through active intercepting macros.
+        :type mangle: Bool
+
         :rtype: Twisted deferred
         """
-        new_req = yield Request.submit_new(self.host, self.port, self.is_ssl,
-                                           self.full_request)
-        self.set_metadata(new_req.get_metadata())
-        self.unmangled = new_req.unmangled
-        self.response = new_req.response
-        self.time_start = new_req.time_start
-        self.time_end = new_req.time_end
+        from pappyproxy.plugin import active_intercepting_macros
+        
+        if mangle:
+            int_macros = active_intercepting_macros()
+        else:
+            int_macros = None
+        yield Request.submit_request(self,
+                                     save_request=False,
+                                     intercepting_macros=int_macros,
+                                     stream_transport=None)
 
     @crochet.wait_for(timeout=180.0)
     @defer.inlineCallbacks
-    def submit(self):
+    def submit(self, mangle=False):
         """
         submit()
         Submits the request using its host, port, etc. and updates its response value
@@ -2191,7 +2205,7 @@ class Request(HTTPMessage):
         Cannot be called in async functions.
         This is what you should use to submit your requests in macros.
         """
-        yield self.async_submit()
+        yield self.async_submit(mangle=mangle)
 
 
 class Response(HTTPMessage):

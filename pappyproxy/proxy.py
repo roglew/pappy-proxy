@@ -62,11 +62,20 @@ def log_request(request, id=None, symbol='*', verbosity_level=3):
         for l in r_split:
             log(l, id, symbol, verbosity_level)
             
-def get_endpoint(target_host, target_port, target_ssl, socks_config=None):
+def get_endpoint(target_host, target_port, target_ssl, socks_config=None, use_http_proxy=False, debugid=None):
     # Imports go here to allow mocking for tests
     from twisted.internet.endpoints import SSL4ClientEndpoint, TCP4ClientEndpoint
     from txsocksx.client import SOCKS5ClientEndpoint
     from txsocksx.tls import TLSWrapClientEndpoint
+    from pappyproxy.pappy import session
+
+    log("Getting endpoint for host '%s' on port %d ssl=%s, socks_config=%s, use_http_proxy=%s" % (target_host, target_port, target_ssl, str(socks_config), use_http_proxy), id=debugid, verbosity_level=3)
+
+    if session.config.http_proxy and use_http_proxy:
+        target_host = session.config.http_proxy['host']
+        target_port = session.config.http_proxy['port']
+        target_ssl = False # We turn on ssl after CONNECT request if needed
+        log("Connecting to http proxy at %s:%d" % (target_host, target_port), id=debugid, verbosity_level=3)
 
     if socks_config is not None:
         sock_host = socks_config['host']
@@ -183,7 +192,7 @@ class UpstreamHTTPProxyClient(ProxyClient):
             sendreq.proxy_creds = self.creds
         lines = sendreq.full_request.splitlines()
         for l in lines:
-            self.log(l, symbol='>r', verbosity_level=3)
+            self.log(l, symbol='>rp', verbosity_level=3)
         self.transport.write(sendreq.full_message)
 
     def connectionMade(self):
@@ -194,10 +203,16 @@ class UpstreamHTTPProxyClient(ProxyClient):
                 self.connect_response = True
                 if self.creds is not None:
                     connreq.proxy_creds = self.creds
+                lines = connreq.full_message.splitlines()
+                for l in lines:
+                    self.log(l, symbol='>p', verbosity_level=3)
                 self.transport.write(connreq.full_message)
             else:
                 self.proxy_connected = True
                 self.stream_response = True
+                lines = self.request.full_message.splitlines()
+                for l in lines:
+                    self.log(l, symbol='>p', verbosity_level=3)
                 self.write_proxied_request(self.request)
 
     def handle_response_end(self, *args, **kwargs):
@@ -211,6 +226,10 @@ class UpstreamHTTPProxyClient(ProxyClient):
             self.transport.loseConnection()
             assert self._response_obj.full_response
             self.data_defer.callback(self.request)
+        elif self._response_obj.response_code != 200:
+            print "Error establishing connection to proxy"
+            self.transport.loseConnection()
+            return
         elif self.connect_response:
             self.log("Response to CONNECT request recieved from http proxy", verbosity_level=3)
             self.proxy_connected = True
@@ -220,10 +239,12 @@ class UpstreamHTTPProxyClient(ProxyClient):
             self.completed = False
             self._sent = False
 
+            self.log("Starting TLS", verbosity_level=3)
             self.transport.startTLS(ClientTLSContext())
+            self.log("TLS started", verbosity_level=3)
             lines = self.request.full_message.splitlines()
             for l in lines:
-                self.log(l, symbol='>r', verbosity_level=3)
+                self.log(l, symbol='>rpr', verbosity_level=3)
             self.transport.write(self.request.full_message)
 
 class ProxyClientFactory(ClientFactory):
@@ -240,6 +261,7 @@ class ProxyClientFactory(ClientFactory):
         self.return_transport = return_transport
         self.intercepting_macros = {}
         self.use_as_proxy = False
+        self.sendback_function = None
 
     def log(self, message, symbol='*', verbosity_level=1):
         log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
@@ -297,6 +319,8 @@ class ProxyClientFactory(ClientFactory):
 
             if session.config.http_proxy:
                 self.use_as_proxy = True
+                if (not self.stream_response) and self.sendback_function:
+                    self.data_defer.addCallback(self.sendback_function)
         else:
             self.log("Request out of scope, passing along unmangled")
         self.request = sendreq
@@ -339,6 +363,29 @@ class ProxyClientFactory(ClientFactory):
             self.log("Response out of scope, passing along unmangled")
         self.data_defer.callback(request)
         defer.returnValue(None)
+
+    @defer.inlineCallbacks
+    def connect(self):
+        from pappyproxy.pappy import session
+
+        yield self.prepare_request()
+        if context.in_scope(self.request):
+            # Get connection using config
+            endpoint = get_endpoint(self.request.host,
+                                    self.request.port,
+                                    self.request.is_ssl,
+                                    socks_config=session.config.socks_proxy,
+                                    use_http_proxy=True)
+        else:
+            # Just forward it normally
+            endpoint = get_endpoint(self.request.host,
+                                    self.request.port,
+                                    self.request.is_ssl)
+
+        # Connect via the endpoint
+        self.log("Accessing using endpoint")
+        yield endpoint.connect(self)
+        self.log("Connected")
 
 class ProxyServerFactory(ServerFactory):
 
@@ -425,6 +472,8 @@ class ProxyServer(LineReceiver):
                 
     @defer.inlineCallbacks
     def full_request_received(self):
+        from pappyproxy.http import Request
+
         global cached_certs
         
         self.log('End of request', verbosity_level=3)
@@ -447,8 +496,18 @@ class ProxyServer(LineReceiver):
 
         # if _request_obj.host is a listener, forward = False
 
+        if self.factory.intercepting_macros:
+            return_transport = None
+        else:
+            return_transport = self.transport
+
         if forward:
-            self._generate_and_submit_client()
+            d = Request.submit_request(self._request_obj,
+                                       save_request=True,
+                                       intercepting_macros=self.factory.intercepting_macros,
+                                       stream_transport=return_transport)
+            if return_transport is None:
+                d.addCallback(self.send_response_back)
         self._reset()
         
     def _reset(self):
@@ -467,73 +526,9 @@ class ProxyServer(LineReceiver):
             self._request_obj.port = self._connect_port
         self.setLineMode()
 
-    def _generate_and_submit_client(self):
-        """
-        Sets up self._client_factory with self._request_obj then calls back to
-        submit the request
-        """
-
-        self.log("Forwarding to %s on %d" % (self._request_obj.host, self._request_obj.port))
-        if self.factory.intercepting_macros:
-            stream = False
-        else:
-            stream = True
-        self.log('Creating client factory, stream=%s' % stream)
-        self._client_factory = ProxyClientFactory(self._request_obj,
-                                                  save_all=self.factory.save_all,
-                                                  stream_response=stream,
-                                                  return_transport=self.transport)
-        self._client_factory.intercepting_macros = self.factory.intercepting_macros
-        self._client_factory.connection_id = self.connection_id
-        if not stream:
-            self._client_factory.data_defer.addCallback(self.send_response_back)
-        d = self._client_factory.prepare_request()
-        d.addCallback(self._make_remote_connection)
-        return d
-
-    @defer.inlineCallbacks
-    def _make_remote_connection(self, req):
-        """
-        Creates an endpoint to the target server using the given configuration
-        options then connects to the endpoint using self._client_factory
-        """
-        from pappyproxy.pappy import session
-
-        self._request_obj = req
-
-        # If we have a socks proxy, wrap the endpoint in it
-        if context.in_scope(self._request_obj):
-            # Modify the request connection settings to match settings in the factory
-            if self.factory.force_ssl:
-                self._request_obj.is_ssl = True
-            if self.factory.forward_host:
-                self._request_obj.host = self.factory.forward_host
-
-            usehost = self._request_obj.host
-            useport = self._request_obj.port
-            usessl = self._request_obj.is_ssl
-            if session.config.http_proxy:
-                usehost = session.config.http_proxy['host']
-                useport = session.config.http_proxy['port']
-                usessl = False # We turn on ssl after CONNECT request if needed
-                self.log("Connecting to http proxy at %s:%d" % (usehost, useport))
-
-            # Get connection from the request
-            endpoint = get_endpoint(usehost, useport, usessl,
-                                    socks_config=session.config.socks_proxy)
-        else:
-            endpoint = get_endpoint(self._request_obj.host,
-                                    self._request_obj.port,
-                                    self._request_obj.is_ssl)
-
-        # Connect via the endpoint
-        self.log("Accessing using endpoint")
-        yield endpoint.connect(self._client_factory)
-        self.log("Connected")
-        
-    def send_response_back(self, response):
-        if response is not None:
-            self.transport.write(response.response.full_response)
+    def send_response_back(self, request):
+        if request.response is not None:
+            self.transport.write(request.response.full_response)
         self.log("Response sent back, losing connection")
         self.transport.loseConnection()
         

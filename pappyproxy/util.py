@@ -4,10 +4,19 @@ import re
 import string
 import sys
 import time
+import pyperclip
 
 from .colors import Styles, Colors, verb_color, scode_color, path_formatter, host_color
 from twisted.internet import defer
 from twisted.test.proto_helpers import StringTransport
+
+try:
+    # If you don't do this then pyperclip imports gtk, it blocks the twisted reactor.
+    # Dumb. I know.
+    import gtk
+    gtk.set_interactive(False)
+except ImportError:
+    pass
 
 class PappyException(Exception):
     """
@@ -320,3 +329,10 @@ def confirm(message, default='n'):
         return True
     else:
         return False
+
+
+def copy_to_clipboard(text):
+    pyperclip.copy(text)
+    
+def clipboard_contents():
+    return pyperclip.paste()

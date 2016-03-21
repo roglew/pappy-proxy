@@ -1,6 +1,7 @@
 import crochet
 import pappyproxy
 import shlex
+import sys
 
 from pappyproxy.colors import Colors, Styles, path_formatter, host_color, scode_color, verb_color
 from pappyproxy.util import PappyException, remove_color, confirm, load_reqlist, Capturing
@@ -34,6 +35,7 @@ class PrintStreamInterceptMacro(InterceptMacro):
         s += req.url_color
         s += ', len=' + str(len(req.body))
         print s
+        sys.stdout.flush()
 
     @staticmethod
     def _print_response(req):
@@ -47,6 +49,7 @@ class PrintStreamInterceptMacro(InterceptMacro):
         s += req.url_color
         s += ', len=' + str(len(req.response.body))
         print s
+        sys.stdout.flush()
 
     def mangle_request(self, request):
         PrintStreamInterceptMacro._print_request(request)

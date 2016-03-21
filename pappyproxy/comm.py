@@ -31,21 +31,21 @@ class CommServer(LineReceiver):
 
         if line == '':
             return
-        try:
-            command_data = json.loads(line)
-            command = command_data['action']
-            valid = False
-            if command in self.action_handlers:
-                valid = True
-                result = {'success': True}
-                func_defer = self.action_handlers[command](command_data)
-                func_defer.addCallback(self.action_result_handler, result)
-                func_defer.addErrback(self.action_error_handler, result)
-            if not valid:
-                raise PappyException('%s is an invalid command' % command_data['action'])
-        except PappyException as e:
-            return_data = {'success': False, 'message': str(e)}
-            self.sendLine(json.dumps(return_data))
+        #try:
+        command_data = json.loads(line)
+        command = command_data['action']
+        valid = False
+        if command in self.action_handlers:
+            valid = True
+            result = {'success': True}
+            func_defer = self.action_handlers[command](command_data)
+            func_defer.addCallback(self.action_result_handler, result)
+            func_defer.addErrback(self.action_error_handler, result)
+        if not valid:
+            raise PappyException('%s is an invalid command' % command_data['action'])
+        # except PappyException as e:
+        #     return_data = {'success': False, 'message': str(e)}
+        #     self.sendLine(json.dumps(return_data))
 
     def action_result_handler(self, data, result):
         result.update(data)
@@ -94,11 +94,15 @@ class CommServer(LineReceiver):
     @defer.inlineCallbacks
     def action_submit_request(self, data):
         from .http import Request
+        from .plugin import active_intercepting_macros
         message = base64.b64decode(data['full_message'])
-        try:
-            req = yield Request.submit_new(data['host'].encode('utf-8'), data['port'], data['is_ssl'], message)
-        except Exception:
-            raise PappyException('Error submitting request. Please make sure request is a valid HTTP message.')
+        req = Request(message)
+        req.host = data['host'].encode('utf-8')
+        req.port = data['port']
+        req.is_ssl = data['is_ssl']
+        yield Request.submit_request(req,
+                                     save_request=True,
+                                     intercepting_macros=active_intercepting_macros())
         if 'tags' in data:
             req.tags = set(data['tags'])
         yield req.async_deep_save()

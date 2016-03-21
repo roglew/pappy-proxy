@@ -1123,6 +1123,8 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.9
+    * Fix bugs/clean up some code
 * 0.2.8
     * Upstream HTTP proxy support
     * Usability improvements

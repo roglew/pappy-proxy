@@ -375,7 +375,7 @@ def gen_filter_by_before(args):
     defer.returnValue(f)
 
 @defer.inlineCallbacks
-def gen_filter_by_after(reqid, negate=False):
+def gen_filter_by_after(args, negate=False):
     if len(args) != 1:
         raise PappyException('Invalid number of arguments')
     r = yield Request.load_request(args[0])

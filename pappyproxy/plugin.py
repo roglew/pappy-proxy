@@ -107,12 +107,13 @@ def remove_intercepting_macro(name):
     
 def active_intercepting_macros():
     """
-    Returns a list of the active intercepting macro objects. Modifying
+    Returns a dict of the active intercepting macro objects. Modifying
     this list will not affect which macros are active.
     """
-    ret = []
+    ret = {}
     for factory in pappyproxy.pappy.session.server_factories:
-        ret += [v for k, v in factory.intercepting_macros.iteritems() ]
+        for k, v in factory.intercepting_macros.iteritems():
+            ret[k] = v
     return ret
 
 def in_memory_reqs():
