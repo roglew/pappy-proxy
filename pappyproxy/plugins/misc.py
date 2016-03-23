@@ -201,3 +201,25 @@ def load_cmds(cmd):
     cmd.add_aliases([
         #('rpy', ''),
     ])
+
+class CryptoCompressUtils():
+  # Constants
+  ENCRYPT = 0
+  DECRYPT = 1
+  PROJECT_PATH = getcwd() + sep
+  ZIPFILE = PROJECT_PATH + "pappy.zip"
+  BZ2FILE = PROJECT_PATH + "pappy.bz2"
+  CRYPTFILE = ""
+  if path.isfile(ZIPFILE):
+      CRYPTFILE = ZIPFILE + ".crypt"
+  elsif path.isfile(BZ2FILE):
+      CRYPTFILE = BZ2FILE + ".crypt" 
+  SALTFILE = PROJECT_PATH + "pappy.salt"
+
+  def get_project_files():
+      file_glob = glob.glob('*')
+      pp = PROJECT_PATH
+      project_files = [pp+f for f in file_glob if path.isfile(pp+f)]
+      project_files.remove(SALTFILE)
+      project_files.remove(CRYPTFILE)
+      return project_files 
