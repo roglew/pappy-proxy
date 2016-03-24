@@ -21,7 +21,9 @@ import signal
 
 from . import comm
 from . import config
+from . import compress
 from . import context
+from . import crypto
 from . import http
 from .console import ProxyCmd
 from twisted.enterprise import adbapi
@@ -62,6 +64,8 @@ class PappySession(object):
         self.dbpool = None
         self.delete_data_on_quit = False
         self.ports = None
+        self.crypto = Crypto(sessconfig)
+        self.password = None
 
     @defer.inlineCallbacks
     def start(self):
@@ -138,12 +142,25 @@ class PappySession(object):
         # Add cleanup to defer
         self.complete_defer = deferToThread(self.cons.cmdloop)
         self.complete_defer.addCallback(self.cleanup)
-            
+
+    @defer.inlineCallbacks
+    def encrypt(self):
+        if self.password:
+            self.crypto.encrypt_project(self.password)     
+        else:
+            self.password = self.crypto.get_password()
+            self.crypto.encrypt_project(self.password)     
+
+    @defer.inlineCallbacks
+    def decrypt(self):
+        self.password = self.crypto.get_password()
+        self.crypto.decrypt_project(self.password)
+                
     @defer.inlineCallbacks
     def cleanup(self, ignored=None):
         for port in self.ports:
             yield port.stopListening()
-
+    
         if self.delete_data_on_quit:
             print 'Deleting temporary datafile'
             os.remove(self.config.datafile)
@@ -153,6 +170,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description='An intercepting proxy for testing web applications.')
     parser.add_argument('-l', '--lite', help='Run the proxy in "lite" mode', action='store_true')
+    parser.add_argument('-c', '--crypt', type=str, nargs='?', help='Start pappy in "crypto" mode, optionally supply a name for the encrypted project archive [CRYPT]')
 
     args = parser.parse_args(sys.argv[1:])
     settings = {}
@@ -161,6 +179,13 @@ def parse_args():
         settings['lite'] = True
     else:
         settings['lite'] = False
+
+    if args.crypt:
+        settings['crypt'] = args.crypt 
+    elif args.crypt == "":
+        settings['crypt'] = 'project.crypt'
+    else:
+        settings['crypt'] = None
 
     return settings
 
@@ -189,7 +214,12 @@ def main():
     session = PappySession(pappy_config)
     signal.signal(signal.SIGINT, inturrupt_handler)
 
-    if settings['lite']:
+    if settings['crypt']:
+        session.decrypt()
+        conf_settings = pappy_config.load_from_file('./config.json')
+        pappy_config.global_load_from_file()
+        session.delete_data_on_quit = False
+    elif settings['lite']:
         conf_settings = pappy_config.get_default_config()
         conf_settings['debug_dir'] = None
         conf_settings['debug_to_file'] = False
