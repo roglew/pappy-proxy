@@ -26,6 +26,7 @@ def tmpname():
 
 tmpdir = '/tmp/test_crypto'+tmpname()
 tmpfiles = ['cmdhistory', 'config.json', 'data.db']
+tmp_pass = 'fugyeahbruh'
 
 def stub_files():
     enter_tmpdir()
@@ -40,12 +41,22 @@ def enter_tmpdir():
 
 def test_decrypt_tmpdir():
     enter_tmpdir()
-    crypt().decrypt_project()
+    c = crypt()
+     
+    # Stub out the password, working with stdout is a pain with pytest
+    c.password = tmp_pass
+    
+    c.decrypt_project()
     assert os.path.isdir(os.path.join(os.getcwd(), '../crypt'))
 
 def test_decrypt_copy_files():
     enter_tmpdir()
     stub_files()
-    crypt().decrypt_project()
+    c = crypt()
+     
+    # Stub out the password, working with stdout is a pain with pytest
+    c.password = tmp_pass
+    
+    c.decrypt_project()
     for tf in tmpfiles:
-        assert os.path.isfile(tf)
+        assert os.path.isfile(os.path.join(os.getcwd(),tf))
