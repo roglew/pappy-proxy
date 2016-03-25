@@ -16,7 +16,6 @@ except:
 
 from base64 import b64encode, b64decode
 from os import getcwd, sep, path, urandom 
-from pappyproxy.plugins.misc import CryptoCompressUtils as ccu
 
 class Compress(object):
     def __init__(self, sessconfig):
@@ -86,10 +85,10 @@ class Compress(object):
         if tarfile.is_tarfile(self.bz2_archive):
             # Attempt to read the first 16 bytes of the archive
             # Raise exception if there is a failure
-    	project_files = self.config.get_project_files()
+    	    project_files = self.config.get_project_files()
             try:
                 with tarfile.open(self.bz2_archive, "r:bz2") as archive:
                     for pf in project_files:
                         archive.add(pf)
             except e:
-                raise PappyException("Project archive contents corrupted. Error: ", e
+                raise PappyException("Project archive contents corrupted. Error: ", e)
