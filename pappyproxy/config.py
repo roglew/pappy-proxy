@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import shutil
@@ -175,7 +176,7 @@ class PappyConfig(object):
         self.crypt_dir = os.path.join(os.getcwd(), 'crypt')
         self.crypt_file = 'project.crypt'
         self.crypt_mode = None
-        self.salt = os.urandom(16)
+        self.salt = os.urandom(16) 
         self.salt_file = 'project.salt'
     
     def get_default_config(self):
@@ -186,12 +187,14 @@ class PappyConfig(object):
         return settings
 
     def get_project_files(self):
-      file_glob = glob.glob('*')
-      pp = os.path.join(os.getcwd()) 
-      project_files = [pp+f for f in file_glob if os.path.isfile(pp+f)]
-      project_files.remove(self.salt_file)
-      project_files.remove(self.crypt_file)
-      return project_files 
+        file_glob = glob.glob('*')
+        pp = os.path.join(os.getcwd()) 
+        project_files = [pp+f for f in file_glob if os.path.isfile(pp+f)]
+        if self.salt_file in project_files:
+            project_files.remove(self.salt_file)
+        if self.crypt_file in project_files:
+            project_files.remove(self.crypt_file)
+        return project_files 
         
 
     @staticmethod

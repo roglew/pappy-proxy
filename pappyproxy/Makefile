@@ -16,3 +16,7 @@ test-proxy:
 
 test-comm:
 	py.test -v -rw --twisted tests/test_comm.py
+
+test-crypto:
+	py.test -v -rw --twisted tests/test_crypto.py
+      

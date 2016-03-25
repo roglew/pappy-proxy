@@ -64,7 +64,7 @@ class PappySession(object):
         self.dbpool = None
         self.delete_data_on_quit = False
         self.ports = None
-        self.crypto = Crypto(sessconfig)
+        self.crypto = crypto.Crypto(sessconfig)
         self.password = None
 
     @defer.inlineCallbacks
@@ -145,16 +145,11 @@ class PappySession(object):
 
     @defer.inlineCallbacks
     def encrypt(self):
-        if self.password:
-            self.crypto.encrypt_project(self.password)     
-        else:
-            self.password = self.crypto.get_password()
-            self.crypto.encrypt_project(self.password)     
+        self.crypto.encrypt_project(self.password)     
 
     @defer.inlineCallbacks
     def decrypt(self):
-        self.password = self.crypto.get_password()
-        self.crypto.decrypt_project(self.password)
+        self.crypto.decrypt_project()
                 
     @defer.inlineCallbacks
     def cleanup(self, ignored=None):
