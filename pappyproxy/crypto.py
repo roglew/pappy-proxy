@@ -36,7 +36,7 @@ class Crypto(object):
    
         # Create project archive and crypto archive 
         self.compressor.compress_project()
-        archive_file = open(self.archive, 'rb') 
+        archive_file = open(self.archive, 'rb').read() 
         archive_crypt = open(self.config.crypt_file, 'wb')
     
         # Encrypt the archive read as a bytestring
@@ -57,7 +57,7 @@ class Crypto(object):
         # Get the password and salt, then derive the key
         self.crypto_ramp_up()
 
-        crypto_path = os.path.join(os.getcwd(), self.config.crypt_dir)
+        crypto_path = self.config.crypt_dir
         
         if not os.path.isdir(crypto_path):
             os.mkdir(crypto_path)
@@ -168,7 +168,7 @@ class Crypto(object):
     
         try:
             if not self.key:
-                self.key = scrypt.hash(self.password, self.salt, buflen=32)
+                self.key = b64encode(scrypt.hash(self.password, self.salt, buflen=32))
         except TypeError, e:
             raise PappyException("Scrypt failed with type error: ", e)
         except scrypt.error, e:

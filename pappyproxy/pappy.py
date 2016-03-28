@@ -145,11 +145,11 @@ class PappySession(object):
 
     @defer.inlineCallbacks
     def encrypt(self):
-        self.crypto.encrypt_project(self.password)     
+        yield self.crypto.encrypt_project()     
 
     @defer.inlineCallbacks
     def decrypt(self):
-        self.crypto.decrypt_project()
+        yield self.crypto.decrypt_project()
                 
     @defer.inlineCallbacks
     def cleanup(self, ignored=None):
@@ -159,6 +159,11 @@ class PappySession(object):
         if self.delete_data_on_quit:
             print 'Deleting temporary datafile'
             os.remove(self.config.datafile)
+
+        # If currently in the crypt directory,
+        # encrypt the project, delete clear files
+        if os.getcwd() == self.config.crypt_dir:
+            self.encrypt()
     
 def parse_args():
     # parses sys.argv and returns a settings dictionary

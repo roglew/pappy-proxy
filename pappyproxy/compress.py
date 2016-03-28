@@ -23,19 +23,19 @@ class Compress(object):
         self.zip_archive = sessconfig.archive
         self.bz2_archive = sessconfig.archive
 
-    def compress_project():
+    def compress_project(self):
         if bz2:
-            tar_project()
+            self.tar_project()
         else:
-            zip_project()
+            self.zip_project()
     
-    def decompress_project():
+    def decompress_project(self):
         if bz2:
-            untar_project()
+            self.untar_project()
         else:
-            unzip_project()
+            self.unzip_project()
     
-    def zip_project():
+    def zip_project(self):
         """
         Zip project files
     
@@ -52,7 +52,7 @@ class Compress(object):
             raise PappyException("Error creating the zipfile", e)
         pass
     
-    def unzip_project():
+    def unzip_project(self):
         """
         Extract project files from decrypted zip archive.
         Initially checks the zip archive's magic number and
@@ -71,24 +71,20 @@ class Compress(object):
     
         zf.extractall()
     
-    def tar_project():
-        if tarfile.is_tarfile(self.bz2_archive):
-            archive = tarfile.open(self.bz2_archive, 'w:bz2')
-            project_files = self.config.get_project_files()
-    
-            # Read files line by line to accomodate larger files, e.g. the project database
-            for pf in project_files:
-                archive.add(pf)
+    def tar_project(self):
+        archive = tarfile.open(self.bz2_archive, 'w:bz2')
+        project_files = self.config.get_project_files()
+         
+        # Read files line by line to accomodate larger files, e.g. the project database
+        for pf in project_files:
+            archive.add(pf)
     	archive.close()
     
-    def untar_project():
+    def untar_project(self):
         if tarfile.is_tarfile(self.bz2_archive):
-            # Attempt to read the first 16 bytes of the archive
             # Raise exception if there is a failure
-    	    project_files = self.config.get_project_files()
             try:
                 with tarfile.open(self.bz2_archive, "r:bz2") as archive:
-                    for pf in project_files:
-                        archive.add(pf)
+                    archive.extractall()
             except e:
                 raise PappyException("Project archive contents corrupted. Error: ", e)
