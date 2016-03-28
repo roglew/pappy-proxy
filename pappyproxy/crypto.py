@@ -11,7 +11,7 @@ import twisted
 from . import compress
 from .util import PappyException
 from base64 import b64encode, b64decode
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from twisted.internet import reactor, defer
 
 class Crypto(object):
@@ -78,7 +78,10 @@ class Crypto(object):
             # Decrypt the project archive
             archive_crypt = open(self.config.crypt_file, 'rb').read()
             archive_file = open(self.config.archive, 'wb')
-            archive = fern.decrypt(archive_crypt)
+            try:
+                archive = fern.decrypt(archive_crypt)
+            except InvalidToken:
+                raise PappyException("Problem decrypting the file, restart pappy to try again")
             
             archive_file.write(archive)
             archive_file.close()
