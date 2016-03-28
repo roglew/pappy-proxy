@@ -160,9 +160,8 @@ class PappySession(object):
             print 'Deleting temporary datafile'
             os.remove(self.config.datafile)
 
-        # If currently in the crypt directory,
-        # encrypt the project, delete clear files
-        if os.getcwd() == self.config.crypt_dir:
+        # Encrypt the project when in crypto mode 
+        if self.config.crypt_session:
             self.encrypt()
     
 def parse_args():
@@ -215,6 +214,8 @@ def main():
     signal.signal(signal.SIGINT, inturrupt_handler)
 
     if settings['crypt']:
+        pappy_config.crypt_file = settings['crypt']
+        pappy_config.crypt_session = True
         session.decrypt()
         conf_settings = pappy_config.load_from_file('./config.json')
         pappy_config.global_load_from_file()

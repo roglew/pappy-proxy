@@ -7,11 +7,10 @@ import pappyproxy
 import zipfile
 import tarfile
 
-# This is a gross hack, please help
-bz2 = None
 try:
     import bz2
-except:
+except ImportError:
+    bz2 = None
     print "BZ2 not installed on your system"
 
 from base64 import b64encode, b64decode
@@ -44,12 +43,10 @@ class Compress(object):
         """
         try:
             zf = zipfile.ZipFile(self.zip_archive, mode="a")
-            project_files = self.config.get_project_files() 
-            for pf in project_files:
-                zf.write(pf)
+            zf.write(self.config.crypt_dir)
             zf.close()
         except e:
-            raise PappyException("Error creating the zipfile", e)
+            raise PappyException("Error creating the zipfile. Error: ", e)
         pass
     
     def unzip_project(self):
@@ -73,11 +70,8 @@ class Compress(object):
     
     def tar_project(self):
         archive = tarfile.open(self.bz2_archive, 'w:bz2')
-        project_files = self.config.get_project_files()
          
-        # Read files line by line to accomodate larger files, e.g. the project database
-        for pf in project_files:
-            archive.add(pf)
+        archive.add(self.config.crypt_dir)
     	archive.close()
     
     def untar_project(self):
@@ -86,5 +80,5 @@ class Compress(object):
             try:
                 with tarfile.open(self.bz2_archive, "r:bz2") as archive:
                     archive.extractall()
-            except e:
+            except tarfile.ExtractError, e:
                 raise PappyException("Project archive contents corrupted. Error: ", e)

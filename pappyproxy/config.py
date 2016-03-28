@@ -99,13 +99,13 @@ class PappyConfig(object):
     The dictionary from ~/.pappy/global_config.json. It contains settings for
     Pappy that are specific to the current computer. Avoid putting settings here,
     especially if it involves specific projects.
-
+     
     .. data: archive 
 
     Project archive compressed as a ``tar.bz2`` archive if libraries available on the system, 
     otherwise falls back to zip archive.
 
-    :Default: 'project.archive'
+    :Default: ``project.archive``
 
     .. data: crypt_dir 
 
@@ -115,14 +115,20 @@ class PappyConfig(object):
     Compressed as a tar.bz2 archive if libraries available on the system, 
     otherwise falls back to zip.
 
-    :Default: 'crypt'
+    :Default: ``crypt``
 
     .. data: crypt_file
 
     Encrypted archive of the temporary working directory ``crypt_dir``. Compressed as a
     tar.bz2 archive if libraries available on the system, otherwise falls back to zip.
 
-    :Default: 'project.crypt'
+    :Default: ``project.crypt``
+     
+    .. data: crypt_session
+    
+    Boolean variable to determine whether pappy started in crypto mode
+    
+    :Default: False
 
     .. data: salt_file
 
@@ -161,8 +167,9 @@ class PappyConfig(object):
         self.global_config_dict = {}
 
         self.archive = 'project.archive' 
-        self.crypt_dir = os.path.join(os.getcwd(), 'crypt')
+        self.crypt_dir = 'crypt'
         self.crypt_file = 'project.crypt'
+        self.crypt_session = False
         self.salt_file = 'project.salt'
     
     def get_default_config(self):

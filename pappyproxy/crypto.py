@@ -27,103 +27,74 @@ class Crypto(object):
         """
         Compress and encrypt the project files, deleting clear-text files afterwards
         """
+        
+        # Leave the crypto working directory
+        os.chdir('../')
 
         # Get the password and salt, then derive the key
         self.crypto_ramp_up()
-
-        # Instantiate the crypto module
-        fern = Fernet(self.key)
-   
-        # Create project archive and crypto archive 
+        
         self.compressor.compress_project()
-        archive_file = open(self.archive, 'rb').read() 
+         
+        # Create project and crypto archive 
+        archive_file = open(self.archive, 'rb') 
         archive_crypt = open(self.config.crypt_file, 'wb')
     
         # Encrypt the archive read as a bytestring
-        crypt_token = fern.encrypt(archive_file)
+        fern = Fernet(self.key)
+        crypt_token = fern.encrypt(archive_file.read())
         archive_crypt.write(crypt_token)
+
+        # Store the salt for the next decryption
+        self.create_salt_file()
+
+        archive_file.close()
+        archive_crypt.close()
     
         # Delete clear-text files
-        # delete_clear_files()
+        self.delete_clear_files()
         
-        # Leave crypto working directory
-        os.chdir('../')
     
     def decrypt_project(self):
         """
         Decrypt and decompress the project files
         """
 
-        # Get the password and salt, then derive the key
-        self.crypto_ramp_up()
+        # If project hasn't been encrypted before, setup crypt working directory
+        crypt_fp = os.path.join(os.getcwd(), self.config.crypt_file)
+        if not os.path.isfile(crypt_fp):
+            os.mkdir(self.config.crypt_dir)
 
-        crypto_path = self.config.crypt_dir
-        
-        if not os.path.isdir(crypto_path):
-            os.mkdir(crypto_path)
-
-        if os.path.isfile(self.config.crypt_file):
-            # Derive the key
-            key = self.crypto_ramp_up()
-            fern = Fernet(key)
-
-            # Decrypt the project archive
-            archive_crypt = open(self.config.crypt_file, 'rb')
-            archive = fern.decrypt(archive_crypt)
-
-            shutil.move(archive, crypto_path)
-            os.chdir(crypto_path)
-            self.compressor.decompress_project()
-        else:
             project_files = self.config.get_project_files()
             for pf in project_files:
-                shutil.copy2(pf, crypto_path)
-            os.chdir(crypto_path)
+                shutil.copy2(pf, self.config.crypt_dir)
+            os.chdir(self.config.crypt_dir)
+        
+        # Otherwise, decrypt and decompress the project 
+        else: 
+            self.crypto_ramp_up()
+            fern = Fernet(self.key)
+
+            # Decrypt the project archive
+            archive_crypt = open(self.config.crypt_file, 'rb').read()
+            archive_file = open(self.config.archive, 'wb')
+            archive = fern.decrypt(archive_crypt)
+            
+            archive_file.write(archive)
+            archive_file.close()
+
+            self.compressor.decompress_project()
+
+            # Force generation of new salt and crypt archive
+            self.delete_crypt_files()
+            
+            os.chdir(self.config.crypt_dir)
              
     def crypto_ramp_up(self):
         if not self.password:
             self.get_password()
         self.set_salt()
         self.derive_key()
-    
-    def delete_clear_files(self):
-        """
-        Deletes all clear-text files left in the project directory.
-        """
-        project_files = self.config.get_project_files()
-        for pf in project_files:
-    	    os.remove(pf)
-    	
-    def delete_crypt_files(self):
-        """
-        Deletes all encrypted-text files in the project directory.
-        Forces generation of new salt after opening and closing the project.
-        Adds security in the case of a one-time compromise of the system.
-        """
-        os.remove(self.config.salt_file)
-        os.remove(self.config.crypt_file)
-    
-    def create_salt_file(self):
-        salt_file = open(self.config.salt_file, 'wb')
-
-        if not self.config.salt:
-            self.set_salt()
-        
-        salt_file.write(self.config.salt)
-        salt_file.close()
-    
-    def set_salt_from_file(self):
-        try:
-            salt_file = open(self.config.salt_file, 'rb')
-            self.salt = salt_file.readline().strip()
-        except:
-            raise PappyException("Unable to read project.salt")
-
-    def set_salt(self):
-        if os.path.isfile(self.config.salt_file):
-            self.set_salt_from_file()
-        else:
-            self.salt = os.urandom(16) 
     
     def get_password(self):
         """
@@ -136,6 +107,25 @@ class Crypto(object):
             self.password = passwd.encode("utf-8")
         except:
             raise PappyException("Invalid password, try again")
+    
+    def set_salt(self):
+        if os.path.isfile(self.config.salt_file):
+            self.set_salt_from_file()
+        else:
+            self.salt = os.urandom(16) 
+    
+    def set_salt_from_file(self):
+        try:
+            salt_file = open(self.config.salt_file, 'rb')
+            self.salt = salt_file.readline().strip()
+        except:
+            raise PappyException("Unable to read project.salt")
+    
+    def create_salt_file(self):
+        salt_file = open(self.config.salt_file, 'wb')
+
+        salt_file.write(self.salt)
+        salt_file.close()
     
     def derive_key(self):
         """
@@ -173,3 +163,19 @@ class Crypto(object):
             raise PappyException("Scrypt failed with type error: ", e)
         except scrypt.error, e:
             raise PappyException("Scrypt failed with internal error: ", e)
+    
+    def delete_clear_files(self):
+        """
+        Deletes all clear-text files left in the project directory.
+        """
+        shutil.rmtree(self.config.crypt_dir)
+        os.remove(self.config.archive)
+    	
+    def delete_crypt_files(self):
+        """
+        Deletes all encrypted-text files in the project directory.
+        Forces generation of new salt after opening and closing the project.
+        Adds security in the case of a one-time compromise of the system.
+        """
+        #os.remove(self.config.salt_file)
+        os.remove(self.config.crypt_file)
