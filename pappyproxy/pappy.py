@@ -70,6 +70,12 @@ class PappySession(object):
     @defer.inlineCallbacks
     def start(self):
         from . import proxy, plugin
+
+        if self.config.crypt_session:
+            self.decrypt()
+            self.config.load_from_file('./config.json')
+            self.config.global_load_from_file()
+            self.delete_data_on_quit = False
         
         # If the data file doesn't exist, create it with restricted permissions
         if not os.path.isfile(self.config.datafile):
@@ -216,10 +222,6 @@ def main():
     if settings['crypt']:
         pappy_config.crypt_file = settings['crypt']
         pappy_config.crypt_session = True
-        session.decrypt()
-        conf_settings = pappy_config.load_from_file('./config.json')
-        pappy_config.global_load_from_file()
-        session.delete_data_on_quit = False
     elif settings['lite']:
         conf_settings = pappy_config.get_default_config()
         conf_settings['debug_dir'] = None

@@ -82,6 +82,8 @@ class Crypto(object):
                 archive = fern.decrypt(archive_crypt)
             except InvalidToken:
                 raise PappyException("Problem decrypting the file, restart pappy to try again")
+                reactor.stop()
+                defer.returnValue(None)
             
             archive_file.write(archive)
             archive_file.close()
@@ -162,7 +164,7 @@ class Crypto(object):
         try:
             if not self.key:
                 self.key = b64encode(scrypt.hash(self.password, self.salt, buflen=32))
-        except TypeError, e:
+        except TypeError as e:
             raise PappyException("Scrypt failed with type error: ", e)
         except scrypt.error, e:
             raise PappyException("Scrypt failed with internal error: ", e)

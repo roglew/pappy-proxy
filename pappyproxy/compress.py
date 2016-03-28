@@ -45,9 +45,8 @@ class Compress(object):
             zf = zipfile.ZipFile(self.zip_archive, mode="a")
             zf.write(self.config.crypt_dir)
             zf.close()
-        except e:
-            raise PappyException("Error creating the zipfile. Error: ", e)
-        pass
+        except zipfile.LargeZipFile as e:
+            raise PappyException("Project zipfile too large. Error: ", e)
     
     def unzip_project(self):
         """
@@ -63,7 +62,7 @@ class Compress(object):
     
         try:
             zf.extract("config.json")
-        except e:
+        except zipfile.BadZipfile as e:
             raise PappyException("Project archive contents corrupted. Error: ", e)
     
         zf.extractall()
@@ -80,5 +79,5 @@ class Compress(object):
             try:
                 with tarfile.open(self.bz2_archive, "r:bz2") as archive:
                     archive.extractall()
-            except tarfile.ExtractError, e:
+            except tarfile.ExtractError as e:
                 raise PappyException("Project archive contents corrupted. Error: ", e)
