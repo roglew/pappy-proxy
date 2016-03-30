@@ -4,7 +4,7 @@ import shlex
 
 from pappyproxy.plugin import active_intercepting_macros, add_intercepting_macro, remove_intercepting_macro
 from pappyproxy.macros import load_macros, macro_from_requests, gen_imacro
-from pappyproxy.util import PappyException, load_reqlist
+from pappyproxy.util import PappyException, load_reqlist, autocomplete_startswith
 from twisted.internet import defer
 
 loaded_macros = []
@@ -64,6 +64,11 @@ def load_macros_cmd(line):
                 int_macro_dict[macro.short_name] = macro
             loaded_int_macros.append(macro)
             print 'Loaded "%s"' % macro
+            
+def complete_run_macro(text, line, begidx, endidx):
+    global macro_dict
+    strs = [k for k,v in macro_dict.iteritems()]
+    return autocomplete_startswith(text, strs)
 
 def run_macro(line):
     """
@@ -80,6 +85,24 @@ def run_macro(line):
         raise PappyException('%s not a loaded macro' % mname)
     macro = macro_dict[mname]
     macro.execute(args[1:])
+
+def complete_run_int_macro(text, line, begidx, endidx):
+    global int_macro_dict
+    global loaded_int_macros
+    running = []
+    not_running = []
+    for macro in loaded_int_macros:
+        if macro.name in [m.name for k, m in active_intercepting_macros().iteritems()]:
+            running.append(macro)
+        else:
+            not_running.append(macro)
+    strs = []
+    for m in not_running:
+        strs.append(macro.name)
+        strs.append(macro.file_name)
+        if macro.short_name:
+            strs.append(macro.short_name)
+    return autocomplete_startswith(text, strs)
 
 def run_int_macro(line):
     """
@@ -102,6 +125,24 @@ def run_int_macro(line):
     except Exception as e:
         print 'Error initializing macro:'
         raise e
+
+def complete_stop_int_macro(text, line, begidx, endidx):
+    global int_macro_dict
+    global loaded_int_macros
+    running = []
+    not_running = []
+    for macro in loaded_int_macros:
+        if macro.name in [m.name for k, m in active_intercepting_macros().iteritems()]:
+            running.append(macro)
+        else:
+            not_running.append(macro)
+    strs = []
+    for m in running:
+        strs.append(macro.name)
+        strs.append(macro.file_name)
+        if macro.short_name:
+            strs.append(macro.short_name)
+    return autocomplete_startswith(text, strs)
 
 def stop_int_macro(line):
     """
@@ -201,9 +242,9 @@ def load_cmds(cmd):
         'generate_int_macro': (generate_int_macro, None),
         'generate_macro': (generate_macro, None),
         'list_int_macros': (list_int_macros, None),
-        'stop_int_macro': (stop_int_macro, None),
-        'run_int_macro': (run_int_macro, None),
-        'run_macro': (run_macro, None),
+        'stop_int_macro': (stop_int_macro, complete_stop_int_macro),
+        'run_int_macro': (run_int_macro, complete_run_int_macro),
+        'run_macro': (run_macro, complete_run_macro),
         'load_macros': (load_macros_cmd, None),
     })
     cmd.add_aliases([

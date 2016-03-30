@@ -262,13 +262,17 @@ class ProxyClientFactory(ClientFactory):
         self.intercepting_macros = {}
         self.use_as_proxy = False
         self.sendback_function = None
+        self.dropped_request = False
+
+        # Only used for unit tests. Do not use.
+        self._use_string_transport = False
+        self._conn_info = None
 
     def log(self, message, symbol='*', verbosity_level=1):
         log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
 
-    def buildProtocol(self, addr, _do_callback=True):
+    def buildProtocol(self, addr):
         from pappyproxy.pappy import session
-        # _do_callback is intended to help with testing and should not be modified
         if self.use_as_proxy and context.in_scope(self.request):
             p = UpstreamHTTPProxyClient(self.request)
             if 'username' in session.config.http_proxy and 'password' in session.config.http_proxy:
@@ -279,8 +283,7 @@ class ProxyClientFactory(ClientFactory):
             p = ProxyClient(self.request)
         p.factory = self
         self.log("Building protocol", verbosity_level=3)
-        if _do_callback:
-            p.data_defer.addCallback(self.return_request_pair)
+        p.data_defer.addCallback(self.return_request_pair)
         return p
 
     def clientConnectionFailed(self, connector, reason):
@@ -310,17 +313,24 @@ class ProxyClientFactory(ClientFactory):
                 else:
                     yield self.request.async_deep_save()
 
-            (sendreq, mangled) = yield macros.mangle_request(sendreq, mangle_macros)
+            (mangreq, mangled) = yield macros.mangle_request(sendreq, mangle_macros)
+            if mangreq is None:
+                self.log("Request dropped. Closing connections.")
+                self.request.tags.add('dropped')
+                self.request.response = None
+                self.dropped_request = True
+                defer.returnValue(None)
+            else:
+                sendreq = mangreq
+                if sendreq and mangled and self.save_all:
+                    self.start_time = datetime.datetime.utcnow()
+                    sendreq.time_start = self.start_time
+                    yield sendreq.async_deep_save()
 
-            if sendreq and mangled and self.save_all:
-                self.start_time = datetime.datetime.utcnow()
-                sendreq.time_start = self.start_time
-                yield sendreq.async_deep_save()
-
-            if session.config.http_proxy:
-                self.use_as_proxy = True
-                if (not self.stream_response) and self.sendback_function:
-                    self.data_defer.addCallback(self.sendback_function)
+                if session.config.http_proxy:
+                    self.use_as_proxy = True
+                    if (not self.stream_response) and self.sendback_function:
+                        self.data_defer.addCallback(self.sendback_function)
         else:
             self.log("Request out of scope, passing along unmangled")
         self.request = sendreq
@@ -337,7 +347,7 @@ class ProxyClientFactory(ClientFactory):
         from pappyproxy.pappy import session
 
         self.end_time = datetime.datetime.utcnow()
-        if session.config.debug_to_file or session.config.debug_verbosity > 0:
+        if session.config.debug_to_file or session.config.debug_verbosity > 0 and request.response:
             log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
 
         request.time_start = self.start_time
@@ -351,14 +361,15 @@ class ProxyClientFactory(ClientFactory):
                 else:
                     yield request.async_deep_save()
 
-            mangled = yield macros.mangle_response(request, mangle_macros)
+            if request.response:
+                mangled = yield macros.mangle_response(request, mangle_macros)
 
-            if mangled and self.save_all:
-                yield request.async_deep_save()
+                if mangled and self.save_all:
+                    yield request.async_deep_save()
 
-            if request.response and (session.config.debug_to_file or session.config.debug_verbosity > 0):
-                log_request(printable_data(request.response.full_response),
-                            id=self.connection_id, symbol='<', verbosity_level=3)
+                if request.response and (session.config.debug_to_file or session.config.debug_verbosity > 0):
+                    log_request(printable_data(request.response.full_response),
+                                id=self.connection_id, symbol='<', verbosity_level=3)
         else:
             self.log("Response out of scope, passing along unmangled")
         self.data_defer.callback(request)
@@ -369,6 +380,10 @@ class ProxyClientFactory(ClientFactory):
         from pappyproxy.pappy import session
 
         yield self.prepare_request()
+        if self.dropped_request:
+            self.data_defer.callback(self.request)
+            defer.returnValue(None)
+
         if context.in_scope(self.request):
             # Get connection using config
             endpoint = get_endpoint(self.request.host,
@@ -380,12 +395,26 @@ class ProxyClientFactory(ClientFactory):
             # Just forward it normally
             endpoint = get_endpoint(self.request.host,
                                     self.request.port,
-                                    self.request.is_ssl)
+                                    self.request.is_ssl,
+                                    socks_config=None,
+                                    use_http_proxy=False)
 
-        # Connect via the endpoint
-        self.log("Accessing using endpoint")
-        yield endpoint.connect(self)
-        self.log("Connected")
+        if self._use_string_transport:
+            from pappyproxy.tests.testutil import TLSStringTransport
+            # "Connect" via string transport
+            protocol = self.buildProtocol(('127.0.0.1', 0))
+
+            # Pass the protocol back to the test
+            if self._conn_info:
+                self._conn_info['protocol'] = protocol
+
+            tr = TLSStringTransport()
+            protocol.makeConnection(tr)
+        else:
+            # Connect via the endpoint
+            self.log("Accessing using endpoint")
+            yield endpoint.connect(self)
+            self.log("Connected")
 
 class ProxyServerFactory(ServerFactory):
 
@@ -529,6 +558,14 @@ class ProxyServer(LineReceiver):
     def send_response_back(self, request):
         if request.response is not None:
             self.transport.write(request.response.full_response)
+        else:
+            droppedrsp = http.Response(('HTTP/1.1 200 OK\r\n'
+                                        'Connection: close\r\n'
+                                        'Cache-control: no-cache\r\n'
+                                        'Pragma: no-cache\r\n'
+                                        'Cache-control: no-store\r\n'
+                                        'X-Frame-Options: DENY\r\n\r\n'))
+            self.transport.write(droppedrsp.full_message)
         self.log("Response sent back, losing connection")
         self.transport.loseConnection()
         
