@@ -65,7 +65,6 @@ class PappySession(object):
         self.delete_data_on_quit = False
         self.ports = None
         self.crypto = crypto.Crypto(sessconfig)
-        self.password = None
 
     @defer.inlineCallbacks
     def start(self):
@@ -155,8 +154,14 @@ class PappySession(object):
 
     @defer.inlineCallbacks
     def decrypt(self):
-        yield self.crypto.decrypt_project()
-                
+        # Attempt to decrypt project archive
+        if self.crypto.decrypt_project():
+            yield True
+        # Quit pappy on failure
+        else:
+            reactor.stop() 
+            defer.returnValue(None)
+             
     @defer.inlineCallbacks
     def cleanup(self, ignored=None):
         for port in self.ports:
@@ -175,7 +180,12 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description='An intercepting proxy for testing web applications.')
     parser.add_argument('-l', '--lite', help='Run the proxy in "lite" mode', action='store_true')
-    parser.add_argument('-c', '--crypt', type=str, nargs='?', help='Start pappy in "crypto" mode, optionally supply a name for the encrypted project archive [CRYPT]')
+    try:
+        parser.add_argument('-c', '--crypt', type=str, nargs=1, help='Start pappy in "crypto" mode, must supply a name for the encrypted project archive [CRYPT]')
+    except:
+        print 'Must supply a project name: pappy -c <project_name>'
+        reactor.stop() 
+        defer.returnValue(None)
 
     args = parser.parse_args(sys.argv[1:])
     settings = {}
@@ -186,9 +196,8 @@ def parse_args():
         settings['lite'] = False
 
     if args.crypt:
-        settings['crypt'] = args.crypt 
-    elif args.crypt == "":
-        settings['crypt'] = 'project.crypt'
+        # Convert from single-item list produced by argparse `nargs=1`
+        settings['crypt'] = args.crypt[0].encode('utf-8') 
     else:
         settings['crypt'] = None
 
