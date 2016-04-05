@@ -181,9 +181,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description='An intercepting proxy for testing web applications.')
     parser.add_argument('-l', '--lite', help='Run the proxy in "lite" mode', action='store_true')
     try:
-        hlpmsg = 'Start pappy in "crypto" mode,'+
-                 'must supply a name for the encrypted'+
-                 'project archive [CRYPT]'
+        hlpmsg = ''.join(['Start pappy in "crypto" mode,',
+                 'must supply a name for the encrypted',
+                 'project archive [CRYPT]'])
         parser.add_argument('-c', '--crypt', type=str, nargs=1, help=hlpmsg)
     except:
         print 'Must supply a project name: pappy -c <project_name>'
