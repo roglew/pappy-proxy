@@ -22,7 +22,7 @@ class Crypto(object):
         self.key = None
         self.password = None
         self.salt = None
-
+         
     def encrypt_project(self):
         """
         Compress and encrypt the project files, deleting clear-text files afterwards
@@ -30,7 +30,7 @@ class Crypto(object):
         
         # Leave the crypto working directory
         os.chdir('../')
-
+        
         self.compressor.compress_project()
          
         # Create project and crypto archive 
@@ -44,7 +44,7 @@ class Crypto(object):
         fern = Fernet(self.key)
         crypt_token = fern.encrypt(archive_file.read())
         archive_crypt.write(crypt_token)
-
+        
         # Store the salt for the next decryption
         self.create_salt_file()
 
@@ -59,7 +59,7 @@ class Crypto(object):
         """
         Decrypt and decompress the project files
         """
-
+        
         # If project hasn't been encrypted before, setup crypt working directory
         if not os.path.isfile(self.config.crypt_file):
             os.mkdir(self.config.crypt_dir)
@@ -74,7 +74,7 @@ class Crypto(object):
         else: 
             archive_crypt = open(self.config.crypt_file, 'rb').read()
             archive_file = open(self.config.archive, 'wb')
-
+            
             retries = 3
             while True:
                 try:
@@ -146,39 +146,39 @@ class Crypto(object):
              
     def create_salt_file(self):
         salt_file = open(self.config.salt_file, 'wb')
-
+        
         salt_file.write(self.salt)
         salt_file.close()
-    
+         
     def derive_key(self):
         """
         Derive a key sufficient for use as a cryptographic key
         used to encrypt the project (currently: cryptography.Fernet).
-    
+         
         cryptography.Fernet utilizes AES-CBC-128, requiring a 32-byte key.
         Parameter notes from the py-scrypt source-code:
         https://bitbucket.org/mhallin/py-scrypt/
-    
+         
         Compute scrypt(password, salt, N, r, p, buflen).
-    
+         
         The parameters r, p, and buflen must satisfy r * p < 2^30 and
         buflen <= (2^32 - 1) * 32. The parameter N must be a power of 2
         greater than 1. N, r and p must all be positive.
-    
+         
         Notes for Python 2:
           - `password` and `salt` must be str instances
           - The result will be a str instance
-    
+         
         Notes for Python 3:
           - `password` and `salt` can be both str and bytes. If they are str
             instances, they wil be encoded with utf-8.
           - The result will be a bytes instance
-    
+         
         Exceptions raised:
           - TypeError on invalid input
           - scrypt.error if scrypt failed
         """
-    
+         
         try:
             if not self.key:
                 self.key = b64encode(scrypt.hash(self.password, self.salt, buflen=32))
@@ -186,7 +186,7 @@ class Crypto(object):
             raise PappyException("Scrypt failed with type error: ", e)
         except scrypt.error, e:
             raise PappyException("Scrypt failed with internal error: ", e)
-    
+             
     def delete_clear_files(self):
         """
         Deletes all clear-text files left in the project directory.
