@@ -170,6 +170,7 @@ class PappyConfig(object):
         self.crypt_dir = 'crypt'
         self.crypt_file = 'project.crypt'
         self.crypt_session = False
+        self.crypt_success = False
         self.salt_file = 'project.salt'
     
     def get_default_config(self):

@@ -90,6 +90,7 @@ class Crypto(object):
                     # Quit pappy if user doesn't retry
                     # or if all retries exhuasted
                     if not self.confirm_password_retry() or retries <= 0:
+                        self.config.crypt_success = False
                         return False
                     else:
                         self.password = None
@@ -106,6 +107,7 @@ class Crypto(object):
             self.delete_crypt_files()
 
             os.chdir(self.config.crypt_dir)
+            self.config.crypt_success = True
             return True
 
     def confirm_password_retry(self):

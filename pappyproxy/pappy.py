@@ -72,9 +72,11 @@ class PappySession(object):
 
         if self.config.crypt_session:
             self.decrypt()
-            self.config.load_from_file('./config.json')
-            self.config.global_load_from_file()
-            self.delete_data_on_quit = False
+
+            if self.config.crypt_success:
+                self.config.load_from_file('./config.json')
+                self.config.global_load_from_file()
+                self.delete_data_on_quit = False
         
         # If the data file doesn't exist, create it with restricted permissions
         if not os.path.isfile(self.config.datafile):
