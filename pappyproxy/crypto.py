@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import crochet
+import getpass
 import glob
 import os
 import pappyproxy
@@ -55,6 +56,7 @@ class Crypto(object):
 
         # Delete clear-text files
         self.delete_clear_files()
+        return True
 
     def decrypt_project(self):
         """
@@ -74,7 +76,10 @@ class Crypto(object):
 
         # Otherwise, decrypt and decompress the project
         else:
-            archive_crypt = open(self.config.crypt_file, 'rb').read()
+            cf = self.config.crypt_file
+            sl = self.config.salt_len
+            crl = os.path.getsize(cf) - sl
+            archive_crypt = open(cf, 'rb').read(crl)
             archive_file = open(self.config.archive, 'wb')
 
             retries = 3
@@ -103,11 +108,7 @@ class Crypto(object):
 
             self.compressor.decompress_project()
 
-            # Force generation of new salt and crypt archive
-            self.delete_crypt_files()
-
             os.chdir(self.config.crypt_dir)
-            self.config.crypt_success = True
             return True
 
     def confirm_password_retry(self):
@@ -130,27 +131,40 @@ class Crypto(object):
         """
         encoded_passwd = ""
         try:
-            passwd = raw_input("Enter a password: ").strip()
+            passwd = getpass.getpass("Enter a password: ").strip()
             self.password = passwd.encode("utf-8")
         except:
             raise PappyException("Invalid password, try again")
 
     def set_salt(self):
-        if os.path.isfile(self.config.salt_file):
+        if os.path.isfile(self.config.crypt_file):
             self.set_salt_from_file()
         else:
             self.salt = os.urandom(16)
 
     def set_salt_from_file(self):
         try:
-            salt_file = open(self.config.salt_file, 'rb')
-            self.salt = salt_file.readline().strip()
+            # Seek to `salt_len` bytes before the EOF
+            # then read `salt_len` bytes to retrieve the salt
+
+            # WARNING: must open `crypt_file` in `rb` mode
+            # or `salt_file.seek()` will result in undefined
+            # behavior.
+            salt_file = open(self.config.crypt_file, 'rb')
+            sl = self.config.salt_len
+            salt_file.seek(sl, 2)
+            self.salt = salt_file.read(sl)
         except:
-            raise PappyException("Unable to read project.salt")
+            cf = self.config.crypt_file
+            raise PappyException("Unable to read %s" % cf)
 
     def create_salt_file(self):
-        salt_file = open(self.config.salt_file, 'wb')
-
+        # WARNING: must open `crypt_file` in `wb` mode
+        # or `salt_file.seek()` will result in undefined
+        # behavior.
+        salt_file = open(self.config.crypt_file, 'wb')
+        # Seek to the end of the encrypted archive
+        salt_file.seek(0,2)
         salt_file.write(self.salt)
         salt_file.close()
 

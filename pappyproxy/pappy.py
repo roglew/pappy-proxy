@@ -26,6 +26,7 @@ from . import context
 from . import crypto
 from . import http
 from .console import ProxyCmd
+from .util import PappyException
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, defer
 from twisted.internet.error import CannotListenError
@@ -71,9 +72,7 @@ class PappySession(object):
         from . import proxy, plugin
 
         if self.config.crypt_session:
-            self.decrypt()
-
-            if self.config.crypt_success:
+            if self.decrypt():
                 self.config.load_from_file('./config.json')
                 self.config.global_load_from_file()
                 self.delete_data_on_quit = False
@@ -150,17 +149,23 @@ class PappySession(object):
         self.complete_defer = deferToThread(self.cons.cmdloop)
         self.complete_defer.addCallback(self.cleanup)
 
-    @defer.inlineCallbacks
     def encrypt(self):
-        yield self.crypto.encrypt_project()     
+        if self.crypto.encrypt_project():
+            return True
+        else:
+            errmsg = "There was an issue encrypting the project."
+            raise PappyException(errmsg)
+            reactor.stop()
+            defer.returnValue(None)
 
-    @defer.inlineCallbacks
     def decrypt(self):
         # Attempt to decrypt project archive
         if self.crypto.decrypt_project():
-            yield True
+            return True
         # Quit pappy on failure
         else:
+            errmsg = "There was an issue encrypting the project."
+            raise PappyException(errmsg)
             reactor.stop()
             defer.returnValue(None)
 

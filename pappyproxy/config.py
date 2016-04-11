@@ -130,14 +130,11 @@ class PappyConfig(object):
     
     :Default: False
 
-    .. data: salt_file
+    .. data: salt_len
 
-    Clear-text file containing the salt generated for key derivation. A new salt
-    will be generated each time the project is encrypted. After successfully
-    decrypting the project file (``project.crypt``), the salt file (``project.salt``)
-    will be deleted.
+    Length of the nonce-salt value appended to the end of `crypt_file`
 
-    :Default: ``project.salt``
+    :Default: 16
     """
 
     def __init__(self):
@@ -170,8 +167,7 @@ class PappyConfig(object):
         self.crypt_dir = 'crypt'
         self.crypt_file = 'project.crypt'
         self.crypt_session = False
-        self.crypt_success = False
-        self.salt_file = 'project.salt'
+        self.salt_len = 16
     
     def get_default_config(self):
         default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -185,8 +181,6 @@ class PappyConfig(object):
         pp = os.getcwd() + os.sep 
         project_files = [pp+f for f in file_glob if os.path.isfile(pp+f)]
         
-        if self.salt_file in project_files:
-            project_files.remove(self.salt_file)
         if self.crypt_file in project_files:
             project_files.remove(self.crypt_file)
         
