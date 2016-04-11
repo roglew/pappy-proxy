@@ -1,7 +1,7 @@
 import crochet
 import pappyproxy
 
-from pappyproxy.util import PappyException, confirm
+from pappyproxy.util import PappyException, confirm, autocomplete_startswith
 from pappyproxy.http import Request
 from twisted.internet import defer
 
@@ -40,6 +40,11 @@ class BuiltinFilters(object):
         return pappyproxy.context.Filter(BuiltinFilters._filters[name][1])
 
 
+def complete_filtercmd(text, line, begidx, endidx):
+    strs = [k for k, v in pappyproxy.context.Filter._filter_functions.iteritems()]
+    strs += [k for k, v in pappyproxy.context.Filter._async_filter_functions.iteritems()]
+    return autocomplete_startswith(text, strs)
+    
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
 def filtercmd(line):
@@ -179,7 +184,7 @@ def load_cmds(cmd):
         'filter_clear': (filter_clear, None),
         'filter_up': (filter_up, None),
         'builtin_filter': (builtin_filter, complete_builtin_filter),
-        'filter': (filtercmd, None),
+        'filter': (filtercmd, complete_filtercmd),
     })
     cmd.add_aliases([
         #('filter_prune', ''),

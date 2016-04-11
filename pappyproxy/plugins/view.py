@@ -10,7 +10,7 @@ import urllib
 from pappyproxy.util import PappyException, utc2local, load_reqlist, print_table, print_request_rows, get_req_data_row
 from pappyproxy.http import Request, repeatable_parse_qs
 from twisted.internet import defer
-from pappyproxy.plugin import main_context_ids
+from pappyproxy.plugin import async_main_context_ids
 from pappyproxy.colors import Colors, Styles, verb_color, scode_color, path_formatter, host_color
 from pygments.formatters import TerminalFormatter
 from pygments.lexers.data import JsonLexer
@@ -255,7 +255,7 @@ def list_reqs(line):
         print_count = 25
 
     rows = []
-    ids = yield main_context_ids(print_count)
+    ids = yield async_main_context_ids(print_count)
     for i in ids:
         req = yield Request.load_request(i)
         rows.append(get_req_data_row(req))
@@ -477,7 +477,7 @@ def get_param_info(line):
 
     found_params = {}
 
-    ids = yield main_context_ids()
+    ids = yield async_main_context_ids()
     for i in ids:
         req = yield Request.load_request(i)
         for k, v in req.url_params.all_pairs():
@@ -501,17 +501,20 @@ def dump_response(line):
     """
     # dump the data of a response
     args = shlex.split(line)
-    reqid = args[0]
-    req = yield Request.load_request(reqid)
-    rsp = req.response
-    if len(args) >= 2:
-        fname = args[1]
-    else:
-        fname = req.path.split('/')[-1]
+    reqs = yield load_reqlist(args[0])
+    for req in reqs:
+        if req.response:
+            rsp = req.response
+            if len(args) >= 2:
+                fname = args[1]
+            else:
+                fname = req.path.split('/')[-1]
 
-    with open(fname, 'w') as f:
-        f.write(rsp.body)
-    print 'Response data written to %s' % fname
+            with open(fname, 'w') as f:
+                f.write(rsp.body)
+            print 'Response data written to %s' % fname
+        else:
+            print 'Request %s does not have a response' % req.reqid
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -525,7 +528,7 @@ def site_map(line):
         paths = True
     else:
         paths = False
-    ids = yield main_context_ids()
+    ids = yield async_main_context_ids()
     paths_set = set()
     for reqid in ids:
         req = yield Request.load_request(reqid)

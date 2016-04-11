@@ -174,6 +174,8 @@ Configuration for each project is done in the `config.json` file. The file is a 
 | `debug_dir` (optional) | Where connection debug info should be stored. If not present, debug info is not saved to a file. |
 | `cert_dir` | Where the CA cert and the private key for the CA cert are stored |
 | `proxy_listeners` | A list of dicts which describe which ports the proxy will listen on. Each item is a dict with "port" and "interface" values which determine which port and interface to listen on. For example, if port=8000 and the interface is 127.0.0.1, the proxy will only accept connections from localhost on port 8000. To accept connections from anywhere, set the interface to 0.0.0.0. |
+| `socks_proxy` | A dictionary with details on how to connect to an upstream SOCKS proxy to send all in-scope requests through. See the secion on upstream SOCKS proxies for more information. |
+| `http_proxy` | A dictionary with details on how to connect to an upstream http proxy to send all in-scope requests through. See the section on upstream http proxies for more information. |
 
 The following tokens will also be replaced with values:
 
@@ -378,6 +380,11 @@ Some arguments can take multiple IDs for an argument. To pass multiple IDs to a 
 
 * `viq 1,2,u3` View information about requests 1, 2, and the unmangled version of 3
 * `gma foo 4,5,6` Generate a macro with definitions for requests 4, 5, and 6
+
+In addition, you can pass in a wildcard to include all in context requests.
+
+* `viq *` View information about all in-context requests
+* `dump_response *` Dump the responses of all in-context requests (will overwrite duplicates)
 
 Context
 -------
@@ -1123,6 +1130,13 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.10
+    * Add wildcard support for requests that can take in multiple request ids
+    * Update dump_response to dump multiple requests at the same time
+    * More autocompleters (macro commands, field for filters)
+    * Add non-async function to get in-context request IDs. Now macros can scan over all in-context stuff and do things with them.
+    * Improve sessions to be used to maintain state with macros
+    * Bugfixes
 * 0.2.9
     * Fix bugs/clean up some code
 * 0.2.8
