@@ -68,19 +68,8 @@ class Crypto(object):
         Decrypt and decompress the project files
         """
 
-        # If project hasn't been encrypted before,
-        # setup crypt working directory
-        if not os.path.isfile(self.config.crypt_file):
-            os.mkdir(self.config.crypt_dir)
-
-            project_files = self.config.get_project_files()
-            for pf in project_files:
-                shutil.copy2(pf, self.config.crypt_dir)
-            os.chdir(self.config.crypt_dir)
-            return True
-
-        # Otherwise, decrypt and decompress the project
-        else:
+        # Decrypt and decompress the project if crypt_file exists
+        if os.path.isfile(self.config.crypt_file):
             cf = self.config.crypt_file
             sl = self.config.salt_len
             crl = os.path.getsize(cf) - sl
@@ -116,6 +105,22 @@ class Crypto(object):
 
             os.chdir(self.config.crypt_dir)
             return True
+        # If project exited before encrypting the working directory
+        # change to the working directory to resume the session
+	elif os.path.isdir(self.config.crypt_dir):
+            os.chdir(self.config.crypt_dir)
+            return True
+        # If project hasn't been encrypted before,
+        # setup crypt working directory
+        else:
+            os.mkdir(self.config.crypt_dir)
+
+            project_files = self.config.get_project_files()
+            for pf in project_files:
+                shutil.copy2(pf, self.config.crypt_dir)
+            os.chdir(self.config.crypt_dir)
+            return True
+
 
     def confirm_password_retry(self):
         answer = raw_input("Re-enter your password? (y/n): ").strip()
