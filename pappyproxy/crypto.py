@@ -32,27 +32,32 @@ class Crypto(object):
         """
 
         # Leave the crypto working directory
-        os.chdir('../')
+        if self.config.crypt_dir in os.getcwd():
+            os.chdir('../')
 
         self.compressor.compress_project()
+
+        # Get the password and salt, then derive the key
+        self.crypto_ramp_up()
 
         # Create project and crypto archive
         archive_file = open(self.archive, 'rb')
         archive_crypt = open(self.config.crypt_file, 'wb')
 
-        # Get the password and salt, then derive the key
-        self.crypto_ramp_up()
-
-        # Encrypt the archive read as a bytestring
-        fern = Fernet(self.key)
-        crypt_token = fern.encrypt(archive_file.read())
-        archive_crypt.write(crypt_token)
-
-        # Store the salt for the next decryption
-        self.create_salt_file()
+        try:
+            # Encrypt the archive read as a bytestring
+            fern = Fernet(self.key)
+            crypt_token = fern.encrypt(archive_file.read())
+            archive_crypt.write(crypt_token)
+        except InvalidToken as e:
+            raise PappyException("Error encrypting project: ", e)
+            return False
 
         archive_file.close()
         archive_crypt.close()
+
+        # Store the salt for the next decryption
+        self.create_salt_file()
 
         # Delete clear-text files
         self.delete_clear_files()
@@ -79,6 +84,7 @@ class Crypto(object):
             cf = self.config.crypt_file
             sl = self.config.salt_len
             crl = os.path.getsize(cf) - sl
+
             archive_crypt = open(cf, 'rb').read(crl)
             archive_file = open(self.config.archive, 'wb')
 
@@ -89,18 +95,16 @@ class Crypto(object):
                     fern = Fernet(self.key)
                     archive = fern.decrypt(archive_crypt)
                     break
-                except InvalidToken:
-                    print "Invalid password"
+                except InvalidToken as e:
+                    print "Invalid decryption: ", e
                     retries -= 1
                     # Quit pappy if user doesn't retry
                     # or if all retries exhuasted
                     if not self.confirm_password_retry() or retries <= 0:
-                        self.config.crypt_success = False
                         return False
                     else:
                         self.password = None
                         self.key = None
-                        self.salt = None
                         pass
 
             archive_file.write(archive)
@@ -112,7 +116,7 @@ class Crypto(object):
             return True
 
     def confirm_password_retry(self):
-        answer = raw_input("Re-enter your password? (y/n)").strip()
+        answer = raw_input("Re-enter your password? (y/n): ").strip()
         if answer[0] == "y" or answer[0] == "Y":
             return True
         else:
@@ -121,7 +125,8 @@ class Crypto(object):
     def crypto_ramp_up(self):
         if not self.password:
             self.get_password()
-        self.set_salt()
+        if not self.salt:
+            self.set_salt()
         self.derive_key()
 
     def get_password(self):
@@ -137,7 +142,11 @@ class Crypto(object):
             raise PappyException("Invalid password, try again")
 
     def set_salt(self):
-        if os.path.isfile(self.config.crypt_file):
+        if self.config.crypt_dir in os.getcwd():
+            os.chdir('../')
+            self.set_salt_from_file()
+            os.chdir(self.config.crypt_dir)
+        elif os.path.isfile(self.config.crypt_file):
             self.set_salt_from_file()
         else:
             self.salt = os.urandom(16)
@@ -152,19 +161,17 @@ class Crypto(object):
             # behavior.
             salt_file = open(self.config.crypt_file, 'rb')
             sl = self.config.salt_len
-            salt_file.seek(sl, 2)
+            # Negate the salt length to seek to the 
+            # correct position in the buffer
+            salt_file.seek(-sl, 2)
             self.salt = salt_file.read(sl)
+            salt_file.close()
         except:
             cf = self.config.crypt_file
             raise PappyException("Unable to read %s" % cf)
 
     def create_salt_file(self):
-        # WARNING: must open `crypt_file` in `wb` mode
-        # or `salt_file.seek()` will result in undefined
-        # behavior.
-        salt_file = open(self.config.crypt_file, 'wb')
-        # Seek to the end of the encrypted archive
-        salt_file.seek(0,2)
+        salt_file = open(self.config.crypt_file, 'a')
         salt_file.write(self.salt)
         salt_file.close()
 

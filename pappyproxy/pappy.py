@@ -76,6 +76,9 @@ class PappySession(object):
                 self.config.load_from_file('./config.json')
                 self.config.global_load_from_file()
                 self.delete_data_on_quit = False
+            else:
+                self.complete_defer.callback(None)
+                return
         
         # If the data file doesn't exist, create it with restricted permissions
         if not os.path.isfile(self.config.datafile):
@@ -153,10 +156,7 @@ class PappySession(object):
         if self.crypto.encrypt_project():
             return True
         else:
-            errmsg = "There was an issue encrypting the project."
-            raise PappyException(errmsg)
-            reactor.stop()
-            defer.returnValue(None)
+            return False
 
     def decrypt(self):
         # Attempt to decrypt project archive
@@ -164,10 +164,7 @@ class PappySession(object):
             return True
         # Quit pappy on failure
         else:
-            errmsg = "There was an issue encrypting the project."
-            raise PappyException(errmsg)
-            reactor.stop()
-            defer.returnValue(None)
+            return False
 
     @defer.inlineCallbacks
     def cleanup(self, ignored=None):
@@ -187,6 +184,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description='An intercepting proxy for testing web applications.')
     parser.add_argument('-l', '--lite', help='Run the proxy in "lite" mode', action='store_true')
+    parser.add_argument('-d', '--debug', help='Run the proxy in "debug" mode', action='store_true')
     try:
         hlpmsg = ''.join(['Start pappy in "crypto" mode,',
                  'must supply a name for the encrypted',
@@ -211,6 +209,10 @@ def parse_args():
     else:
         settings['crypt'] = None
 
+    if args.debug:
+        settings['debug'] = True
+    else:
+        settings['debug'] = False
     return settings
 
 def set_text_factory(conn):
@@ -256,6 +258,9 @@ def main():
         pappy_config.load_from_file('./config.json')
         pappy_config.global_load_from_file()
         session.delete_data_on_quit = False
+
+    if settings['debug']:
+        pappy_config.debug = True
 
     yield session.start()
 

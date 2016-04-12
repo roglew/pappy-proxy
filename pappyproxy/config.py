@@ -164,6 +164,7 @@ class PappyConfig(object):
         self.global_config_dict = {}
 
         self.archive = 'project.archive' 
+        self.debug = False
         self.crypt_dir = 'crypt'
         self.crypt_file = 'project.crypt'
         self.crypt_session = False
