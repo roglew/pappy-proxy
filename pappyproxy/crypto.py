@@ -101,6 +101,7 @@ class Crypto(object):
                     # Quit pappy if user doesn't retry
                     # or if all retries exhuasted
                     if not self.confirm_password_retry() or retries <= 0:
+                        os.remove(self.config.archive)
                         return False
                     else:
                         self.password = None
