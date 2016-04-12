@@ -111,6 +111,7 @@ class Crypto(object):
             archive_file.close()
 
             self.compressor.decompress_project()
+            self.delete_crypt_files()
 
             os.chdir(self.config.crypt_dir)
             return True
