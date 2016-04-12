@@ -186,6 +186,10 @@ def run_without_color(line):
     with Capturing() as output:
        session.cons.onecmd(line.strip())
     print remove_color(output.val)
+    
+def version(line):
+    import pappyproxy
+    print pappyproxy.__version__
         
 def load_cmds(cmd):
     cmd.set_cmds({
@@ -197,6 +201,7 @@ def load_cmds(cmd):
         'merge': (merge_datafile, None),
         'nocolor': (run_without_color, None),
         'watch': (watch_proxy, None),
+        'version': (version, None),
     })
     cmd.add_aliases([
         #('rpy', ''),

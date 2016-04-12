@@ -10,7 +10,9 @@ import imp
 import os
 import pappyproxy
 import stat
+import crochet
 
+from twisted.internet import defer
 from .proxy import add_intercepting_macro as proxy_add_intercepting_macro
 from .proxy import remove_intercepting_macro as proxy_remove_intercepting_macro
 from .colors import Colors
@@ -146,7 +148,7 @@ def req_history(num=-1, ids=None, include_unmangled=False):
     """
     return pappyproxy.Request.cache.req_it(num=num, ids=ids, include_unmangled=include_unmangled)
 
-def main_context_ids(n=-1):
+def async_main_context_ids(n=-1):
     """
     Returns a deferred that resolves into a list of up to ``n`` of the
     most recent requests in the main context.  You can then use
@@ -155,6 +157,17 @@ def main_context_ids(n=-1):
     return all of the IDs in the context.
     """
     return pappyproxy.pappy.main_context.get_reqs(n)
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def main_context_ids(*args, **kwargs):
+    """
+    Same as :func:`pappyproxy.plugin.async_main_context_ids` but can be called
+    from macros and other non-async only functions. Cannot be called in async
+    functions.
+    """
+    ret = yield async_main_context_ids(*args, **kwargs)
+    defer.returnValue(ret)
 
 def run_cmd(cmd):
     """

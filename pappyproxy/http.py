@@ -127,7 +127,7 @@ def repeatable_parse_qs(s):
 @crochet.wait_for(timeout=180.0)
 @defer.inlineCallbacks
 def request_by_id(reqid):
-    req = Request.load_request(str(reqid))
+    req = yield Request.load_request(str(reqid))
     defer.returnValue(req)
 
 ##########
@@ -2133,7 +2133,9 @@ class Request(HTTPMessage):
     def submit_request(request,
                        save_request=False,
                        intercepting_macros={},
-                       stream_transport=None):
+                       stream_transport=None,
+                       _factory_string_transport=False,
+                       _conn_info=None):
         """
         submit_request(request, save_request=False, intercepting_macros={}, stream_transport=None)
 
@@ -2152,6 +2154,9 @@ class Request(HTTPMessage):
 
         from .proxy import ProxyClientFactory, get_next_connection_id, get_endpoint
         from .pappy import session
+        from .tests.testutil import TLSStringTransport
+
+        # _factory__string_transport, _conn_classes are only for unit tests. Do not use.
 
         factory = None
         if stream_transport is None:
@@ -2164,6 +2169,16 @@ class Request(HTTPMessage):
                                         save_all=save_request,
                                         stream_response=True,
                                         return_transport=stream_transport)
+
+        # Set up stuff for unit test if needed
+        if _factory_string_transport:
+            factory._use_string_transport = True
+        if _conn_info is not None:
+            # Pass factory back to unit test
+            _conn_info['factory'] = factory
+            factory._conn_info = _conn_info
+
+        # Set up factory settings
         factory.intercepting_macros = intercepting_macros
         factory.connection_id = get_next_connection_id()
         factory.connect()

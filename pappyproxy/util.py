@@ -119,12 +119,21 @@ def load_reqlist(line, allow_special=True, ids_only=False):
     :Returns: Twisted deferred
     """
     from .http import Request
+    from .plugin import async_main_context_ids
     # Parses a comma separated list of ids and returns a list of those requests
     # prints any errors
     if not line:
         raise PappyException('Request id(s) required')
-    ids = re.split(',\s*', line)
     reqs = []
+
+    if line == '*':
+        ids = yield async_main_context_ids()
+        for i in ids:
+            req = yield Request.load_request(i)
+            reqs.append(req)
+        defer.returnValue(reqs)
+
+    ids = re.split(',\s*', line)
     if not ids_only:
         for reqid in ids:
             try:
@@ -336,3 +345,14 @@ def copy_to_clipboard(text):
     
 def clipboard_contents():
     return pyperclip.paste()
+
+def autocomplete_startswith(text, lst, allow_spaces=False):
+    ret = None
+    if not text:
+        ret = lst[:]
+    else:
+        ret = [n for n in lst if n.startswith(text)]
+    if not allow_spaces:
+        ret = [s for s in ret if ' ' not in s]
+    return ret
+    

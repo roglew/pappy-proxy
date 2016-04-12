@@ -12,9 +12,7 @@ class ClassDeleted():
     pass
 
 class TLSStringTransport(StringTransport):
-
-    def startTLS(self, context, factory):
-        pass
+    startTLS = mock.MagicMock()
     
 class PappySession(object):
     

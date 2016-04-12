@@ -1,4 +1,5 @@
 from pappyproxy.http import Request, get_request, post_request, request_by_id
+from pappyproxy.plugin import main_context_ids 
 from pappyproxy.context import set_tag
 from pappyproxy.iter import *
 
@@ -12,7 +13,7 @@ from pappyproxy.iter import *
 
 MACRO_NAME = '{{macro_name}}'
 SHORT_NAME = '{{short_name}}'
-
+{% if req_lines %}
 ###########
 ## Requests
 # It's suggested that you call .copy() on these and then edit attributes
@@ -23,7 +24,7 @@ SHORT_NAME = '{{short_name}}'
 req{{ count }} = Request(({% for line in lines %}
     '{{ line }}'{% endfor %}{% set count = count+1 %}
 ){{ params }})
-{% endfor %}
+{% endfor %}{% endif %}
 
 def run_macro(args):
     # Example:

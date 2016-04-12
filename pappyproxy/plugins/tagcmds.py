@@ -2,7 +2,7 @@ import crochet
 import pappyproxy
 import shlex
 
-from pappyproxy.plugin import main_context_ids
+from pappyproxy.plugin import async_main_context_ids
 from pappyproxy.util import PappyException, load_reqlist
 from twisted.internet import defer
 from pappyproxy.http import Request
@@ -26,7 +26,7 @@ def tag(line):
         print 'Tagging %s with %s' % (', '.join(reqids), tag)
     else:
         print "Tagging all in-context requests with %s" % tag
-        reqids = yield main_context_ids()
+        reqids = yield async_main_context_ids()
 
     for reqid in reqids:
         req = yield Request.load_request(reqid)
@@ -58,7 +58,7 @@ def untag(line):
         print 'Removing tag %s from %s' % (tag, ', '.join(reqids))
     else:
         print "Removing tag %s from all in-context requests" % tag
-        reqids = yield main_context_ids()
+        reqids = yield async_main_context_ids()
 
     for reqid in reqids:
         req = yield Request.load_request(reqid)
