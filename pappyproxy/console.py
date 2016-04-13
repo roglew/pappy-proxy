@@ -42,13 +42,15 @@ class ProxyCmd(cmd2.Cmd):
         self._cmds = {}
         self._aliases = {}
 
-        atexit.register(self.save_histfile)
-        readline.set_history_length(self.session.config.histsize)
-        if os.path.exists('cmdhistory'):
-            if self.session.config.histsize != 0:
-                readline.read_history_file('cmdhistory')
-            else:
-                os.remove('cmdhistory')
+        # Only read and save history when not in crypto mode
+        if not self.session.config.crypt_session:
+            atexit.register(self.save_histfile)
+            readline.set_history_length(self.session.config.histsize)
+            if os.path.exists('cmdhistory'):
+                if self.session.config.histsize != 0:
+                    readline.read_history_file('cmdhistory')
+                else:
+                    os.remove('cmdhistory')
 
         cmd2.Cmd.__init__(self, *args, **kwargs)
 
@@ -110,10 +112,12 @@ class ProxyCmd(cmd2.Cmd):
         raise AttributeError(attr)
 
     def save_histfile(self):
-        # Write the command to the history file
-        if self.session.config.histsize != 0:
-            readline.set_history_length(self.session.config.histsize)
-            readline.write_history_file('cmdhistory')
+        # Only write to file if not in crypto mode
+        if not self.session.config.crypt_session:
+            # Write the command to the history file
+            if self.session.config.histsize != 0:
+                readline.set_history_length(self.session.config.histsize)
+                readline.write_history_file('cmdhistory')
     
     def get_names(self):
         # Hack to get cmd to recognize do_/etc functions as functions for things

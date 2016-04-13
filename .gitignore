@@ -11,3 +11,4 @@ config.json
 build/*
 *.egg-info/*
 .#*
+*notes*

@@ -21,9 +21,12 @@ import signal
 
 from . import comm
 from . import config
+from . import compress
 from . import context
+from . import crypto
 from . import http
 from .console import ProxyCmd
+from .util import PappyException
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, defer
 from twisted.internet.error import CannotListenError
@@ -62,10 +65,20 @@ class PappySession(object):
         self.dbpool = None
         self.delete_data_on_quit = False
         self.ports = None
+        self.crypto = crypto.Crypto(sessconfig)
 
     @defer.inlineCallbacks
     def start(self):
         from . import proxy, plugin
+
+        if self.config.crypt_session:
+            if self.decrypt():
+                self.config.load_from_file('./config.json')
+                self.config.global_load_from_file()
+                self.delete_data_on_quit = False
+            else:
+                self.complete_defer.callback(None)
+                return
         
         # If the data file doesn't exist, create it with restricted permissions
         if not os.path.isfile(self.config.datafile):
@@ -138,21 +151,49 @@ class PappySession(object):
         # Add cleanup to defer
         self.complete_defer = deferToThread(self.cons.cmdloop)
         self.complete_defer.addCallback(self.cleanup)
-            
+
+    def encrypt(self):
+        if self.crypto.encrypt_project():
+            return True
+        else:
+            return False
+
+    def decrypt(self):
+        # Attempt to decrypt project archive
+        if self.crypto.decrypt_project():
+            return True
+        # Quit pappy on failure
+        else:
+            return False
+
     @defer.inlineCallbacks
     def cleanup(self, ignored=None):
         for port in self.ports:
             yield port.stopListening()
-
+    
         if self.delete_data_on_quit:
             print 'Deleting temporary datafile'
             os.remove(self.config.datafile)
+
+        # Encrypt the project when in crypto mode 
+        if self.config.crypt_session:
+            self.encrypt()
     
 def parse_args():
     # parses sys.argv and returns a settings dictionary
 
     parser = argparse.ArgumentParser(description='An intercepting proxy for testing web applications.')
     parser.add_argument('-l', '--lite', help='Run the proxy in "lite" mode', action='store_true')
+    parser.add_argument('-d', '--debug', help='Run the proxy in "debug" mode', action='store_true')
+    try:
+        hlpmsg = ''.join(['Start pappy in "crypto" mode,',
+                 'must supply a name for the encrypted',
+                 'project archive [CRYPT]'])
+        parser.add_argument('-c', '--crypt', type=str, nargs=1, help=hlpmsg)
+    except:
+        print 'Must supply a project name: pappy -c <project_name>'
+        reactor.stop()
+        defer.returnValue(None)
 
     args = parser.parse_args(sys.argv[1:])
     settings = {}
@@ -162,6 +203,16 @@ def parse_args():
     else:
         settings['lite'] = False
 
+    if args.crypt:
+        # Convert from single-item list produced by argparse `nargs=1`
+        settings['crypt'] = args.crypt[0].encode('utf-8')
+    else:
+        settings['crypt'] = None
+
+    if args.debug:
+        settings['debug'] = True
+    else:
+        settings['debug'] = False
     return settings
 
 def set_text_factory(conn):
@@ -189,7 +240,10 @@ def main():
     session = PappySession(pappy_config)
     signal.signal(signal.SIGINT, inturrupt_handler)
 
-    if settings['lite']:
+    if settings['crypt']:
+        pappy_config.crypt_file = settings['crypt']
+        pappy_config.crypt_session = True
+    elif settings['lite']:
         conf_settings = pappy_config.get_default_config()
         conf_settings['debug_dir'] = None
         conf_settings['debug_to_file'] = False
@@ -204,6 +258,9 @@ def main():
         pappy_config.load_from_file('./config.json')
         pappy_config.global_load_from_file()
         session.delete_data_on_quit = False
+
+    if settings['debug']:
+        pappy_config.debug = True
 
     yield session.start()
 

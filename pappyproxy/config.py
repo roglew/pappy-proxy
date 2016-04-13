@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import shutil
@@ -98,6 +99,42 @@ class PappyConfig(object):
     The dictionary from ~/.pappy/global_config.json. It contains settings for
     Pappy that are specific to the current computer. Avoid putting settings here,
     especially if it involves specific projects.
+     
+    .. data: archive 
+
+    Project archive compressed as a ``tar.bz2`` archive if libraries available on the system, 
+    otherwise falls back to zip archive.
+
+    :Default: ``project.archive``
+
+    .. data: crypt_dir 
+
+    Temporary working directory to unpack an encrypted project archive. Directory
+    will contain copies of normal startup files, e.g. conifg.json, cmdhistory, etc.
+    On exiting pappy, entire directory will be compressed into an archive and encrypted.
+    Compressed as a tar.bz2 archive if libraries available on the system, 
+    otherwise falls back to zip.
+
+    :Default: ``crypt``
+
+    .. data: crypt_file
+
+    Encrypted archive of the temporary working directory ``crypt_dir``. Compressed as a
+    tar.bz2 archive if libraries available on the system, otherwise falls back to zip.
+
+    :Default: ``project.crypt``
+     
+    .. data: crypt_session
+    
+    Boolean variable to determine whether pappy started in crypto mode
+    
+    :Default: False
+
+    .. data: salt_len
+
+    Length of the nonce-salt value appended to the end of `crypt_file`
+
+    :Default: 16
     """
 
     def __init__(self):
@@ -125,6 +162,13 @@ class PappyConfig(object):
 
         self.config_dict = {}
         self.global_config_dict = {}
+
+        self.archive = 'project.archive' 
+        self.debug = False
+        self.crypt_dir = 'crypt'
+        self.crypt_file = 'project.crypt'
+        self.crypt_session = False
+        self.salt_len = 16
     
     def get_default_config(self):
         default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -132,6 +176,17 @@ class PappyConfig(object):
         with open(default_config_file) as f:
             settings = json.load(f)
         return settings
+
+    def get_project_files(self):
+        file_glob = glob.glob('*')
+        pp = os.getcwd() + os.sep 
+        project_files = [pp+f for f in file_glob if os.path.isfile(pp+f)]
+        
+        if self.crypt_file in project_files:
+            project_files.remove(self.crypt_file)
+        
+        return project_files 
+        
 
     @staticmethod
     def _parse_proxy_login(conf):

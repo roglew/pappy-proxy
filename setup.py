@@ -33,6 +33,7 @@ setup(name='pappyproxy',
           'pytest-mock>=0.9.0',
           'pytest-twisted>=1.5',
           'pytest>=2.8.3',
+          'scrypt>=0.7.1',
           'service_identity>=14.0.0',
           'twisted>=15.4.0',
           'txsocksx>=1.15.0.2'
