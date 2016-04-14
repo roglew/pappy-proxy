@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Pappy Proxy &mdash; Pappy Proxy 0.2.1 documentation</title>
+    <title>The Pappy Proxy &mdash; Pappy Proxy 0.2.11 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.1',
+        VERSION:     '0.2.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Pappy Proxy 0.2.1 documentation" href="index.html" />
+    <link rel="top" title="Pappy Proxy 0.2.11 documentation" href="index.html" />
     <link rel="next" title="The Pappy Proxy Tutorial" href="tutorial.html" />
     <link rel="prev" title="Welcome to Pappy Proxy’s documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to Pappy Proxy’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -96,7 +96,7 @@ docs</a>.</p>
 <code class="docutils literal"><span class="pre">pip</span></code> or some other command that can handle a <code class="docutils literal"><span class="pre">setup.py</span></code> with
 requirements. Once the requirements are installed, you can check that it
 installed correctly by running <code class="docutils literal"><span class="pre">pappy</span> <span class="pre">-l</span></code> to start the proxy.</p>
-<div class="highlight-python"><div class="highlight"><pre>$ git clone --recursive https://github.com/roglew/pappy-proxy.git
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ git clone --recursive https://github.com/roglew/pappy-proxy.git
 $ cd pappy-proxy
 $ pip install .
 </pre></div>
@@ -108,7 +108,7 @@ $ pip install .
 exported responses, plugin data, etc. will be placed in the current
 directory so it&#8217;s good to give your project a directory of its own. To
 start a project, do something like:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ mkdir test_project
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ mkdir test_project
 $ cd test_project
 $ pappy
 Copying default config to directory
@@ -136,7 +136,7 @@ a temporary data file in <code class="docutils literal"><span class="pre">/tmp</
 be deleted. If you want to run Pappy in lite mode, run Pappy with either
 <code class="docutils literal"><span class="pre">-l</span></code> or <code class="docutils literal"><span class="pre">--lite</span></code>.</p>
 <p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy -l
 Temporary datafile is /tmp/tmpw4mGv2
 Proxy is listening on port 8000
 pappy&gt; quit
@@ -188,196 +188,26 @@ file is a JSON-formatted dictionary that contains settings for the
 proxy. The following fields can be used to configure the proxy:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col width="7%" />
+<col width="93%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Key</th>
-<th class="head">Valu
-e</th>
+<th class="head">Value</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><a href="#id1"><span class="problematic" id="id2">``</span></a>da
-ta_f
-ile`
-`</td>
-<td>The
-file
-wher
-e
-requ
-ests
-and
-imag
-es
-will
-be
-stor
-ed</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">data_file</span></code></td>
+<td>The file where requests and images will be stored</td>
 </tr>
-<tr class="row-odd"><td><a href="#id3"><span class="problematic" id="id4">``</span></a>de
-<a href="#id15"><span class="problematic" id="id16">bug_</span></a>
-dir`
-`
-(opt
-iona
-l)</td>
-<td>Wher
-e
-conn
-ecti
-on
-debu
-g
-info
-shou
-ld
-be
-stor
-ed.
-If
-not
-pres
-ent,
-debu
-g
-info
-is
-not
-save
-d
-to a
-file
-.</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">debug_dir</span></code> (optional)</td>
+<td>Where connection debug info should be stored. If not present, debug info is not saved to a file.</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">ce</span>
-<span class="pre">rt_d</span>
-<span class="pre">ir</span></code></td>
-<td>Wher
-e
-the
-CA
-cert
-and
-the
-priv
-ate
-key
-for
-the
-CA
-cert
-are
-stor
-ed</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">cert_dir</span></code></td>
+<td>Where the CA cert and the private key for the CA cert are stored</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">pr</span>
-<span class="pre">oxy_</span>
-<span class="pre">list</span>
-<span class="pre">ener</span>
-<span class="pre">s</span></code></td>
-<td>A
-list
-of
-dict
-s
-whic
-h
-desc
-ribe
-whic
-h
-port
-s
-the
-prox
-y
-will
-list
-en
-on.
-Each
-item
-is a
-dict
-with
-&#8220;por
-t&#8221;
-and
-&#8220;int
-erfa
-ce&#8221;
-valu
-es
-whic
-h
-dete
-rmin
-e
-whic
-h
-port
-and
-inte
-rfac
-e
-to
-list
-en
-on.
-For
-exam
-ple,
-if
-port
-=800
-0
-and
-the
-inte
-rfac
-e
-is
-127.
-0.0.
-1,
-the
-prox
-y
-will
-only
-acce
-pt
-conn
-ecti
-ons
-from
-loca
-lhos
-t
-on
-port
-8000
-.
-To
-acce
-pt
-conn
-ecti
-ons
-from
-anyw
-here
-,
-set
-the
-inte
-rfac
-e
-to
-0.0.
-0.0.</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">proxy_listeners</span></code></td>
+<td>A list of dicts which describe which ports the proxy will listen on. Each item is a dict with &#8220;port&#8221; and &#8220;interface&#8221; values which determine which port and interface to listen on. For example, if port=8000 and the interface is 127.0.0.1, the proxy will only accept connections from localhost on port 8000. To accept connections from anywhere, set the interface to 0.0.0.0.</td>
 </tr>
 </tbody>
 </table>
@@ -400,6 +230,132 @@ to
 </table>
 <p>See the default <code class="docutils literal"><span class="pre">config.json</span></code> for examples.</p>
 </div>
+<div class="section" id="general-console-techniques">
+<h2>General Console Techniques<a class="headerlink" href="#general-console-techniques" title="Permalink to this headline">¶</a></h2>
+<p>There are a few tricks you can use in general when using Pappy&#8217;s
+console. Most of these are provided by the
+<a class="reference external" href="https://docs.python.org/2/library/cmd.html">cmd</a> and
+<a class="reference external" href="https://pythonhosted.org/cmd2/index.html">cmd2</a>.</p>
+<div class="section" id="run-a-shell-command">
+<h3>Run a shell command<a class="headerlink" href="#run-a-shell-command" title="Permalink to this headline">¶</a></h3>
+<p>You can run a shell command with <code class="docutils literal"><span class="pre">!</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ls
+ID  Verb  Host         Path               S-Code            Req Len  Rsp Len  Time  Mngl
+5   GET   vitaly.sexy  /netscape.gif      304 Not Modified  0        0        0.08  --
+4   GET   vitaly.sexy  /esr1.jpg          304 Not Modified  0        0        0.07  --
+3   GET   vitaly.sexy  /construction.gif  304 Not Modified  0        0        0.07  --
+2   GET   vitaly.sexy  /vitaly2.jpg                         0        N/A      --    --
+1   GET   vitaly.sexy  /                  304 Not Modified  0        0        0.07  --
+pappy&gt; !ls
+cmdhistory  config.json  data.db
+pappy&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-python-code">
+<h3>Running Python Code<a class="headerlink" href="#running-python-code" title="Permalink to this headline">¶</a></h3>
+<p>You can use the <code class="docutils literal"><span class="pre">py</span></code> command to either run python code or to drop down
+to a Python shell.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; py print &#39;:D &#39;*10
+:D :D :D :D :D :D :D :D :D :D
+pappy&gt; py
+Python 2.7.6 (default, Jun 22 2015, 17:58:13)
+[GCC 4.8.2] on linux2
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+(ProxyCmd)
+
+        py &lt;command&gt;: Executes a Python command.
+        py: Enters interactive Python mode.
+        End with ``Ctrl-D`` (Unix) / ``Ctrl-Z`` (Windows), ``quit()``, &#39;`exit()``.
+        Non-python commands can be issued with ``cmd(&quot;your command&quot;)``.
+        Run python code from external files with ``run(&quot;filename.py&quot;)``
+
+&gt;&gt;&gt; from pappyproxy import config
+&gt;&gt;&gt; config.CONFIG_DICT
+{u&#39;data_file&#39;: u&#39;./data.db&#39;, u&#39;history_size&#39;: 1000, u&#39;cert_dir&#39;: u&#39;{DATADIR}/certs&#39;, u&#39;proxy_listeners&#39;: [{u&#39;interface&#39;: u&#39;127.0.0.1&#39;, u&#39;port&#39;: 8000}]}
+&gt;&gt;&gt; exit()
+pappy&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="redirect-output-to-file">
+<h3>Redirect Output To File<a class="headerlink" href="#redirect-output-to-file" title="Permalink to this headline">¶</a></h3>
+<p>You can use <code class="docutils literal"><span class="pre">&gt;</span></code> to direct output to a file. However, a number of
+commands use colored output. If you just redirect these to a file, there
+will be additional bytes which represent the ANSI color codes. To get
+around this, use the <code class="docutils literal"><span class="pre">nocolor</span></code> command to remove the color from the
+command output.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; ls &gt; ls.txt
+pappy&gt; !xxd -c 32 -g 4 ls.txt
+0000000: 1b5b316d 1b5b346d 49442020 56657262 2020486f 73742020 20202020 20202050  .[1m.[4mID  Verb  Host         P
+0000020: 61746820 20202020 20202020 20202020 2020532d 436f6465 20202020 20202020  ath               S-Code
+0000040: 20202020 52657120 4c656e20 20527370 204c656e 20205469 6d652020 20204d6e      Req Len  Rsp Len  Time    Mn
+0000060: 676c2020 1b5b306d 0a352020 201b5b33 366d4745 541b5b30 6d202020 1b5b3931  gl  .[0m.5   .[36mGET.[0m   .[91
+0000080: 6d766974 616c792e 73657879 1b5b306d 20201b5b 33366d1b 5b306d2f 1b5b3334  mvitaly.sexy.[0m  .[36m.[0m/.[34
+00000a0: 6d6e6574 73636170 652e6769 661b5b30 6d202020 2020201b 5b33356d 33303420  mnetscape.gif.[0m      .[35m304
+00000c0: 4e6f7420 4d6f6469 66696564 1b5b306d 20203020 20202020 20202030 20202020  Not Modified.[0m  0        0
+00000e0: 20202020 302e3038 20202020 2d2d2020 20200a34 2020201b 5b33366d 4745541b      0.08    --    .4   .[36mGET.
+0000100: 5b306d20 20201b5b 39316d76 6974616c 792e7365 78791b5b 306d2020 1b5b3336  [0m   .[91mvitaly.sexy.[0m  .[36
+0000120: 6d1b5b30 6d2f1b5b 33346d65 7372312e 6a70671b 5b306d20 20202020 20202020  m.[0m/.[34mesr1.jpg.[0m
+0000140: 201b5b33 356d3330 34204e6f 74204d6f 64696669 65641b5b 306d2020 30202020   .[35m304 Not Modified.[0m  0
+0000160: 20202020 20302020 20202020 2020302e 30372020 20202d2d 20202020 0a332020       0        0.07    --    .3
+0000180: 201b5b33 366d4745 541b5b30 6d202020 1b5b3931 6d766974 616c792e 73657879   .[36mGET.[0m   .[91mvitaly.sexy
+00001a0: 1b5b306d 20201b5b 33366d1b 5b306d2f 1b5b3334 6d636f6e 73747275 6374696f  .[0m  .[36m.[0m/.[34mconstructio
+00001c0: 6e2e6769 661b5b30 6d20201b 5b33356d 33303420 4e6f7420 4d6f6469 66696564  n.gif.[0m  .[35m304 Not Modified
+00001e0: 1b5b306d 20203020 20202020 20202030 20202020 20202020 302e3037 20202020  .[0m  0        0        0.07
+0000200: 2d2d2020 20200a32 2020201b 5b33366d 4745541b 5b306d20 20201b5b 39316d76  --    .2   .[36mGET.[0m   .[91mv
+0000220: 6974616c 792e7365 78791b5b 306d2020 1b5b3336 6d1b5b30 6d2f1b5b 33346d76  italy.sexy.[0m  .[36m.[0m/.[34mv
+0000240: 6974616c 79322e6a 70671b5b 306d2020 20202020 201b5b33 366d3230 30204f4b  italy2.jpg.[0m       .[36m200 OK
+0000260: 1b5b306d 20202020 20202020 20202020 30202020 20202020 20323033 34303033  .[0m            0        2034003
+0000280: 20203135 352e3131 20202d2d 20202020 0a312020 201b5b33 366d4745 541b5b30    155.11  --    .1   .[36mGET.[0
+00002a0: 6d202020 1b5b3931 6d766974 616c792e 73657879 1b5b306d 20201b5b 33366d1b  m   .[91mvitaly.sexy.[0m  .[36m.
+00002c0: 5b306d2f 1b5b3334 6d1b5b30 6d202020 20202020 20202020 20202020 2020201b  [0m/.[34m.[0m                  .
+00002e0: 5b33356d 33303420 4e6f7420 4d6f6469 66696564 1b5b306d 20203020 20202020  [35m304 Not Modified.[0m  0
+0000300: 20202030 20202020 20202020 302e3037 20202020 2d2d2020 20200a                0        0.07    --    .
+pappy&gt; nocolor ls &gt; ls2.txt
+pappy&gt; !xxd -c 32 -g 4 ls2.txt
+0000000: 49442020 56657262 2020486f 73742020 20202020 20202050 61746820 20202020  ID  Verb  Host         Path
+0000020: 20202020 20202020 2020532d 436f6465 20202020 20202020 20202020 52657120            S-Code            Req
+0000040: 4c656e20 20527370 204c656e 20205469 6d652020 20204d6e 676c2020 0a352020  Len  Rsp Len  Time    Mngl  .5
+0000060: 20474554 20202076 6974616c 792e7365 78792020 2f6e6574 73636170 652e6769   GET   vitaly.sexy  /netscape.gi
+0000080: 66202020 20202033 3034204e 6f74204d 6f646966 69656420 20302020 20202020  f      304 Not Modified  0
+00000a0: 20203020 20202020 20202030 2e303820 2020202d 2d202020 200a3420 20204745    0        0.08    --    .4   GE
+00000c0: 54202020 76697461 6c792e73 65787920 202f6573 72312e6a 70672020 20202020  T   vitaly.sexy  /esr1.jpg
+00000e0: 20202020 33303420 4e6f7420 4d6f6469 66696564 20203020 20202020 20202030      304 Not Modified  0        0
+0000100: 20202020 20202020 302e3037 20202020 2d2d2020 20200a33 20202047 45542020          0.07    --    .3   GET
+0000120: 20766974 616c792e 73657879 20202f63 6f6e7374 72756374 696f6e2e 67696620   vitaly.sexy  /construction.gif
+0000140: 20333034 204e6f74 204d6f64 69666965 64202030 20202020 20202020 30202020   304 Not Modified  0        0
+0000160: 20202020 20302e30 37202020 202d2d20 2020200a 32202020 47455420 20207669       0.07    --    .2   GET   vi
+0000180: 74616c79 2e736578 7920202f 76697461 6c79322e 6a706720 20202020 20203230  taly.sexy  /vitaly2.jpg       20
+00001a0: 30204f4b 20202020 20202020 20202020 30202020 20202020 20323033 34303033  0 OK            0        2034003
+00001c0: 20203135 352e3131 20202d2d 20202020 0a312020 20474554 20202076 6974616c    155.11  --    .1   GET   vital
+00001e0: 792e7365 78792020 2f202020 20202020 20202020 20202020 20202033 3034204e  y.sexy  /                  304 N
+0000200: 6f74204d 6f646966 69656420 20302020 20202020 20203020 20202020 20202030  ot Modified  0        0        0
+0000220: 2e303720 2020202d 2d202020 200a0a                                        .07    --    ..
+pappy&gt;
+</pre></div>
+</div>
+<p>If you want to write the contents of a request or response to a file,
+don&#8217;t use <code class="docutils literal"><span class="pre">nocolor</span></code> with <code class="docutils literal"><span class="pre">vfq</span></code> or <code class="docutils literal"><span class="pre">vfs</span></code>. Use just the <code class="docutils literal"><span class="pre">vbq</span></code> or
+<code class="docutils literal"><span class="pre">vbs</span></code> commands.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="8%" />
+<col width="92%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Command</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">nocolor</span></code></td>
+<td>Run a command and print its output without ASCII escape codes. Intended for use when redirecting output to a file. Should only be used with text and not with binary data.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <div class="section" id="generating-pappy-s-ca-cert">
 <h2>Generating Pappy&#8217;s CA Cert<a class="headerlink" href="#generating-pappy-s-ca-cert" title="Permalink to this headline">¶</a></h2>
 <p>In order to intercept and modify requests to sites that use HTTPS, you
@@ -411,8 +367,8 @@ will look for certificates (unless you specify otherwise in
 argument to have it put the generated certs in a different directory.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="43%" />
-<col width="57%" />
+<col width="13%" />
+<col width="87%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -420,35 +376,8 @@ argument to have it put the generated certs in a different directory.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><dl class="first docutils">
-<dt><a href="#id5"><span class="problematic" id="id6">``</span></a>gencerts</dt>
-<dd>[/path/to</dd>
-</dl>
-<p class="last">/put/certs
-/in]``</p>
-</td>
-<td>Generate a CA
-cert that can
-be added to
-your browser
-to let Pappy
-decrypt HTTPS
-traffic. Also
-generates the
-private key
-for that cert
-in the same
-directory. If
-no path is
-given, the
-certs will be
-placed in the
-default
-certificate
-location.
-Overwrites any
-existing
-certs.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">gencerts</span> <span class="pre">[/path/to/put/certs/in]</span></code></td>
+<td>Generate a CA cert that can be added to your browser to let Pappy decrypt HTTPS traffic. Also generates the private key for that cert in the same directory. If no path is given, the certs will be placed in the default certificate location. Overwrites any existing certs.</td>
 </tr>
 </tbody>
 </table>
@@ -458,9 +387,9 @@ certs.</td>
 <p>The following commands can be used to view requests and responses</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
 <col width="40%" />
+<col width="4%" />
+<col width="56%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -469,139 +398,85 @@ certs.</td>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">ls</span> <span class="pre">[a|&lt;n</span>
-<span class="pre">um&gt;</span></code>]</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">ls</span> <span class="pre">[a|&lt;num&gt;</span></code>]</td>
 <td>list, ls</td>
-<td>List requests
-that are in
-the current
-context (see
-Context
-section). Has
-information
-like the host,
-target path,
-and status
-code. With no
-arguments, it
-will print the
-25 most recent
-requests in
-the current
-context. If
-you pass &#8216;a&#8217;
-or &#8216;all&#8217; as an
-argument, it
-will print all
-the requests
-in the current
-context. If
-you pass a
-number &#8220;n&#8221; as
-an argument,
-it will print
-the n most
-recent
-requests in
-the current
-context.</td>
+<td>List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass &#8216;a&#8217; or &#8216;all&#8217; as an argument, it will print all the requests in the current context. If you pass a number &#8220;n&#8221; as an argument, it will print the n most recent requests in the current context.</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">sm</span></code></td>
-<td>sm,
-site_map</td>
-<td>Print a tree
-showing the
-site map. It
-will display
-all requests
-in the current
-context that
-did not have a
-404 response.</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">sm</span></code> [p]</td>
+<td>sm, site_map</td>
+<td>Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. If the <code class="docutils literal"><span class="pre">p</span></code> option is given, it will print the paths as paths rather than as a tree.</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">viq</span> <span class="pre">&lt;id(</span>
-<span class="pre">s)&gt;</span></code></td>
-<td>view_requ
-est_info,
-viq</td>
-<td>View
-additional
-information
-about
-requests.
-Includes the
-target port,
-if SSL was
-used, applied
-tags, and
-other
-information.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">viq</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>view_request_info, viq</td>
+<td>View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information.</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">vfq</span> <span class="pre">&lt;id(</span>
-<span class="pre">s)&gt;</span></code></td>
-<td>view_full
-_request,
-vfq</td>
-<td>[V]iew [F]ull
-Re[Q]uest,
-prints the
-full request
-including
-headers and
-data.</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">vfq</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>view_full_request, vfq, kjq</td>
+<td>[V]iew [F]ull Re[Q]uest, prints the full request including headers and data.</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">vhq</span> <span class="pre">&lt;id(</span>
-<span class="pre">s)&gt;</span></code></td>
-<td>view_requ
-est_heade
-rs,
-vhq</td>
-<td>[V]iew
-[H]eaders of a
-Re[Q]uest.
-Prints just
-the headers of
-a request.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">vbq</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>view_request_bytes, vbq</td>
+<td>[V]iew [B]ytes of Re[Q]uest, prints the full request including headers and data without coloring or additional newlines. Use this if you want to write a request to a file.</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">vfs</span> <span class="pre">&lt;id(</span>
-<span class="pre">s)&gt;</span></code></td>
-<td>view_full
-_response
-,
-vfs</td>
-<td>[V]iew [F]ull
-Re[S]ponse,
-prints the
-full response
-associated
-with a request
-including
-headers and
-data.</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">ppq</span> <span class="pre">&lt;format&gt;</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>pretty_print_request, ppq</td>
+<td>Pretty print a request with a specific format. See the table below for a list of formats.</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">vhs</span> <span class="pre">&lt;id(</span>
-<span class="pre">s)&gt;</span></code></td>
-<td>view_resp
-onse_head
-ers,
-vhs</td>
-<td>[V]iew
-[H]eaders of a
-Re[S]ponse.
-Prints just
-the headers of
-a response
-associated
-with a
-request.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">vhq</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>view_request_headers, vhq</td>
+<td>[V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">vfs</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>view_full_response, vfs, kjs</td>
+<td>[V]iew [F]ull Re[S]ponse, prints the full response associated with a request including headers and data.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">vhs</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>view_response_headers, vhs</td>
+<td>[V]iew [H]eaders of a Re[S]ponse. Prints just the headers of a response associated with a request.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">vbs</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>view_response_bytes, vbs</td>
+<td>[V]iew [B]ytes of Re[S]ponse, prints the full response including headers and data without coloring or additional newlines. Use this if you want to write a response to a file.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">pps</span> <span class="pre">&lt;format&gt;</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>pretty_print_response, pps</td>
+<td>Pretty print a response with a specific format. See the table below for a list of formats.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">pprm</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
+<td>print_params, pprm</td>
+<td>Print a summary of the parameters submitted with the request. It will include URL params, POST params, and/or cookies</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">pri</span> <span class="pre">[ct]</span> <span class="pre">[key(s)]</span> <span class="pre">|</span> <span class="pre">param_info,</span> <span class="pre">pri</span> <span class="pre">|</span> <span class="pre">Print</span> <span class="pre">a</span> <span class="pre">summary</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">parameters</span> <span class="pre">and</span> <span class="pre">values</span> <span class="pre">submitted</span> <span class="pre">by</span> <span class="pre">in-context</span> <span class="pre">requests.</span> <span class="pre">You</span> <span class="pre">can</span> <span class="pre">pass</span> <span class="pre">in</span> <span class="pre">keys</span> <span class="pre">to</span> <span class="pre">limit</span> <span class="pre">which</span> <span class="pre">values</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">shown.</span> <span class="pre">If</span> <span class="pre">you</span> <span class="pre">also</span> <span class="pre">provide</span></code>ct<code class="docutils literal"><span class="pre">as</span> <span class="pre">the</span> <span class="pre">first</span> <span class="pre">argument,</span> <span class="pre">it</span> <span class="pre">will</span> <span class="pre">include</span> <span class="pre">any</span> <span class="pre">keys</span> <span class="pre">that</span> <span class="pre">are</span> <span class="pre">passed</span> <span class="pre">as</span> <span class="pre">arguments.</span> <span class="pre">|</span> <span class="pre">|</span></code>watch`</td>
+<td>watch</td>
+<td>Print requests and responses in real time as they pass through the proxy.</td>
+</tr>
+</tbody>
+</table>
+<p>Available formats for <code class="docutils literal"><span class="pre">ppq</span></code> and <code class="docutils literal"><span class="pre">pps</span></code> commands:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Format</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">form</span></code></td>
+<td>Print POST data submitted from a form (normal post data)</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">json</span></code></td>
+<td>Print as JSON</td>
 </tr>
 </tbody>
 </table>
 <p>The table shown by <code class="docutils literal"><span class="pre">ls</span></code> will have the following columns:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="38%" />
-<col width="62%" />
+<col width="5%" />
+<col width="95%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Label</th>
@@ -610,71 +485,31 @@ request.</td>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>ID</td>
-<td>The request ID
-of that
-request. Used
-to identify
-the request
-for other
-commands.</td>
+<td>The request ID of that request. Used to identify the request for other commands.</td>
 </tr>
 <tr class="row-odd"><td>Method</td>
-<td>The
-method(/http
-verb) for the
-request</td>
+<td>The method(/http verb) for the request</td>
 </tr>
 <tr class="row-even"><td>Host</td>
-<td>The host that
-the request
-was sent to</td>
+<td>The host that the request was sent to</td>
 </tr>
 <tr class="row-odd"><td>Path</td>
-<td>The path of
-the request</td>
+<td>The path of the request</td>
 </tr>
 <tr class="row-even"><td>S-Code</td>
-<td>The status
-code of the
-response</td>
+<td>The status code of the response</td>
 </tr>
 <tr class="row-odd"><td>Req Len</td>
-<td>The length of
-the data
-submitted</td>
+<td>The length of the data submitted</td>
 </tr>
 <tr class="row-even"><td>Rsp Len</td>
-<td>The length of
-the data
-returned in
-the response</td>
+<td>The length of the data returned in the response</td>
 </tr>
 <tr class="row-odd"><td>Time</td>
-<td>The time in
-seconds it
-took to
-complete the
-request</td>
+<td>The time in seconds it took to complete the request</td>
 </tr>
 <tr class="row-even"><td>Mngl</td>
-<td>If the request
-or response
-were mangled
-with the
-interceptor.
-If the request
-was mangled,
-the column
-will show &#8216;q&#8217;.
-If the
-response was
-mangled, the
-column will
-show &#8216;s&#8217;. If
-both were
-mangled, it
-will show
-&#8216;q/s&#8217;.</td>
+<td>If the request or response were mangled with the interceptor. If the request was mangled, the column will show &#8216;q&#8217;. If the response was mangled, the column will show &#8216;s&#8217;. If both were mangled, it will show &#8216;q/s&#8217;.</td>
 </tr>
 </tbody>
 </table>
@@ -685,9 +520,9 @@ will show
 The following commands can be used to apply and remove tags to requests:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="18%" />
+<col width="7%" />
+<col width="74%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -696,39 +531,17 @@ The following commands can be used to apply and remove tags to requests:</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><a href="#id7"><span class="problematic" id="id8">``</span></a>tag &lt;tag
-&gt; [id(s)]`
-`</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">tag</span> <span class="pre">&lt;tag&gt;</span> <span class="pre">[id(s)]</span></code></td>
 <td>tag</td>
-<td>Apply a tag to
-the given
-requests. If
-no IDs are
-given, the tag
-will be
-applied to all
-in-context
-requests.</td>
+<td>Apply a tag to the given requests. If no IDs are given, the tag will be applied to all in-context requests.</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">untag</span> <span class="pre">&lt;t</span>
-<span class="pre">ag&gt;</span> <span class="pre">[id(s)</span>
-<span class="pre">]</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">untag</span> <span class="pre">&lt;tag&gt;</span> <span class="pre">[id(s)]</span></code></td>
 <td>untag</td>
-<td>Remove a tag
-from the given
-ids. If no IDs
-are given, the
-tag is removed
-from every
-in-context
-request.</td>
+<td>Remove a tag from the given ids. If no IDs are given, the tag is removed from every in-context request.</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">clrtag</span> <span class="pre">&lt;</span>
-<span class="pre">id(s)&gt;</span></code></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">clrtag</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
 <td>clrtag</td>
-<td>Removes all
-tags from the
-given ids.</td>
+<td>Removes all tags from the given ids.</td>
 </tr>
 </tbody>
 </table>
@@ -744,8 +557,8 @@ interceptor, you can get the unmangled versions.) Here are the valid
 prefixes:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="41%" />
-<col width="59%" />
+<col width="4%" />
+<col width="96%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Prefix</th>
@@ -754,39 +567,10 @@ prefixes:</p>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">u</span></code></td>
-<td>If the request
-was mangled,
-prefixing the
-ID with <code class="docutils literal"><span class="pre">u</span></code>
-will result in
-the unmangled
-version of the
-request. The
-resulting
-request will
-not have an
-associated
-response
-because it was
-never
-submitted to
-the server.</td>
+<td>If the request was mangled, prefixing the ID with <code class="docutils literal"><span class="pre">u</span></code> will result in the unmangled version of the request. The resulting request will not have an associated response because it was never submitted to the server.</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">s</span></code></td>
-<td>If the
-response was
-mangled,
-prefixing the
-request ID
-<code class="docutils literal"><span class="pre">s</span></code> will
-result in the
-same request
-but its
-associated
-response will
-be the
-unmangled
-version.</td>
+<td>If the response was mangled, prefixing the request ID <code class="docutils literal"><span class="pre">s</span></code> will result in the same request but its associated response will be the unmangled version.</td>
 </tr>
 </tbody>
 </table>
@@ -833,138 +617,36 @@ more filters, only requests/responses which pass every active filter
 will be a part of the current context.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="34%" />
-<col width="46%" />
-<col width="20%" />
+<col width="13%" />
+<col width="11%" />
+<col width="76%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
 <th class="head">Aliases</th>
-<th class="head">Descr
-iptio
-n</th>
+<th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><a href="#id9"><span class="problematic" id="id10">``</span></a>f &lt;filte
-r string&gt;`
-`</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">f</span> <span class="pre">&lt;filter</span> <span class="pre">string&gt;</span></code></td>
 <td>filter, fl, f</td>
-<td>Add a
-filte
-r
-that
-limit
-s
-which
-reque
-sts
-are
-inclu
-ded
-in
-the
-curre
-nt
-conte
-xt.
-See
-the
-Filte
-r
-Strin
-g
-secti
-on
-for
-how
-to
-creat
-e
-a
-filte
-r
-strin
-g</td>
+<td>Add a filter that limits which requests are included in the current context. See the Filter String section for how to create a filter string</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">fc</span></code></td>
-<td>filter_clear,
-fc</td>
-<td>Clear
-s
-the
-filte
-rs
-and
-reset
-s
-the
-conte
-xt
-to
-conta
-in
-all
-reque
-sts
-and
-respo
-nses.
-Ignor
-es
-scope</td>
+<td>filter_clear, fc</td>
+<td>Clears the filters and resets the context to contain all requests and responses. Ignores scope</td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">fu</span></code></td>
 <td>filter_up, fu</td>
-<td>Remov
-es
-the
-most
-recen
-tly
-appli
-ed
-filte
-r</td>
+<td>Removes the most recently applied filter</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">fls</span></code></td>
-<td>filter_list,
-fls</td>
-<td>Print
-the
-filte
-rs
-that
-make
-up
-the
-curre
-nt
-conte
-xt</td>
+<td>filter_list, fls</td>
+<td>Print the filters that make up the current context</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">filter_p</span>
-<span class="pre">rune</span></code></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">filter_prune</span></code></td>
 <td>filter_prune</td>
-<td>Delet
-e
-all
-the
-reque
-sts
-that
-aren&#8217;
-t
-in
-the
-curre
-nt
-conte
-xt
-from
-the
-data
-file</td>
+<td>Delete all the requests that aren&#8217;t in the current context from the data file</td>
 </tr>
 </tbody>
 </table>
@@ -974,24 +656,24 @@ file</td>
 <p>Filter strings define a condition that a request/response pair must pass
 to be part of the context. Most filter strings have the following
 format:</p>
-<div class="highlight-python"><div class="highlight"><pre>&lt;field&gt; &lt;comparer&gt; &lt;value&gt;
+<div class="highlight-python"><div class="highlight"><pre><span></span>&lt;field&gt; &lt;comparer&gt; &lt;value&gt;
 </pre></div>
 </div>
 <p>Where <code class="docutils literal"><span class="pre">&lt;field&gt;</span></code> is some part of the request/response, <code class="docutils literal"><span class="pre">&lt;comparer&gt;</span></code>
 is some comparison to <code class="docutils literal"><span class="pre">&lt;value&gt;</span></code>. For example, if you wanted a filter
 that only matches requests to <code class="docutils literal"><span class="pre">target.org</span></code>, you could use the
 following filter string:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">host</span> <span class="ow">is</span> <span class="n">target</span><span class="o">.</span><span class="n">org</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">host</span> <span class="ow">is</span> <span class="n">target</span><span class="o">.</span><span class="n">org</span>
 
-<span class="n">field</span> <span class="o">=</span> <span class="s">&quot;host&quot;</span>
-<span class="n">comparer</span> <span class="o">=</span> <span class="s">&quot;is&quot;</span>
-<span class="n">value</span> <span class="o">=</span> <span class="s">&quot;target.org&quot;</span>
+<span class="n">field</span> <span class="o">=</span> <span class="s2">&quot;host&quot;</span>
+<span class="n">comparer</span> <span class="o">=</span> <span class="s2">&quot;is&quot;</span>
+<span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;target.org&quot;</span>
 </pre></div>
 </div>
 <p>Also <strong>if you prefix a comparer with &#8216;n&#8217; it turns it into a negation.</strong>
 Using the previous example, the following will match any request except
 for ones where the host contains <code class="docutils literal"><span class="pre">target.org</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre>host nis target.org
+<div class="highlight-python"><div class="highlight"><pre><span></span>host nis target.org
 
 field = &quot;host&quot;
 comparer = &quot;nis&quot;
@@ -1000,7 +682,7 @@ value = &quot;target.org&quot;
 </div>
 <p>For fields that are a list of key/value pairs (headers, get params, post
 params, and cookies) you can use the following format:</p>
-<div class="highlight-python"><div class="highlight"><pre>&lt;field&gt; &lt;comparer1&gt; &lt;value1&gt;[ &lt;comparer2&gt; &lt;value2&gt;]
+<div class="highlight-python"><div class="highlight"><pre><span></span>&lt;field&gt; &lt;comparer1&gt; &lt;value1&gt;[ &lt;comparer2&gt; &lt;value2&gt;]
 </pre></div>
 </div>
 <p>This is a little more complicated. If you don&#8217;t give comparer2/value2,
@@ -1008,7 +690,7 @@ the filter will pass any pair where the key or the value matches
 comparer1 and value1. If you do give comparer2/value2, the key must
 match comparer1/value1 and the value must match comparer2/value2 For
 example:</p>
-<div class="highlight-python"><div class="highlight"><pre>Filter A:
+<div class="highlight-python"><div class="highlight"><pre><span></span>Filter A:
     cookie contains Session
 
 Filter B:
@@ -1028,172 +710,97 @@ Matches both A and B but not C
 <h3>List of fields<a class="headerlink" href="#list-of-fields" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
-<col width="26%" />
-<col width="34%" />
-<col width="19%" />
-<col width="21%" />
+<col width="10%" />
+<col width="23%" />
+<col width="58%" />
+<col width="9%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Field Name</th>
 <th class="head">Aliases</th>
-<th class="head">Descrip
-tion</th>
+<th class="head">Description</th>
 <th class="head">Format</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>all</td>
 <td>all</td>
-<td>The
-entire
-request
-represe
-nted
-as one
-string</td>
+<td>The entire request represented as one string</td>
 <td>String</td>
 </tr>
 <tr class="row-odd"><td>host</td>
-<td>host, domain,
-hs, dm</td>
-<td>The
-target
-host
-(ie
-www.tar
-get.com
-)</td>
+<td>host, domain, hs, dm</td>
+<td>The target host (ie www.target.com)</td>
 <td>String</td>
 </tr>
 <tr class="row-even"><td>path</td>
 <td>path, pt</td>
-<td>The
-path of
-the url
-(ie
-/path/t
-o/secre
-ts.php)</td>
+<td>The path of the url (ie /path/to/secrets.php)</td>
 <td>String</td>
 </tr>
 <tr class="row-odd"><td>body</td>
-<td>body, data,
-bd, dt</td>
-<td>The
-body
-(data
-section
-)
-of
-either
-the
-request
-or the
-respons
-e</td>
+<td>body, data, bd, dt</td>
+<td>The body (data section) of either the request or the response</td>
+<td>String</td>
+</tr>
+<tr class="row-even"><td>reqbody</td>
+<td>qbody, qdata, qbd, qdt</td>
+<td>The body (data section) of th request</td>
+<td>String</td>
+</tr>
+<tr class="row-odd"><td>rspbody</td>
+<td>sbody, sdata, sbd, sdt</td>
+<td>The body (data section) of th response</td>
 <td>String</td>
 </tr>
 <tr class="row-even"><td>verb</td>
 <td>verb, vb</td>
-<td>The
-HTTP
-verb of
-the
-request
-(ie
-GET,
-POST)</td>
+<td>The HTTP verb of the request (ie GET, POST)</td>
 <td>String</td>
 </tr>
 <tr class="row-odd"><td>param</td>
 <td>param, pm</td>
-<td>Either
-the get
-or post
-paramet
-ers</td>
-<td>Key/Valu
-e</td>
+<td>Either the get or post parameters</td>
+<td>Key/Value</td>
 </tr>
 <tr class="row-even"><td>header</td>
 <td>header, hd</td>
-<td>An HTTP
-header
-(ie
-User-Ag
-ent,
-Basic-A
-uthoriz
-ation)
-in the
-request
-or
-respons
-e</td>
-<td>Key/Valu
-e</td>
+<td>An HTTP header (ie User-Agent, Basic-Authorization) in the request or response</td>
+<td>Key/Value</td>
+</tr>
+<tr class="row-odd"><td>reqheader</td>
+<td>reqheader, qhd</td>
+<td>An HTTP header in the request</td>
+<td>Key/Value</td>
+</tr>
+<tr class="row-even"><td>rspheader</td>
+<td>rspheader, shd</td>
+<td>An HTTP header in the response</td>
+<td>Key/Value</td>
 </tr>
 <tr class="row-odd"><td>rawheaders</td>
 <td>rawheaders, rh</td>
-<td>The
-entire
-header
-section
-(as one
-string)
-of
-either
-the
-head or
-the
-respons
-e</td>
+<td>The entire header section (as one string) of either the head or the response</td>
 <td>String</td>
 </tr>
 <tr class="row-even"><td>sentcookie</td>
-<td>sentcookie,
-sck</td>
-<td>A
-cookie
-sent in
-a
-request</td>
-<td>Key/Valu
-e</td>
+<td>sentcookie, sck</td>
+<td>A cookie sent in a request</td>
+<td>Key/Value</td>
 </tr>
 <tr class="row-odd"><td>setcookie</td>
-<td>setcookie,
-stck</td>
-<td>A
-cookie
-set by
-a
-respons
-e</td>
-<td>Key/Valu
-e</td>
+<td>setcookie, stck</td>
+<td>A cookie set by a response</td>
+<td>Key/Value</td>
 </tr>
 <tr class="row-even"><td>statuscode</td>
-<td>statuscode,
-sc,
-responsecode</td>
-<td>The
-respons
-e
-code of
-the
-respons
-e</td>
+<td>statuscode, sc, responsecode</td>
+<td>The response code of the response</td>
 <td>Numeric</td>
 </tr>
 <tr class="row-odd"><td>tag</td>
 <td>tag</td>
-<td>Any of
-the
-tags
-applied
-to the
-request</td>
+<td>Any of the tags applied to the request</td>
 <td>String</td>
 </tr>
 </tbody>
@@ -1203,123 +810,56 @@ request</td>
 <h3>List of comparers<a class="headerlink" href="#list-of-comparers" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
-<col width="32%" />
-<col width="43%" />
-<col width="24%" />
+<col width="14%" />
+<col width="19%" />
+<col width="67%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Field Name</th>
 <th class="head">Aliases</th>
-<th class="head">Descrip
-tion</th>
+<th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>is</td>
 <td>is</td>
-<td>Exact
-string
-match</td>
+<td>Exact string match</td>
 </tr>
 <tr class="row-odd"><td>contains</td>
 <td>contains, ct</td>
-<td>A
-contain
-B is
-true if
-B is a
-substri
-ng
-of A</td>
+<td>A contain B is true if B is a substring of A</td>
 </tr>
 <tr class="row-even"><td>containsr</td>
 <td>containsr, ctr</td>
-<td>A
-contain
-r
-B is
-true if
-A
-matches
-regexp
-B</td>
+<td>A containr B is true if A matches regexp B</td>
 </tr>
 <tr class="row-odd"><td>exists</td>
 <td>exists, ex</td>
-<td>A
-exists
-B if A
-is not
-an
-empty
-string
-(likely
-buggy)</td>
+<td>A exists B if A is not an empty string (likely buggy)</td>
 </tr>
 <tr class="row-even"><td>Leq</td>
 <td>Leq</td>
-<td>A Leq B
-if A&#8217;s
-length
-equals
-B (B
-must be
-a
-number)</td>
+<td>A Leq B if A&#8217;s length equals B (B must be a number)</td>
 </tr>
 <tr class="row-odd"><td>Lgt</td>
 <td>Lgt</td>
-<td>A Lgt B
-if A&#8217;s
-length
-is
-greater
-than B
-(B must
-be a
-number
-)</td>
+<td>A Lgt B if A&#8217;s length is greater than B (B must be a number )</td>
 </tr>
 <tr class="row-even"><td>Llt</td>
 <td>Llt</td>
-<td>A Llt B
-if A&#8217;s
-length
-is less
-than B
-(B must
-be a
-number)</td>
+<td>A Llt B if A&#8217;s length is less than B (B must be a number)</td>
 </tr>
 <tr class="row-odd"><td>eq</td>
 <td>eq</td>
-<td>A eq B
-if A =
-B (A
-and B
-must be
-a
-number)</td>
+<td>A eq B if A = B (A and B must be a number)</td>
 </tr>
 <tr class="row-even"><td>gt</td>
 <td>gt</td>
-<td>A gt B
-if A &gt;
-B (A
-and B
-must be
-a
-number)</td>
+<td>A gt B if A &gt; B (A and B must be a number)</td>
 </tr>
 <tr class="row-odd"><td>lt</td>
 <td>lt</td>
-<td>A lt B
-if A &lt;
-B (A
-and B
-must be
-a
-number)</td>
+<td>A lt B if A &lt; B (A and B must be a number)</td>
 </tr>
 </tbody>
 </table>
@@ -1330,90 +870,42 @@ number)</td>
 can still negate these.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="33%" />
-<col width="33%" />
-<col width="33%" />
+<col width="8%" />
+<col width="13%" />
+<col width="78%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Form
-at</th>
-<th class="head">Alia
-ses</th>
-<th class="head">Desc
-ript
-ion</th>
+<tr class="row-odd"><th class="head">Format</th>
+<th class="head">Aliases</th>
+<th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>befo
-re</td>
-<td>befo
-re,
-bf,
-b4</td>
-<td>Filt
-ers
-out
-any
-requ
-est
-that
-is
-not
-befo
-re
-the
-give
-n
-requ
-est.
-Filt
-ers
-out
-any
-requ
-est
-with
-out
-a
-time
-.</td>
+<tr class="row-even"><td>before</td>
+<td>before, bf, b4</td>
+<td>Filters out any request that is not before the given request. Filters out any request without a time.</td>
 </tr>
-<tr class="row-odd"><td>afte
-r</td>
-<td>afte
-r,
-af</td>
-<td>Filt
-ers
-out
-any
-requ
-est
-that
-is
-not
-befo
-re
-the
-give
-n
-requ
-est.
-Filt
-ers
-out
-any
-requ
-est
-with
-out
-a
-time
-.</td>
+<tr class="row-odd"><td>after</td>
+<td>after, af</td>
+<td>Filters out any request that is not before the given request. Filters out any request without a time.</td>
+</tr>
+<tr class="row-even"><td>inv</td>
+<td>inf</td>
+<td>Inverts a filter string. Anything that matches the filter string will not pass the filter.</td>
 </tr>
 </tbody>
 </table>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>Only show requests before request 1234
+  f b4 1234
+
+Only show requests after request 1234
+  f af 1234
+
+Show requests without a csrf parameter
+  f inv param ct csrf
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="scope">
@@ -1430,9 +922,9 @@ accidentally do something like log in to your email through the proxy
 and have your plaintext username/password stored.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="20%" />
+<col width="27%" />
+<col width="53%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -1441,42 +933,21 @@ and have your plaintext username/password stored.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">scope_sa</span>
-<span class="pre">ve</span></code></td>
-<td><code class="docutils literal"><span class="pre">scope_sa</span>
-<span class="pre">ve</span></code></td>
-<td>Set the
-current
-context to be
-the scope</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">scope_save</span></code></td>
+<td><code class="docutils literal"><span class="pre">scope_save</span></code></td>
+<td>Set the current context to be the scope</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">sr</span></code></td>
-<td><code class="docutils literal"><span class="pre">scope_re</span>
-<span class="pre">set</span></code>,
-<code class="docutils literal"><span class="pre">sr</span></code></td>
-<td>Set the
-current
-context to the
-scope</td>
+<td><code class="docutils literal"><span class="pre">scope_reset</span></code>, <code class="docutils literal"><span class="pre">sr</span></code></td>
+<td>Set the current context to the scope</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">scope_de</span>
-<span class="pre">lete</span></code></td>
-<td><code class="docutils literal"><span class="pre">scope_de</span>
-<span class="pre">lete</span></code></td>
-<td>Clear the
-scope
-(everything&#8217;s
-in scope!)</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">scope_delete</span></code></td>
+<td><code class="docutils literal"><span class="pre">scope_delete</span></code></td>
+<td>Clear the scope (everything&#8217;s in scope!)</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">scope_li</span>
-<span class="pre">st</span></code></td>
-<td><code class="docutils literal"><span class="pre">scope_li</span>
-<span class="pre">st</span></code>,
-<code class="docutils literal"><span class="pre">sls</span></code></td>
-<td>List all the
-filters that
-are applied to
-the scope</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">scope_list</span></code></td>
+<td><code class="docutils literal"><span class="pre">scope_list</span></code>, <code class="docutils literal"><span class="pre">sls</span></code></td>
+<td>List all the filters that are applied to the scope</td>
 </tr>
 </tbody>
 </table>
@@ -1506,9 +977,9 @@ The <code class="docutils literal"><span class="pre">fbi</span></code> command a
 </table>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="20%" />
+<col width="31%" />
+<col width="50%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -1517,20 +988,136 @@ The <code class="docutils literal"><span class="pre">fbi</span></code> command a
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">fbi</span> <span class="pre">&lt;fil</span>
-<span class="pre">ter&gt;</span></code></td>
-<td><code class="docutils literal"><span class="pre">builtin_</span>
-<span class="pre">filter</span></code>,
-<code class="docutils literal"><span class="pre">fbi</span></code></td>
-<td>Apply a
-built-in
-filter to the
-current
-context</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">fbi</span> <span class="pre">&lt;filter&gt;</span></code></td>
+<td><code class="docutils literal"><span class="pre">builtin_filter</span></code>, <code class="docutils literal"><span class="pre">fbi</span></code></td>
+<td>Apply a built-in filter to the current context</td>
 </tr>
 </tbody>
 </table>
 </div>
+</div>
+<div class="section" id="decoding-strings">
+<h2>Decoding Strings<a class="headerlink" href="#decoding-strings" title="Permalink to this headline">¶</a></h2>
+<p>These features try to fill a similar role to Burp&#8217;s decoder. Each
+command will automatically copy the results to the clipboard. In
+addition, if no string is given, the commands will encode/decode
+whatever is already in the clipboard. Here is an example of how to
+base64 encode/decode a string.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; b64e &quot;Hello World!&quot;
+SGVsbG8gV29ybGQh
+pappy&gt; b64d
+Hello World!
+pappy&gt;
+</pre></div>
+</div>
+<p>And if the result contains non-printable characters, a hexdump will be
+produced instead</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; b64d ImALittleTeapot=
+0000  22 60 0b 8a db 65 79 37 9a a6 8b                  &quot;`...ey7...
+
+pappy&gt;
+</pre></div>
+</div>
+<p>The following commands can be used to encode/decode strings:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="16%" />
+<col width="72%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Command</th>
+<th class="head">Aliases</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">base64_decode</span></code></td>
+<td><code class="docutils literal"><span class="pre">base64_decode</span></code>, <code class="docutils literal"><span class="pre">b64d</span></code></td>
+<td>Base64 decode a string</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">base64_encode</span></code></td>
+<td><code class="docutils literal"><span class="pre">base64_encode</span></code>, <code class="docutils literal"><span class="pre">b64e</span></code></td>
+<td>Base64 encode a string</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">asciihex_decode</span></code></td>
+<td><code class="docutils literal"><span class="pre">asciihex_decode</span></code>, <code class="docutils literal"><span class="pre">ahd</span></code></td>
+<td>Decode an ASCII hex string</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">asciihex_encode</span></code></td>
+<td><code class="docutils literal"><span class="pre">asciihex_encode</span></code>, <code class="docutils literal"><span class="pre">ahe</span></code></td>
+<td>Encode an ASCII hex string</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">html_decode</span></code></td>
+<td><code class="docutils literal"><span class="pre">html_decode</span></code>, <code class="docutils literal"><span class="pre">htmld</span></code></td>
+<td>Decode an html encoded string</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">html_encode</span></code></td>
+<td><code class="docutils literal"><span class="pre">html_encode</span></code>, <code class="docutils literal"><span class="pre">htmle</span></code></td>
+<td>Encode a string to html encode all of the characters</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">url_decode</span></code></td>
+<td><code class="docutils literal"><span class="pre">url_decode</span></code>, <code class="docutils literal"><span class="pre">urld</span></code></td>
+<td>Url decode a string</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">url_encode</span></code></td>
+<td><code class="docutils literal"><span class="pre">url_encode</span></code>, <code class="docutils literal"><span class="pre">urle</span></code></td>
+<td>Url encode a string</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">gzip_decode</span></code></td>
+<td><code class="docutils literal"><span class="pre">gzip_decode</span></code>, <code class="docutils literal"><span class="pre">gzd</span></code></td>
+<td>Gzip decompress a string. Probably won&#8217;t work too well since there&#8217;s not a great way to get binary data passed in as an argument. I&#8217;m working on this.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">gzip_encode</span></code></td>
+<td><code class="docutils literal"><span class="pre">gzip_encode</span></code>, <code class="docutils literal"><span class="pre">gze</span></code></td>
+<td>Gzip compress a string. Result doesn&#8217;t get copied to the clipboard.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">base64_decode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">base64_decode_raw</span></code>, <code class="docutils literal"><span class="pre">b64dr</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">base64_decode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">base64_encode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">base64_encode_raw</span></code>, <code class="docutils literal"><span class="pre">b64er</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">base64_encode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">asciihex_decode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">asciihex_decode_raw</span></code>, <code class="docutils literal"><span class="pre">ahdr</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">asciihex_decode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">asciihex_encode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">asciihex_encode_raw</span></code>, <code class="docutils literal"><span class="pre">aher</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">asciihex_encode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">html_decode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">html_decode_raw</span></code>, <code class="docutils literal"><span class="pre">htmldr</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">html_decode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">html_encode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">html_encode_raw</span></code>, <code class="docutils literal"><span class="pre">htmler</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">html_encode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">url_decode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">url_decode_raw</span></code>, <code class="docutils literal"><span class="pre">urldr</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">url_decode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">url_encode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">url_encode_raw</span></code>, <code class="docutils literal"><span class="pre">urler</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">url_encode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">gzip_decode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">gzip_decode_raw</span></code>, <code class="docutils literal"><span class="pre">gzdr</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">gzip_decode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">gzip_encode_raw</span></code></td>
+<td><code class="docutils literal"><span class="pre">gzip_encode_raw</span></code>, <code class="docutils literal"><span class="pre">gzer</span></code></td>
+<td>Same as <code class="docutils literal"><span class="pre">gzip_encode</span></code> but will not print a hexdump if it contains non-printable characters. It is suggested you use <code class="docutils literal"><span class="pre">&gt;</span></code> to redirect the output to a file.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">unixtime_decode</span></code></td>
+<td><code class="docutils literal"><span class="pre">unixtime_decode</span></code>, <code class="docutils literal"><span class="pre">uxtd</span></code></td>
+<td>Take in a unix timestamp and print a human readable timestamp</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="interceptor">
 <h2>Interceptor<a class="headerlink" href="#interceptor" title="Permalink to this headline">¶</a></h2>
@@ -1549,9 +1136,9 @@ default to <code class="docutils literal"><span class="pre">vi</span></code>.</p
 <p>To forward a request, edit it, save the file, then quit.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="8%" />
+<col width="10%" />
+<col width="82%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -1560,33 +1147,13 @@ default to <code class="docutils literal"><span class="pre">vi</span></code>.</p
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">ic</span> <span class="pre">&lt;req,</span>
-<span class="pre">rsp&gt;+</span></code></td>
-<td><code class="docutils literal"><span class="pre">intercep</span>
-<span class="pre">t</span></code>,
-<code class="docutils literal"><span class="pre">ic</span></code></td>
-<td>Begins
-interception
-mode. Press
-enter to leave
-interception
-mode and
-return to the
-command
-prompt. Pass
-in <code class="docutils literal"><span class="pre">request</span></code>
-to intercept
-requests,
-<code class="docutils literal"><span class="pre">response</span></code>
-to intercept
-responses, or
-both to
-intercept
-both.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">ic</span> <span class="pre">&lt;req,rsp&gt;+</span></code></td>
+<td><code class="docutils literal"><span class="pre">intercept</span></code>, <code class="docutils literal"><span class="pre">ic</span></code></td>
+<td>Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in <code class="docutils literal"><span class="pre">request</span></code> to intercept requests, <code class="docutils literal"><span class="pre">response</span></code> to intercept responses, or both to intercept both.</td>
 </tr>
 </tbody>
 </table>
-<div class="highlight-python"><div class="highlight"><pre>Intercept both requests and responses:
+<div class="highlight-python"><div class="highlight"><pre><span></span>Intercept both requests and responses:
 &gt; ic requests responses
 &gt; ic req rsp
 
@@ -1620,9 +1187,9 @@ buffer.</p>
 changes to nonexistent files.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="19%" />
+<col width="21%" />
+<col width="60%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -1631,48 +1198,28 @@ changes to nonexistent files.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><a href="#id11"><span class="problematic" id="id12">``</span></a>rp &lt;id&gt;`
-`</td>
-<td>repeater,
-rp</td>
-<td>Open the
-specified
-request in the
-repeater</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">rp</span> <span class="pre">&lt;id&gt;</span></code></td>
+<td>repeater, rp</td>
+<td>Open the specified request in the repeater</td>
 </tr>
 </tbody>
 </table>
 <table border="1" class="docutils">
 <colgroup>
-<col width="32%" />
-<col width="39%" />
-<col width="29%" />
+<col width="20%" />
+<col width="10%" />
+<col width="70%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Vim
-Command</th>
+<tr class="row-odd"><th class="head">Vim Command</th>
 <th class="head">Keybinding</th>
 <th class="head">Action</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">Repeater</span>
-<span class="pre">SubmitBuff</span>
-<span class="pre">er</span></code></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">RepeaterSubmitBuffer</span></code></td>
 <td>f</td>
-<td>Submit
-the
-current
-buffer,
-split the
-windows
-verticall
-y,
-and show
-the
-result in
-the right
-window</td>
+<td>Submit the current buffer, split the windows vertically, and show the result in the right window</td>
 </tr>
 </tbody>
 </table>
@@ -1684,7 +1231,7 @@ make automated requests through the proxy and save them to the data
 file. A macro file is any python script file in the current directory
 that is in the form <code class="docutils literal"><span class="pre">macro_&lt;name&gt;.py</span></code>. An example project directory
 with macros would be:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ ls -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ ls -l
 -rw-r--r-- 1 scaryhacker wheel     150 Nov 26 11:17 config.json
 -rw------- 1 scaryhacker wheel 2639872 Nov 26 17:18 data.db
 -rw-r--r-- 1 scaryhacker wheel     471 Nov 26 18:42 macro_blank.py
@@ -1697,15 +1244,15 @@ with macros would be:</p>
 <code class="docutils literal"><span class="pre">test</span></code> macro. A macro script is any python script that defines a
 <code class="docutils literal"><span class="pre">run_macro(args)</span></code> function and a <code class="docutils literal"><span class="pre">MACRO_NAME</span></code> variable. For example,
 a simple macro would be:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">### macro_print.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">### macro_print.py</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Print Macro&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Print Macro&#39;</span>
 
 <span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, Pappy!&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, Pappy!&quot;</span>
 </pre></div>
 </div>
 <p>You can place this macro in your project directory then load and run it
@@ -1713,7 +1260,7 @@ from Pappy. When a macro is run, arguments are passed from the command
 line. Arguments are separated the same way as they are on the command
 line, so if you want to use spaces in your argument, you have to put
 quotes around it.</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy
 Proxy is listening on port 8000
 pappy&gt; lma
 Loaded &quot;&lt;Macro Test Macro (tm/test)&gt;&quot;
@@ -1738,7 +1285,7 @@ function will be run when it the macro gets loaded.</p>
 <h3>Generating Macros From Requests<a class="headerlink" href="#generating-macros-from-requests" title="Permalink to this headline">¶</a></h3>
 <p>You can also generate macros that have Pappy <code class="docutils literal"><span class="pre">Request</span></code> objects created
 with the same information as requests you&#8217;ve already made. For example:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy
 Proxy is listening on port 8000
 pappy&gt; ls
 ID  Verb  Host         Path               S-Code  Req Len  Rsp Len  Time  Mngl
@@ -1788,9 +1335,9 @@ to run that macro. So if in a macro you set <code class="docutils literal"><span
 run it by running <code class="docutils literal"><span class="pre">pappy&gt;</span> <span class="pre">rma</span> <span class="pre">tm</span></code>.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="14%" />
+<col width="16%" />
+<col width="70%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -1799,60 +1346,21 @@ run it by running <code class="docutils literal"><span class="pre">pappy&gt;</sp
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">lma</span> <span class="pre">[dir</span>
-<span class="pre">]</span></code></td>
-<td><code class="docutils literal"><span class="pre">load_mac</span>
-<span class="pre">ros</span></code>,
-<code class="docutils literal"><span class="pre">lma</span></code></td>
-<td>Load macros
-from a
-directory. If
-<code class="docutils literal"><span class="pre">dir</span></code> is not
-given, use the
-current
-directory (the
-project
-directory)</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">lma</span> <span class="pre">[dir]</span></code></td>
+<td><code class="docutils literal"><span class="pre">load_macros</span></code>, <code class="docutils literal"><span class="pre">lma</span></code></td>
+<td>Load macros from a directory. If <code class="docutils literal"><span class="pre">dir</span></code> is not given, use the current directory (the project directory)</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">rma</span> <span class="pre">&lt;mac</span>
-<span class="pre">ro</span> <span class="pre">name&gt;</span></code></td>
-<td><code class="docutils literal"><span class="pre">run_macr</span>
-<span class="pre">o</span></code>,
-<code class="docutils literal"><span class="pre">rma</span></code></td>
-<td>Run a macro
-with the given
-name. You can
-use the
-shortname,
-filename, or
-long name.</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">rma</span> <span class="pre">&lt;macro</span> <span class="pre">name&gt;</span></code></td>
+<td><code class="docutils literal"><span class="pre">run_macro</span></code>, <code class="docutils literal"><span class="pre">rma</span></code></td>
+<td>Run a macro with the given name. You can use the shortname, filename, or long name.</td>
 </tr>
-<tr class="row-even"><td><a href="#id13"><span class="problematic" id="id14">``</span></a>gma &lt;nam
-e&gt; [id(s)]
-``</td>
-<td><code class="docutils literal"><span class="pre">generate</span>
-<span class="pre">_macro</span></code>,
-<code class="docutils literal"><span class="pre">gma</span></code></td>
-<td>Generate a
-macro with the
-given name. If
-request IDs
-are given, the
-macro will
-contain
-request
-objects that
-contain each
-request.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">gma</span> <span class="pre">&lt;name&gt;</span> <span class="pre">[id(s)]</span></code></td>
+<td><code class="docutils literal"><span class="pre">generate_macro</span></code>, <code class="docutils literal"><span class="pre">gma</span></code></td>
+<td>Generate a macro with the given name. If request IDs are given, the macro will contain request objects that contain each request.</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">rpy</span> <span class="pre">&lt;id(</span>
-<span class="pre">s)&gt;</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">rpy</span> <span class="pre">&lt;id(s)&gt;</span></code></td>
 <td><code class="docutils literal"><span class="pre">rpy</span></code></td>
-<td>Print the
-Python object
-definitions
-for each of
-the given ids</td>
+<td>Print the Python object definitions for each of the given ids</td>
 </tr>
 </tbody>
 </table>
@@ -1874,527 +1382,153 @@ surprised if it&#8217;s missing some methods you would expect.</p>
 objects:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="25%" />
-<col width="25%" />
-<col width="25%" />
-<col width="25%" />
+<col width="11%" />
+<col width="8%" />
+<col width="11%" />
+<col width="70%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Attr
-ibut
-e</th>
-<th class="head">Sett
-able
-?</th>
-<th class="head">Data
-Type</th>
-<th class="head">Desc
-ript
-ion</th>
+<tr class="row-odd"><th class="head">Attribute</th>
+<th class="head">Settable?</th>
+<th class="head">Data Type</th>
+<th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>cook
-ies</td>
+<tr class="row-even"><td>cookies</td>
 <td>Yes</td>
-<td>Repe
-atab
-leDi
-ct</td>
-<td>Cook
-ies
-sent
-in
-the
-requ
-est</td>
+<td>RepeatableDict</td>
+<td>Cookies sent in the request</td>
 </tr>
-<tr class="row-odd"><td>frag
-ment</td>
+<tr class="row-odd"><td>fragment</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-url
-frag
-ment
-(The
-text
-afte
-r
-the
-#)</td>
+<td>String</td>
+<td>The url fragment (The text after the #)</td>
 </tr>
-<tr class="row-even"><td>full
-_pa
-th</td>
+<tr class="row-even"><td>full_path</td>
 <td>No</td>
-<td>Stri
-ng</td>
-<td>The
-path
-incl
-udin
-g
-url
-para
-ms
-and
-the
-frag
-ment</td>
+<td>String</td>
+<td>The path including url params and the fragment</td>
 </tr>
-<tr class="row-odd"><td>full
-_re
-ques
-t</td>
+<tr class="row-odd"><td>full_request</td>
 <td>No</td>
-<td>Stri
-ng</td>
-<td>The
-full
-requ
-est
-incl
-udin
-g
-head
-ers
-and
-data</td>
+<td>String</td>
+<td>The full request including headers and data</td>
 </tr>
-<tr class="row-even"><td>head
-ers</td>
+<tr class="row-even"><td>headers</td>
 <td>Yes</td>
-<td>Repe
-atab
-leDi
-ct</td>
-<td>The
-head
-ers
-of
-the
-requ
-est</td>
+<td>RepeatableDict</td>
+<td>The headers of the request</td>
 </tr>
 <tr class="row-odd"><td>host</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-host
-that
-the
-requ
-est
-is
-sent
-to</td>
+<td>String</td>
+<td>The host that the request is sent to</td>
 </tr>
-<tr class="row-even"><td>is_
-ssl</td>
+<tr class="row-even"><td>is_ssl</td>
 <td>Yes</td>
 <td>Bool</td>
-<td>Whet
-her
-the
-requ
-est
-is/w
-as
-sent
-over
-SSL</td>
+<td>Whether the request is/was sent over SSL</td>
 </tr>
 <tr class="row-odd"><td>path</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-docu
-ment
-path
-(ie
-www.
-a.co
-m/th
-is/i
-s/th
-e/pa
-th)</td>
+<td>String</td>
+<td>The document path (ie www.a.com/this/is/the/path)</td>
 </tr>
 <tr class="row-even"><td>port</td>
 <td>Yes</td>
-<td>Inte
-ger</td>
-<td>The
-port
-the
-requ
-est
-is/w
-as
-sent
-to</td>
+<td>Integer</td>
+<td>The port the request is/was sent to</td>
 </tr>
-<tr class="row-odd"><td>post
-_pa
-rams</td>
+<tr class="row-odd"><td>post_params</td>
 <td>Yes</td>
-<td>Repe
-atab
-leDi
-ct</td>
-<td>Post
-para
-mete
-rs</td>
+<td>RepeatableDict</td>
+<td>Post parameters</td>
 </tr>
-<tr class="row-even"><td>raw_dat
-a</td>
+<tr class="row-even"><td>raw_data</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-data
-part
-of
-the
-requ
-est</td>
+<td>String</td>
+<td>The data part of the request</td>
 </tr>
-<tr class="row-odd"><td>raw_hea
-ders</td>
+<tr class="row-odd"><td>raw_headers</td>
 <td>No</td>
-<td>Stri
-ng</td>
-<td>The
-text
-of
-the
-head
-ers
-sect
-ion
-of
-the
-requ
-est</td>
+<td>String</td>
+<td>The text of the headers section of the request</td>
 </tr>
-<tr class="row-even"><td>reqi
-d</td>
+<tr class="row-even"><td>reqid</td>
 <td>Yes</td>
-<td>Inte
-ger</td>
-<td>The
-ID
-of
-the
-requ
-est.
-If
-set
-when
-save
-()
-is
-call
-ed,
-it
-repl
-aces
-the
-requ
-est
-with
-the
-same
-id
-in
-the
-data
-base</td>
+<td>Integer</td>
+<td>The ID of the request. If set when save() is called, it replaces the request with the same id in the database</td>
 </tr>
-<tr class="row-odd"><td>resp
-onse</td>
+<tr class="row-odd"><td>response</td>
 <td>Yes</td>
-<td>Resp
-onse</td>
-<td>The
-asso
-ciat
-ed
-resp
-onse
-for
-the
-requ
-est</td>
+<td>Response</td>
+<td>The associated response for the request</td>
 </tr>
-<tr class="row-even"><td>rspt
-ime</td>
+<tr class="row-even"><td>rsptime</td>
 <td>No</td>
-<td>Date
-time
-Delt
-a</td>
-<td>The
-time
-it
-took
-to
-comp
-lete
-the
-requ
-est.
-Set
-when
-subm
-it()
-is
-call
-ed</td>
+<td>Datetime Delta</td>
+<td>The time it took to complete the request. Set when submit() is called</td>
 </tr>
-<tr class="row-odd"><td>stat
-us_
-line</td>
+<tr class="row-odd"><td>status_line</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-stat
-us
-line
-of
-the
-requ
-est
-(ie
-&#8216;GET
-/
-HTTP
-/1.1
-&#8216;)</td>
+<td>String</td>
+<td>The status line of the request (ie &#8216;GET / HTTP/1.1&#8217;)</td>
 </tr>
-<tr class="row-even"><td>time
-_en
-d</td>
+<tr class="row-even"><td>time_end</td>
 <td>Yes</td>
-<td>Date
-time</td>
-<td>The
-time
-when
-the
-requ
-est
-was
-comp
-lete
-d</td>
+<td>Datetime</td>
+<td>The time when the request was completed</td>
 </tr>
-<tr class="row-odd"><td>time
-_st
-art</td>
+<tr class="row-odd"><td>time_start</td>
 <td>Yes</td>
-<td>Date
-time</td>
-<td>The
-time
-when
-the
-requ
-est
-was
-star
-ted</td>
+<td>Datetime</td>
+<td>The time when the request was started</td>
 </tr>
-<tr class="row-even"><td>unma
-ngle
-d</td>
+<tr class="row-even"><td>unmangled</td>
 <td>Yes</td>
-<td>Requ
-est</td>
-<td>If
-the
-requ
-est
-was
-mang
-led,
-the
-unma
-ngle
-d
-vers
-ion
-of
-the
-requ
-est</td>
+<td>Request</td>
+<td>If the request was mangled, the unmangled version of the request</td>
 </tr>
 <tr class="row-odd"><td>url</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-URL
-of
-the
-requ
-est
-(ie
-&#8216;htt
-ps:/
-/www
-.goo
-gle.
-com&#8217;
-)</td>
+<td>String</td>
+<td>The URL of the request (ie &#8216;<a class="reference external" href="https://www.google.com">https://www.google.com</a>&#8216;)</td>
 </tr>
-<tr class="row-even"><td>url_par
-ams</td>
+<tr class="row-even"><td>url_params</td>
 <td>Yes</td>
-<td>Repe
-atab
-leDi
-ct</td>
-<td>The
-URL
-para
-mete
-rs
-of
-the
-requ
-est</td>
+<td>RepeatableDict</td>
+<td>The URL parameters of the request</td>
 </tr>
 <tr class="row-odd"><td>verb</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-verb
-used
-for
-the
-requ
-est
-(ie
-GET,
-POST
-,
-PATC
-H,
-HEAD
-,
-etc)
-.
-Does
-n&#8217;t
-have
-to
-be a
-vali
-d
-verb
-.</td>
+<td>String</td>
+<td>The verb used for the request (ie GET, POST, PATCH, HEAD, etc). Doesn&#8217;t have to be a valid verb.</td>
 </tr>
-<tr class="row-even"><td>vers
-ion</td>
+<tr class="row-even"><td>version</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-vers
-ion
-part
-of
-the
-stat
-us
-line
-(ie
-&#8216;HTT
-P/1.
-1&#8217;)</td>
+<td>String</td>
+<td>The version part of the status line (ie &#8216;HTTP/1.1&#8217;)</td>
 </tr>
 </tbody>
 </table>
 <p>Request methods:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col width="9%" />
+<col width="91%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Func
-tion</th>
-<th class="head">Desc
-ript
-ion</th>
+<tr class="row-odd"><th class="head">Function</th>
+<th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>subm
-it()</td>
-<td>Subm
-it
-the
-requ
-est
-thro
-ugh
-the
-prox
-y.
-Does
-not
-save
-the
-requ
-est
-to
-the
-data
-file</td>
+<tr class="row-even"><td>submit()</td>
+<td>Submit the request through the proxy. Does not save the request to the data file</td>
 </tr>
-<tr class="row-odd"><td>save
-()</td>
-<td>Save
-the
-requ
-est,
-its
-unma
-ngle
-d
-vers
-ion,
-its
-asso
-ciat
-ed
-resp
-onse
-,
-and
-the
-unma
-ngle
-d
-vers
-ion
-of
-the
-resp
-onse
-to
-the
-data
-base</td>
+<tr class="row-odd"><td>save()</td>
+<td>Save the request, its unmangled version, its associated response, and the unmangled version of the response to the database</td>
 </tr>
 </tbody>
 </table>
@@ -2402,275 +1536,73 @@ base</td>
 <code class="docutils literal"><span class="pre">Response</span></code> objects:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="25%" />
-<col width="25%" />
-<col width="25%" />
-<col width="25%" />
+<col width="8%" />
+<col width="6%" />
+<col width="8%" />
+<col width="78%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Attr
-ibut
-e</th>
-<th class="head">Sett
-able
-?</th>
-<th class="head">Data
-Type</th>
-<th class="head">Desc
-ript
-ion</th>
+<tr class="row-odd"><th class="head">Attribute</th>
+<th class="head">Settable?</th>
+<th class="head">Data Type</th>
+<th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>cook
-ies</td>
+<tr class="row-even"><td>cookies</td>
 <td>Yes</td>
-<td>Repe
-atab
-leDi
-ct</td>
-<td>Cook
-ies
-set
-by
-the
-resp
-onse</td>
+<td>RepeatableDict</td>
+<td>Cookies set by the response</td>
 </tr>
-<tr class="row-odd"><td>head
-ers</td>
+<tr class="row-odd"><td>headers</td>
 <td>Yes</td>
-<td>Repe
-atab
-leDi
-ct</td>
-<td>The
-head
-ers
-of
-the
-resp
-onse</td>
+<td>RepeatableDict</td>
+<td>The headers of the response</td>
 </tr>
-<tr class="row-even"><td>resp
-onse
-_co
-de</td>
+<tr class="row-even"><td>response_code</td>
 <td>Yes</td>
-<td>Inte
-ger</td>
-<td>The
-resp
-onse
-code
-of
-the
-resp
-onse</td>
+<td>Integer</td>
+<td>The response code of the response</td>
 </tr>
-<tr class="row-odd"><td>resp
-onse
-_te
-xt</td>
+<tr class="row-odd"><td>response_text</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-text
-asso
-ciat
-ed
-with
-the
-resp
-onse
-code
-(ie
-OK,
-NOT
-FOUN
-D)</td>
+<td>String</td>
+<td>The text associated with the response code (ie OK, NOT FOUND)</td>
 </tr>
-<tr class="row-even"><td>rspi
-d</td>
+<tr class="row-even"><td>rspid</td>
 <td>Yes</td>
-<td>Inte
-ger</td>
-<td>The
-resp
-onse
-id
-of
-the
-resp
-onse
-.
-If
-this
-is
-the
-same
-as
-anot
-her
-resp
-onse
-in
-the
-data
-base
-,
-call
-ing
-save
-()
-on
-the
-asso
-ciat
-ed
-requ
-est
-will
-repl
-ace
-that
-resp
-onse
-in
-the
-data
-base</td>
+<td>Integer</td>
+<td>The response id of the response. If this is the same as another response in the database, calling save() on the associated request will replace that response in the database</td>
 </tr>
-<tr class="row-odd"><td>unma
-ngle
-d</td>
+<tr class="row-odd"><td>unmangled</td>
 <td>Yes</td>
-<td>Resp
-onse</td>
-<td>If
-the
-resp
-onse
-was
-mang
-led,
-this
-will
-refe
-r
-to
-the
-unma
-ngle
-d
-vers
-ion
-of
-the
-resp
-onse
-.
-Othe
-rwis
-e
-it
-is
-None</td>
+<td>Response</td>
+<td>If the response was mangled, this will refer to the unmangled version of the response. Otherwise it is None</td>
 </tr>
-<tr class="row-even"><td>vers
-ion</td>
+<tr class="row-even"><td>version</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-vers
-ion
-part
-of
-the
-stat
-us
-line
-of
-the
-resp
-onse
-(ie
-&#8216;HTT
-P/1.
-1&#8217;)</td>
+<td>String</td>
+<td>The version part of the status line of the response (ie &#8216;HTTP/1.1&#8217;)</td>
 </tr>
-<tr class="row-odd"><td>raw_hea
-ders</td>
+<tr class="row-odd"><td>raw_headers</td>
 <td>No</td>
-<td>Stri
-ng</td>
-<td>A
-text
-vers
-ion
-of
-the
-head
-ers
-of
-the
-resp
-onse</td>
+<td>String</td>
+<td>A text version of the headers of the response</td>
 </tr>
-<tr class="row-even"><td>stat
-us_
-line</td>
+<tr class="row-even"><td>status_line</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-stat
-us
-line
-of
-the
-resp
-onse</td>
+<td>String</td>
+<td>The status line of the response</td>
 </tr>
-<tr class="row-odd"><td>raw_dat
-a</td>
+<tr class="row-odd"><td>raw_data</td>
 <td>Yes</td>
-<td>Stri
-ng</td>
-<td>The
-data
-port
-ion
-of
-the
-resp
-onse</td>
+<td>String</td>
+<td>The data portion of the response</td>
 </tr>
-<tr class="row-even"><td>full
-_re
-spon
-se</td>
+<tr class="row-even"><td>full_response</td>
 <td>No</td>
-<td>Stri
-ng</td>
-<td>The
-full
-text
-vers
-ion
-of
-the
-resp
-onse
-incl
-udin
-g
-head
-ers
-and
-data</td>
+<td>String</td>
+<td>The full text version of the response including headers and data</td>
 </tr>
 </tbody>
 </table>
@@ -2684,124 +1616,41 @@ can fix it.</p>
 requests in macros. It&#8217;s worth pointing out that <code class="docutils literal"><span class="pre">request_by_id</span></code> is
 useful for passing request objects as arguments. For example, here is a
 macro that lets you resubmit a request with the Google Bot user agent:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## macro_googlebot.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## macro_googlebot.py</span>
 
 <span class="kn">from</span> <span class="nn">pappyproxy.http</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">get_request</span><span class="p">,</span> <span class="n">post_request</span><span class="p">,</span> <span class="n">request_by_id</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.context</span> <span class="kn">import</span> <span class="n">set_tag</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.iter</span> <span class="kn">import</span> <span class="o">*</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Submit as Google&#39;</span>
-<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Submit as Google&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
 <span class="k">def</span> <span class="nf">run_macro</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
     <span class="n">req</span> <span class="o">=</span> <span class="n">request_by_id</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">req</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;User-Agent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)&quot;</span>
+    <span class="n">req</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)&quot;</span>
     <span class="n">req</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
     <span class="n">req</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 </pre></div>
 </div>
 <table border="1" class="docutils">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col width="34%" />
+<col width="66%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Func
-tion</th>
-<th class="head">Desc
-ript
-ion</th>
+<tr class="row-odd"><th class="head">Function</th>
+<th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>get_req
-uest
-(url
-,
-url_par
-ams=
-{})</td>
-<td>Retu
-rns
-a
-Requ
-est
-obje
-ct
-that
-cont
-ains
-a
-GET
-requ
-est
-to
-the
-give
-n
-url
-with
-the
-give
-n
-url
-para
-ms</td>
+<tr class="row-even"><td>get_request(url, url_params={})</td>
+<td>Returns a Request object that contains a GET request to the given url with the given url params</td>
 </tr>
-<tr class="row-odd"><td>post
-_re
-ques
-t(ur
-l,
-post
-_pa
-rams
-={},
-url_par
-ams=
-{})</td>
-<td>Retu
-rns
-a
-Requ
-est
-obje
-ct
-that
-cont
-ains
-a
-POST
-requ
-est
-to
-the
-give
-n
-url
-with
-the
-give
-n
-url
-and
-post
-para
-ms</td>
+<tr class="row-odd"><td>post_request(url, post_params={}, url_params={})</td>
+<td>Returns a Request object that contains a POST request to the given url with the given url and post params</td>
 </tr>
-<tr class="row-even"><td>requ
-est_by_id(
-reqi
-d)</td>
-<td>Get
-a
-requ
-est
-obje
-ct
-from
-its
-id.</td>
+<tr class="row-even"><td>request_by_id(reqid)</td>
+<td>Get a request object from its id.</td>
 </tr>
 </tbody>
 </table>
@@ -2832,24 +1681,24 @@ which generates a deferred, then generate a deferred from
 used twisted before, please don&#8217;t try. Twisted is hard. Plus the mangled
 request will be saved before it is submitted anyways.</p>
 <p>Confusing? Here are some example intercepting macros:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## int_cloud2butt.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## int_cloud2butt.py</span>
 
 <span class="kn">import</span> <span class="nn">string</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Cloud to Butt&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Cloud to Butt&#39;</span>
 
 <span class="k">def</span> <span class="nf">mangle_response</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">raw_data</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="s">&#39;cloud&#39;</span><span class="p">,</span> <span class="s">&#39;butt&#39;</span><span class="p">)</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">raw_data</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="s">&#39;Cloud&#39;</span><span class="p">,</span> <span class="s">&#39;Butt&#39;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">raw_data</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="s1">&#39;cloud&#39;</span><span class="p">,</span> <span class="s1">&#39;butt&#39;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">raw_data</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="s1">&#39;Cloud&#39;</span><span class="p">,</span> <span class="s1">&#39;Butt&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">r</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## int_donothing.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## int_donothing.py</span>
 
 <span class="kn">import</span> <span class="nn">string</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Do Nothing&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Do Nothing&#39;</span>
 
 <span class="k">def</span> <span class="nf">mangle_request</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">request</span>
@@ -2858,25 +1707,25 @@ request will be saved before it is submitted anyways.</p>
     <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">response</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## int_adminplz.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## int_adminplz.py</span>
 
 <span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">base64encode</span> <span class="k">as</span> <span class="n">b64e</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Admin Session&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Admin Session&#39;</span>
 
 <span class="k">def</span> <span class="nf">mangle_request</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;Authorization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Basic </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">b64e</span><span class="p">(</span><span class="s">&#39;Admin:Password123&#39;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Authorization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Basic </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">b64e</span><span class="p">(</span><span class="s1">&#39;Admin:Password123&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">r</span>
 </pre></div>
 </div>
 <p>In addition, you can use an <code class="docutils literal"><span class="pre">init(args)</span></code> function to get arguments
 from the command line. If no arguments are passed, args will be an empty
 list. Here is an example macro that does a search and replace:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## int_replace.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## int_replace.py</span>
 
-<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s">&#39;Find and Replace&#39;</span>
-<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+<span class="n">MACRO_NAME</span> <span class="o">=</span> <span class="s1">&#39;Find and Replace&#39;</span>
+<span class="n">SHORT_NAME</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 <span class="n">runargs</span> <span class="o">=</span> <span class="p">[]</span>
 
 <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
@@ -2901,7 +1750,7 @@ list. Here is an example macro that does a search and replace:</p>
 <p>You can use this macro to do any search and replace that you want. For
 example, if you wanted to replace &#8220;Google&#8221; with &#8220;Skynet&#8221;, you can run
 the macro like this:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; lma
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; lma
 Loaded &quot;&lt;InterceptingMacro Find and Replace (replace)&gt;&quot;
 pappy&gt; rim replace Google Skynet
 &quot;Find and Replace&quot; started
@@ -2914,9 +1763,9 @@ pappy&gt;
 <p>You can use the following commands to start/stop intercepting macros</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="16%" />
+<col width="18%" />
+<col width="66%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -2925,74 +1774,25 @@ pappy&gt;
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">lma</span> <span class="pre">[dir</span>
-<span class="pre">]</span></code></td>
-<td><code class="docutils literal"><span class="pre">load_mac</span>
-<span class="pre">ros</span></code>,
-<code class="docutils literal"><span class="pre">lma</span></code></td>
-<td>Load macros
-from a
-directory. If
-<code class="docutils literal"><span class="pre">dir</span></code> is not
-given, use the
-current
-directory (the
-project
-directory)</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">lma</span> <span class="pre">[dir]</span></code></td>
+<td><code class="docutils literal"><span class="pre">load_macros</span></code>, <code class="docutils literal"><span class="pre">lma</span></code></td>
+<td>Load macros from a directory. If <code class="docutils literal"><span class="pre">dir</span></code> is not given, use the current directory (the project directory)</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">rim</span> <span class="pre">&lt;mac</span>
-<span class="pre">ro</span> <span class="pre">name&gt;</span></code></td>
-<td><code class="docutils literal"><span class="pre">run_int_</span>
-<span class="pre">macro</span></code>,
-<code class="docutils literal"><span class="pre">rim</span></code></td>
-<td>Run an
-intercepting
-macro.
-Similarly to
-normal macros
-you can use
-the name,
-short name, or
-file name of
-the macro.</td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">rim</span> <span class="pre">&lt;macro</span> <span class="pre">name&gt;</span></code></td>
+<td><code class="docutils literal"><span class="pre">run_int_macro</span></code>, <code class="docutils literal"><span class="pre">rim</span></code></td>
+<td>Run an intercepting macro. Similarly to normal macros you can use the name, short name, or file name of the macro.</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">sim</span> <span class="pre">&lt;mac</span>
-<span class="pre">ro</span> <span class="pre">name&gt;</span> <span class="pre">[</span>
-<span class="pre">args]</span></code></td>
-<td><code class="docutils literal"><span class="pre">stop_int</span>
-<span class="pre">_macro</span></code>,
-<code class="docutils literal"><span class="pre">sim</span></code></td>
-<td>Stop an
-intercepting
-macro. If
-arguments are
-given, they
-will be passed
-to the macro&#8217;s
-<code class="docutils literal"><span class="pre">init(args)</span></code>
-function if it
-exists.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">sim</span> <span class="pre">&lt;macro</span> <span class="pre">name&gt;</span> <span class="pre">[args]</span></code></td>
+<td><code class="docutils literal"><span class="pre">stop_int_macro</span></code>, <code class="docutils literal"><span class="pre">sim</span></code></td>
+<td>Stop an intercepting macro. If arguments are given, they will be passed to the macro&#8217;s <code class="docutils literal"><span class="pre">init(args)</span></code> function if it exists.</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">lim</span></code></td>
-<td><code class="docutils literal"><span class="pre">list_int</span>
-<span class="pre">_macros</span></code>,
-<code class="docutils literal"><span class="pre">lsim</span></code></td>
-<td>List all
-enabled/disabl
-ed
-intercepting
-macros</td>
+<td><code class="docutils literal"><span class="pre">list_int_macros</span></code>, <code class="docutils literal"><span class="pre">lsim</span></code></td>
+<td>List all enabled/disabled intercepting macros</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">gima</span> <span class="pre">&lt;na</span>
-<span class="pre">me&gt;</span></code></td>
-<td><code class="docutils literal"><span class="pre">generate</span>
-<span class="pre">_int_macro</span>
-<span class="pre">``,</span>
-<span class="pre">``gima</span></code></td>
-<td>Generate an
-intercepting
-macro with the
-given name.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">gima</span> <span class="pre">&lt;name&gt;</span></code></td>
+<td><code class="docutils literal"><span class="pre">generate_int_macro</span></code>, <code class="docutils literal"><span class="pre">gima</span></code></td>
+<td>Generate an intercepting macro with the given name.</td>
 </tr>
 </tbody>
 </table>
@@ -3010,8 +1810,8 @@ information is stored in the dubug directory (the directory is cleared
 every start though!)</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="43%" />
-<col width="57%" />
+<col width="9%" />
+<col width="91%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -3019,28 +1819,8 @@ every start though!)</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">log</span> <span class="pre">[ver</span>
-<span class="pre">bosity]</span></code></td>
-<td>View the log
-at the given
-verbosity.
-Default
-verbosity is 1
-which just
-shows
-connections
-being
-made/lost and
-some other
-info,
-verbosity 3
-shows full
-requests/respo
-nses
-as they pass
-through and
-are processed
-by the proxy</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">log</span> <span class="pre">[verbosity]</span></code></td>
+<td>View the log at the given verbosity. Default verbosity is 1 which just shows connections being made/lost and some other info, verbosity 3 shows full requests/responses as they pass through and are processed by the proxy</td>
 </tr>
 </tbody>
 </table>
@@ -3053,9 +1833,9 @@ needed while doing a test and just added. They likely don&#8217;t do a ton of
 error checking.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="30%" />
-<col width="30%" />
-<col width="40%" />
+<col width="19%" />
+<col width="10%" />
+<col width="71%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Command</th>
@@ -3064,36 +1844,17 @@ error checking.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">dump_res</span>
-<span class="pre">ponse</span> <span class="pre">&lt;req</span>
-<span class="pre">id&gt;</span> <span class="pre">[filen</span>
-<span class="pre">ame]</span></code></td>
-<td><code class="docutils literal"><span class="pre">dump_res</span>
-<span class="pre">ponse</span></code></td>
-<td>Dumps the data
-from the
-response to
-the given
-filename
-(useful for
-images, .swf,
-etc). If no
-filename is
-given, it uses
-the name given
-in the path.</td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">dump_response</span> <span class="pre">&lt;reqid&gt;</span> <span class="pre">[filename]</span></code></td>
+<td><code class="docutils literal"><span class="pre">dump_response</span></code></td>
+<td>Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path.</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">export</span> <span class="pre">&lt;</span>
-<span class="pre">req|rsp&gt;</span> <span class="pre">&lt;</span>
-<span class="pre">reqid&gt;</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">export</span> <span class="pre">&lt;req|rsp&gt;</span> <span class="pre">&lt;reqid&gt;</span></code></td>
 <td><code class="docutils literal"><span class="pre">export</span></code></td>
-<td>Writes either
-the full
-request or
-response to a
-file in the
-current
-directory.</td>
+<td>Writes either the full request or response to a file in the current directory.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">merge</span> <span class="pre">&lt;dbfile&gt;</span></code></td>
+<td><code class="docutils literal"><span class="pre">merge</span></code></td>
+<td>Add all the requests from another datafile to the current datafile</td>
 </tr>
 </tbody>
 </table>
@@ -3120,58 +1881,58 @@ scripts. Still, it may not be a bad idea to try building a macro to do
 something in a quick and dirty way before writing a plugin since plugins
 are more complicated to write.</p>
 <p>A simple hello world plugin could be something like:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## hello.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## hello.py</span>
 <span class="kn">import</span> <span class="nn">shlex</span>
 
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&#39;Hello, </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">print</span> <span class="s1">&#39;Hello, </span><span class="si">%s</span><span class="s1">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, world!&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, world!&quot;</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;hlo&#39;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;ho&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;hlo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;ho&#39;</span><span class="p">),</span>
     <span class="p">])</span>
 </pre></div>
 </div>
 <p>You can also create commands which support autocomplete:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">shlex</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shlex</span>
 
-<span class="n">_AUTOCOMPLETE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;alice&#39;</span><span class="p">,</span> <span class="s">&#39;allie&#39;</span><span class="p">,</span> <span class="s">&#39;sarah&#39;</span><span class="p">,</span> <span class="s">&#39;mallory&#39;</span><span class="p">,</span> <span class="s">&#39;slagathor&#39;</span><span class="p">]</span>
+<span class="n">_AUTOCOMPLETE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alice&#39;</span><span class="p">,</span> <span class="s1">&#39;allie&#39;</span><span class="p">,</span> <span class="s1">&#39;sarah&#39;</span><span class="p">,</span> <span class="s1">&#39;mallory&#39;</span><span class="p">,</span> <span class="s1">&#39;slagathor&#39;</span><span class="p">]</span>
 
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&#39;Hello, </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">print</span> <span class="s1">&#39;Hello, </span><span class="si">%s</span><span class="s1">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, world!&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, world!&quot;</span>
 
 <span class="k">def</span> <span class="nf">complete_hello_world</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">_AUTOCOMPLETE_NAMES</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">text</span><span class="p">)]</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="n">complete_hello_world</span><span class="p">),</span>
+        <span class="s1">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="n">complete_hello_world</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;hlo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;hlo&#39;</span><span class="p">),</span>
     <span class="p">])</span>
 </pre></div>
 </div>
 <p>Then when you run Pappy you can use the <code class="docutils literal"><span class="pre">hello</span></code> command:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy -l
 Temporary datafile is /tmp/tmpBOXyJ3
 Proxy is listening on port 8000
 pappy&gt; ho
@@ -3211,8 +1972,8 @@ at all possible, please keep settings in the normal project config.</p>
 <p>Settings included in <code class="docutils literal"><span class="pre">~/.pappy/global_config.json</span></code>:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="43%" />
-<col width="57%" />
+<col width="8%" />
+<col width="92%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Setting</th>
@@ -3220,25 +1981,83 @@ at all possible, please keep settings in the normal project config.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>cache_siz
-e</td>
-<td>The number of
-requests from
-history that
-will be
-included in
-memory at any
-given time.
-Set to -1 to
-keep
-everything in
-memory. See
-the request
-cache section
-for more info.</td>
+<tr class="row-even"><td>cache_size</td>
+<td>The number of requests from history that will be included in memory at any given time. Set to -1 to keep everything in memory. See the request cache section for more info.</td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section" id="using-a-socks-server">
+<h2>Using a SOCKS Server<a class="headerlink" href="#using-a-socks-server" title="Permalink to this headline">¶</a></h2>
+<p>Pappy allows you to use an upstream SOCKS server. You can do this by
+adding a <code class="docutils literal"><span class="pre">socks_proxy</span></code> value to config.json. You can use the following
+for anonymous access to the proxy:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>&quot;socks_proxy&quot;: {&quot;host&quot;:&quot;socks.proxy.host&quot;, &quot;port&quot;:5555}
+</pre></div>
+</div>
+<p>To use credentials you add a <code class="docutils literal"><span class="pre">username</span></code> and <code class="docutils literal"><span class="pre">password</span></code> value to the
+dictionary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>&quot;socks_proxy&quot;: {&quot;host&quot;:&quot;socks.proxy.host&quot;, &quot;port&quot;:5555, &quot;username&quot;: &quot;mario&quot;, &quot;password&quot;:&quot;ilovemushrooms&quot;}
+</pre></div>
+</div>
+<p>Anything that passes through any of the active listeners will use the
+proxy.</p>
+</div>
+<div class="section" id="transparent-host-redirection">
+<h2>Transparent Host Redirection<a class="headerlink" href="#transparent-host-redirection" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes you get a frustrating thick client that doesn’t let you mess
+with proxy settings to get it to go through a proxy. However, if you can
+redirect where it sends its traffic to localhost, you can get Pappy to
+take that traffic and redirect it to go where it should.</p>
+<p>It takes root permissions to listen on low numbered ports. As a result,
+we’ll need to do some root stuff to listen on ports 80 and 443 and get
+the data to Pappy. There are two ways to get the traffic to Pappy. The
+first is to set up port forwarding as root to send traffic from
+localhost:80 to localhost:8080 and localhost:443 to localhost:8443
+(since we can listen on 8080 and 8443 without root). Or you can YOLO,
+run Pappy as root and just have it listen on 80 and 443.</p>
+<p>According to Google you can use the following command to forward port 80
+on localhost to 8080 on Linux:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>iptables -t nat -A PREROUTING -i ppp0 -p tcp --dport 80 -j REDIRECT --to-ports 8080
+</pre></div>
+</div>
+<p>Then to route 443 to 8443:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>iptables -t nat -A PREROUTING -i ppp0 -p tcp --dport 443 -j REDIRECT --to-ports 8443
+</pre></div>
+</div>
+<p>Of course, both of these need to be run as root.</p>
+<p>Then on mac it’s</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>echo &quot;
+rdr pass inet proto tcp from any to any port 80 -&gt; 127.0.0.1 port 8080
+rdr pass inet proto tcp from any to any port 443 -&gt; 127.0.0.1 port 8443
+&quot; | sudo pfctl -ef -
+Then to turn it off on mac it’s
+sudo pfctl -F all -f /etc/pf.conf
+</pre></div>
+</div>
+<p>Then modify the listener settings in the project’s config.json to be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>&quot;proxy_listeners&quot;: [
+        {&quot;port&quot;: 8080, &quot;interface&quot;: &quot;127.0.0.1&quot;, &quot;forward_host&quot;: &quot;www.example.faketld&quot;},
+        {&quot;port&quot;: 8443, &quot;interface&quot;: &quot;127.0.0.1&quot;, &quot;forward_host_ssl&quot;: &quot;www.example.faketld&quot;},
+    ]
+</pre></div>
+</div>
+<p>This configuration will cause Pappy to open a port on 8080 that will
+accept connections normally and a port on 8443 which will accept SSL
+connections. The forward_host setting tells Pappy to redirect any
+requests sent to the port to the given host. It will also update the
+request’s host header. forward_host_ssl does the same thing, but it
+listens for SSL connections and forces the connection to use SSL.</p>
+<p>Or if you’re going to YOLO it do the same thing then listen on port
+80/443 directly. I do not suggest you do this.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>&quot;proxy_listeners&quot;: [
+        {&quot;port&quot;: 80, &quot;interface&quot;: &quot;127.0.0.1&quot;, &quot;forward_host&quot;: &quot;www.example.faketld&quot;},
+        {&quot;port&quot;: 443, &quot;interface&quot;: &quot;127.0.0.1&quot;, &quot;forward_host_ssl&quot;: &quot;www.example.faketld&quot;},
+    ]
+</pre></div>
+</div>
+<p>Pappy will automatically use this host to make the connection and
+forward the request to the new server.</p>
 </div>
 <div class="section" id="faq">
 <h2>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h2>
@@ -3295,6 +2114,50 @@ issues.</p>
 <h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <p>The boring part of the readme</p>
 <ul class="simple">
+<li>0.2.7<ul>
+<li>boring unit tests</li>
+<li>should make future releases more stable I guess</li>
+<li>Support for upstream SOCKS servers</li>
+<li><code class="docutils literal"><span class="pre">print_params</span></code> command</li>
+<li><code class="docutils literal"><span class="pre">inv</span></code> filter</li>
+<li><code class="docutils literal"><span class="pre">param_info</span></code> command</li>
+<li>Filters by request/response only headers/body</li>
+<li>Transparent host redirection</li>
+<li>Some easier to type aliases for common commands</li>
+</ul>
+</li>
+<li>0.2.6<ul>
+<li>Fix pip being dumb</li>
+<li><code class="docutils literal"><span class="pre">watch</span></code> command to watch requests/responses in real time</li>
+<li>Added <code class="docutils literal"><span class="pre">pp[qs]</span> <span class="pre">form</span> <span class="pre">&lt;id&gt;</span></code> to print POST data</li>
+<li>Bugfixes</li>
+</ul>
+</li>
+<li>0.2.5<ul>
+<li>Requests sent with repeater now are given <code class="docutils literal"><span class="pre">repeater</span></code> tag</li>
+<li>Add ppq and pps commands</li>
+<li>Look at the pretty prompt</li>
+<li>Bugfixes</li>
+</ul>
+</li>
+<li>0.2.4<ul>
+<li>Add command history saving between sessions</li>
+<li>Add html encoder/decoder</li>
+<li>All the bugs were fixed so I added some more for 0.2.5</li>
+</ul>
+</li>
+<li>0.2.3<ul>
+<li>Decoder functions</li>
+<li>Add <code class="docutils literal"><span class="pre">merge</span></code> command</li>
+<li>Bugfixes</li>
+</ul>
+</li>
+<li>0.2.2<ul>
+<li>COLORS</li>
+<li>Performance improvements</li>
+<li>Bugfixes (duh)</li>
+</ul>
+</li>
 <li>0.2.1<ul>
 <li>Improve memory usage</li>
 <li>Tweaked plugin API</li>
@@ -3344,6 +2207,12 @@ always be pappy time in your heart, I promise)</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#general-console-techniques">General Console Techniques</a><ul>
+<li><a class="reference internal" href="#run-a-shell-command">Run a shell command</a></li>
+<li><a class="reference internal" href="#running-python-code">Running Python Code</a></li>
+<li><a class="reference internal" href="#redirect-output-to-file">Redirect Output To File</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#generating-pappy-s-ca-cert">Generating Pappy&#8217;s CA Cert</a></li>
 <li><a class="reference internal" href="#browsing-recorded-requests-responses">Browsing Recorded Requests/Responses</a></li>
 <li><a class="reference internal" href="#tags">Tags</a></li>
@@ -3362,6 +2231,7 @@ always be pappy time in your heart, I promise)</li>
 <li><a class="reference internal" href="#built-in-filters">Built-In Filters</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#decoding-strings">Decoding Strings</a></li>
 <li><a class="reference internal" href="#interceptor">Interceptor</a></li>
 <li><a class="reference internal" href="#repeater">Repeater</a></li>
 <li><a class="reference internal" href="#macros">Macros</a><ul>
@@ -3384,6 +2254,8 @@ always be pappy time in your heart, I promise)</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#global-settings">Global Settings</a></li>
+<li><a class="reference internal" href="#using-a-socks-server">Using a SOCKS Server</a></li>
+<li><a class="reference internal" href="#transparent-host-redirection">Transparent Host Redirection</a></li>
 <li><a class="reference internal" href="#faq">FAQ</a><ul>
 <li><a class="reference internal" href="#i-still-like-burp-but-pappy-looks-interesting-can-i-use-both">I still like Burp, but Pappy looks interesting, can I use both?</a></li>
 <li><a class="reference internal" href="#why-does-my-request-have-an-id-of">Why does my request have an id of <code class="docutils literal"><span class="pre">--</span></code>?!?!</a></li>
@@ -3443,12 +2315,12 @@ always be pappy time in your heart, I promise)</li>
         <li class="right" >
           <a href="index.html" title="Welcome to Pappy Proxy’s documentation!"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &copy; Copyright 2015, Rob Glew.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>
