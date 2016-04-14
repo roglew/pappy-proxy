@@ -48,14 +48,14 @@ def test_session_cookieobj_basic(req, rsp):
     assert req.headers['auth'] == 'bar'
     assert 'auth' not in rsp.headers
 
-def test_session_get_req(req):
+def test_session_save_req(req):
     req.headers['BasicAuth'] = 'asdfasdf'
     req.headers['Host'] = 'www.myfavoritecolor.foobar'
     req.cookies['session'] = 'foobar'
     req.cookies['favorite_color'] = 'blue'
 
     s = Session()
-    s.get_req(req, ['session'], ['BasicAuth'])
+    s.save_req(req, ['session'], ['BasicAuth'])
     assert s.cookies == ['session']
     assert s.headers == ['BasicAuth']
     assert s.cookie_vals['session'].val == 'foobar'
@@ -63,14 +63,14 @@ def test_session_get_req(req):
     assert 'Host' not in s.headers
     assert 'favorite_color' not in s.cookies
 
-def test_session_get_rsp(rsp):
+def test_session_save_rsp(rsp):
     rsp.headers['BasicAuth'] = 'asdfasdf'
     rsp.headers['Host'] = 'www.myfavoritecolor.foobar'
     rsp.set_cookie(ResponseCookie('session=foobar; secure; path=/'))
     rsp.set_cookie(ResponseCookie('favorite_color=blue; secure; path=/'))
 
     s = Session()
-    s.get_rsp(rsp, ['session'])
+    s.save_rsp(rsp, ['session'])
     assert s.cookies == ['session']
     assert s.headers == []
     assert s.cookie_vals['session'].key == 'session'
@@ -99,6 +99,21 @@ def test_session_mixed(req, rsp):
     r.start_line = 'HTTP/1.1 200 OK'
     r.set_cookie(ResponseCookie('state=bazzers'))
     r.set_cookie(ResponseCookie('session=buzzers'))
-    s.get_rsp(r)
+    s.save_rsp(r)
     assert s.cookie_vals['session'].val == 'buzzers'
     assert s.cookie_vals['state'].val == 'bazzers'
+
+def test_session_save_all(req, rsp):
+    s = Session()
+    rsp.set_cookie(ResponseCookie('state=bazzers'))
+    rsp.set_cookie(ResponseCookie('session=buzzers'))
+    s.save_rsp(rsp, save_all=True)
+
+    assert s.cookies == ['state', 'session']
+
+    assert not 'state' in req.cookies
+    assert not 'session' in req.cookies
+    s.apply_req(req)
+    assert req.cookies['state'] == 'bazzers'
+    assert req.cookies['session'] == 'buzzers'
+    

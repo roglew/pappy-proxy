@@ -7,8 +7,28 @@ import stat
 
 from jinja2 import Environment, FileSystemLoader
 from pappyproxy.pappy import session
-from pappyproxy.util import PappyException
+from pappyproxy.util import PappyException, load_reqlist
 from twisted.internet import defer
+
+## Template generating functions
+# Must be declared before MacroTemplate class
+    
+@defer.inlineCallbacks
+def gen_template_args_macro(args):
+    if len(args) > 0:
+        reqids = args[0]
+        reqs = yield load_reqlist(reqids)
+    else:
+        reqs = []
+    defer.returnValue(macro_from_requests(reqs))
+
+def gen_template_generator_noargs(name):
+    def f(args):
+        subs = {}
+        subs['macro_name'] = 'Macro %d' % random.randint(1,99999999)
+        subs['short_name'] = ''
+        return MacroTemplate.fill_template(name, subs)
+    return f
 
 class Macro(object):
     """
@@ -196,6 +216,66 @@ class FileInterceptMacro(InterceptMacro):
             rsp = yield self.source.async_mangle_response(request)
             defer.returnValue(rsp)
         defer.returnValue(request.response)
+        
+class MacroTemplate(object):
+    _template_data = {
+        'macro': ('macro.py.template',
+                  'Generic macro template',
+                  '[reqids]',
+                  'macro_{fname}.py',
+                  gen_template_args_macro),
+
+        'intmacro': ('intmacro.py.template',
+                     'Generic intercepting macro template',
+                     '',
+                     'int_{fname}.py',
+                     gen_template_generator_noargs('intmacro')),
+
+        'modheader': ('macro_header.py.template',
+                      'Modify a header in the request and the response if it exists.',
+                      '',
+                      'int_{fname}.py',
+                      gen_template_generator_noargs('modheader')),
+
+        'resubmit': ('macro_resubmit.py.template',
+                     'Resubmit all in-context requests',
+                     '',
+                     'macro_{fname}.py',
+                     gen_template_generator_noargs('resubmit')),
+    }
+
+    @classmethod
+    def fill_template(cls, template, subs):
+        loader = FileSystemLoader(session.config.pappy_dir+'/templates')
+        env = Environment(loader=loader)
+        template = env.get_template(cls._template_data[template][0])
+        return template.render(zip=zip, **subs)
+
+    @classmethod
+    @defer.inlineCallbacks
+    def fill_template_args(cls, template, args=[]):
+        ret = cls._template_data[template][4](args)
+        if isinstance(ret, defer.Deferred):
+            ret = yield ret
+        defer.returnValue(ret)
+
+    @classmethod
+    def template_filename(cls, template, fname):
+        return cls._template_data[template][3].format(fname=fname)
+
+    @classmethod
+    def template_list(cls):
+        return [k for k, v in cls._template_data.iteritems()]
+    
+    @classmethod
+    def template_description(cls, template):
+        return cls._template_data[template][1]
+
+    @classmethod
+    def template_argstring(cls, template):
+        return cls._template_data[template][2]
+
+## Other functions
 
 def load_macros(loc):
     """
@@ -279,26 +359,8 @@ def macro_from_requests(reqs, short_name='', long_name=''):
     subs['req_lines'] = req_lines
     subs['req_params'] = req_params
 
-    loader = FileSystemLoader(session.config.pappy_dir+'/templates')
-    env = Environment(loader=loader)
-    template = env.get_template('macro.py.template')
-    return template.render(zip=zip, **subs)
+    return MacroTemplate.fill_template('macro', subs)
 
-def gen_imacro(short_name='', long_name=''):
-    subs = {}
-    if long_name:
-        subs['macro_name'] = long_name
-    else:
-        random.seed()
-        subs['macro_name'] = 'Macro %d' % random.randint(1,99999999)
-
-    subs['short_name'] = short_name
-
-    loader = FileSystemLoader(session.config.pappy_dir+'/templates')
-    env = Environment(loader=loader)
-    template = env.get_template('intmacro.py.template')
-    return template.render(**subs)
-    
 @defer.inlineCallbacks
 def mangle_request(request, intmacros):
     """

@@ -46,14 +46,14 @@ class PappyConfig(object):
     
     :Default: None
     
-    .. data: listeners
+    .. data:: listeners
     
     The list of active listeners. It is a list of tuples of the format (port, interface)
     Not modifiable after startup. Configured in the ``config.json`` file for the project.
     
     :Default: ``[(8000, '127.0.0.1')]``
     
-    .. data: socks_proxy
+    .. data:: socks_proxy
     
     Details for a SOCKS proxy. It is a dict with the following key/values::
     
@@ -66,7 +66,7 @@ class PappyConfig(object):
     
     :Default: ``null``
     
-    .. data: http_proxy
+    .. data:: http_proxy
 
     Details for an upstream HTTP proxy. It is a dict with the following key/values::
     
@@ -77,37 +77,37 @@ class PappyConfig(object):
     
     If null, no proxy will be used.
 
-    .. data: plugin_dirs
+    .. data:: plugin_dirs
     
     List of directories that plugins are loaded from. Not modifiable.
     
     :Default: ``['{DATA_DIR}/plugins', '{PAPPY_DIR}/plugins']``
     
-    .. data: save_history
+    .. data:: save_history
     
     Whether command history should be saved to a file/loaded at startup.
     
     :Default: True
     
-    .. data: config_dict
+    .. data:: config_dict
     
     The dictionary read from config.json. When writing plugins, use this to load
     configuration options for your plugin.
     
-    .. data: global_config_dict
+    .. data:: global_config_dict
     
     The dictionary from ~/.pappy/global_config.json. It contains settings for
     Pappy that are specific to the current computer. Avoid putting settings here,
     especially if it involves specific projects.
      
-    .. data: archive 
+    .. data:: archive 
 
     Project archive compressed as a ``tar.bz2`` archive if libraries available on the system, 
     otherwise falls back to zip archive.
 
     :Default: ``project.archive``
 
-    .. data: crypt_dir 
+    .. data:: crypt_dir 
 
     Temporary working directory to unpack an encrypted project archive. Directory
     will contain copies of normal startup files, e.g. conifg.json, cmdhistory, etc.
@@ -117,20 +117,20 @@ class PappyConfig(object):
 
     :Default: ``crypt``
 
-    .. data: crypt_file
+    .. data:: crypt_file
 
     Encrypted archive of the temporary working directory ``crypt_dir``. Compressed as a
     tar.bz2 archive if libraries available on the system, otherwise falls back to zip.
 
     :Default: ``project.crypt``
      
-    .. data: crypt_session
+    .. data:: crypt_session
     
     Boolean variable to determine whether pappy started in crypto mode
     
     :Default: False
 
-    .. data: salt_len
+    .. data:: salt_len
 
     Length of the nonce-salt value appended to the end of `crypt_file`
 

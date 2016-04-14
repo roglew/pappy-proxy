@@ -3,7 +3,7 @@ import pappyproxy
 import shlex
 
 from pappyproxy.plugin import active_intercepting_macros, add_intercepting_macro, remove_intercepting_macro
-from pappyproxy.macros import load_macros, macro_from_requests, gen_imacro
+from pappyproxy.macros import load_macros, macro_from_requests, MacroTemplate
 from pappyproxy.util import PappyException, load_reqlist, autocomplete_startswith
 from twisted.internet import defer
 
@@ -11,6 +11,25 @@ loaded_macros = []
 loaded_int_macros = []
 macro_dict = {}
 int_macro_dict = {}
+
+@defer.inlineCallbacks
+def gen_macro_helper(line, template=None):
+    args = shlex.split(line)
+    if template is None:
+        fname = args[0]
+        template_name = args[1]
+        argstart = 2
+    else:
+        fname = args[0]
+        template_name = template
+        argstart = 1
+    if template_name not in MacroTemplate.template_list():
+        raise PappyException('%s is not a valid template name' % template_name)
+    script_str = yield MacroTemplate.fill_template_args(template_name, args[argstart:])
+    fname = MacroTemplate.template_filename(template_name, fname)
+    with open(fname, 'wc') as f:
+        f.write(script_str)
+    print 'Wrote script to %s' % fname
 
 def load_macros_cmd(line):
     """
@@ -193,34 +212,37 @@ def generate_macro(line):
     Generate a macro script with request objects
     Usage: generate_macro <name> [reqs]
     """
-    if line == '':
-        raise PappyException('Macro name is required')
-    args = shlex.split(line)
-    name = args[0]
-    if len(args) > 1:
-        reqs = yield load_reqlist(args[1])
-    else:
-        reqs = []
-    script_str = macro_from_requests(reqs)
-    fname = 'macro_%s.py' % name
-    with open(fname, 'wc') as f:
-        f.write(script_str)
-    print 'Wrote script to %s' % fname
+    yield gen_macro_helper(line, template='macro')
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
 def generate_int_macro(line):
     """
     Generate an intercepting macro script
     Usage: generate_int_macro <name>
     """
+    yield gen_macro_helper(line, template='intmacro')
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def generate_template_macro(line):
+    """
+    Generate a macro from a built in template
+    Usage: generate_template_macro <fname> <template> [args]
+    """
     if line == '':
-        raise PappyException('Macro name is required')
-    args = shlex.split(line)
-    name = args[0]
-    script_str = gen_imacro()
-    fname = 'int_%s.py' % name
-    with open(fname, 'wc') as f:
-        f.write(script_str)
-    print 'Wrote script to %s' % fname
+        print 'Usage: gtma <fname> <template> [args]'
+        print 'Macro templates:'
+
+        templates = MacroTemplate.template_list()
+        templates.sort()
+        for t in templates:
+            if MacroTemplate.template_argstring(t):
+                print '"%s %s" - %s' % (t, MacroTemplate.template_argstring(t), MacroTemplate.template_description(t))
+            else:
+                print '"%s" - %s' % (t, MacroTemplate.template_description(t))
+    else:
+        yield gen_macro_helper(line)
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -241,6 +263,7 @@ def load_cmds(cmd):
         'rpy': (rpy, None),
         'generate_int_macro': (generate_int_macro, None),
         'generate_macro': (generate_macro, None),
+        'generate_template_macro': (generate_template_macro, None),
         'list_int_macros': (list_int_macros, None),
         'stop_int_macro': (stop_int_macro, complete_stop_int_macro),
         'run_int_macro': (run_int_macro, complete_run_int_macro),
@@ -251,6 +274,7 @@ def load_cmds(cmd):
         #('rpy', ''),
         ('generate_int_macro', 'gima'),
         ('generate_macro', 'gma'),
+        ('generate_template_macro', 'gtma'),
         ('list_int_macros', 'lsim'),
         ('stop_int_macro', 'sim'),
         ('run_int_macro', 'rim'),

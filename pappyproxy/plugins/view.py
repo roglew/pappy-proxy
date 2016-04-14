@@ -14,6 +14,7 @@ from pappyproxy.plugin import async_main_context_ids
 from pappyproxy.colors import Colors, Styles, verb_color, scode_color, path_formatter, host_color
 from pygments.formatters import TerminalFormatter
 from pygments.lexers.data import JsonLexer
+from pygments.lexers.html import XmlLexer
 
 ###################
 ## Helper functions
@@ -103,6 +104,8 @@ def guess_pretty_print_fmt(msg):
             return 'json'
         elif 'www-form' in msg.headers['content-type']:
             return 'form'
+        elif 'application/xml' in msg.headers['content-type']:
+            return 'xml'
     return 'text'
     
 def pretty_print_body(fmt, body):
@@ -121,6 +124,10 @@ def pretty_print_body(fmt, body):
                 print s
         elif fmt.lower() == 'text':
             print body
+        elif fmt.lower() == 'xml':
+            import xml.dom.minidom
+            xml = xml.dom.minidom.parseString(body)
+            print pygments.highlight(xml.toprettyxml(), XmlLexer(), TerminalFormatter())
         else:
             raise PappyException('"%s" is not a valid format' % fmt)
     except PappyException as e:

@@ -1,3 +1,4 @@
+import argparse
 import crochet
 import pappyproxy
 import shlex
@@ -7,8 +8,10 @@ from pappyproxy.colors import Colors, Styles, path_formatter, host_color, scode_
 from pappyproxy.util import PappyException, remove_color, confirm, load_reqlist, Capturing
 from pappyproxy.macros import InterceptMacro
 from pappyproxy.requestcache import RequestCache
+from pappyproxy.session import Session
 from pappyproxy.pappy import session
-from pappyproxy.plugin import add_intercepting_macro, remove_intercepting_macro
+from pappyproxy.plugin import add_intercepting_macro, remove_intercepting_macro, add_to_history
+from pappyproxy.http import async_submit_requests, Request
 from twisted.internet import defer
 from twisted.enterprise import adbapi
 
@@ -190,6 +193,77 @@ def run_without_color(line):
 def version(line):
     import pappyproxy
     print pappyproxy.__version__
+    
+@crochet.wait_for(timeout=180.0)
+@defer.inlineCallbacks
+def submit(line):
+    """
+    Resubmit some requests, optionally with modified headers and cookies.
+
+    Usage: submit reqids [-h] [-m] [-u] [-p] [-c [COOKIES [COOKIES ...]]] [-d [HEADERS [HEADERS ...]]]
+    """
+    
+    parser = argparse.ArgumentParser(prog="submit", usage=submit.__doc__)
+    parser.add_argument('reqids')
+    parser.add_argument('-m', '--inmem', action='store_true', help='Store resubmitted requests in memory without storing them in the data file')
+    parser.add_argument('-u', '--unique', action='store_true', help='Only resubmit one request per endpoint (different URL parameters are different endpoints)')
+    parser.add_argument('-p', '--uniquepath', action='store_true', help='Only resubmit one request per endpoint (ignoring URL parameters)')
+    parser.add_argument('-c', '--cookies', nargs='*', help='Apply a cookie to requests before submitting')
+    parser.add_argument('-d', '--headers', nargs='*', help='Apply a header to requests before submitting')
+    args = parser.parse_args(shlex.split(line))
+
+    headers = {}
+    cookies = {}
+
+    if args.headers:
+        for h in args.headers:
+            k, v = h.split('=', 1)
+            headers[k] = v
+
+    if args.cookies:
+        for c in args.cookies:
+            k, v = c.split('=', 1)
+            cookies[k] = v
+
+    if args.unique and args.uniquepath:
+        raise PappyException('Both -u and -p cannot be given as arguments')
+
+    newsession = Session(cookie_vals=cookies, header_vals=headers)
+    
+    reqs = yield load_reqlist(args.reqids)
+
+    if args.unique or args.uniquepath:
+        endpoints = set()
+        new_reqs = []
+        for r in reqs:
+            if args.unique:
+                s = r.url
+            else:
+                s = r.path
+
+            if not s in endpoints:
+                new_reqs.append(r.copy())
+                endpoints.add(s)
+        reqs = new_reqs
+    else:
+        reqs = [r.copy() for r in reqs]
+
+    for req in reqs:
+        newsession.apply_req(req)
+
+    conf_message = "You're about to submit %d requests, continue?" % len(reqs)
+    if not confirm(conf_message):
+        defer.returnValue(None)
+
+    for r in reqs:
+        r.tags.add('resubmitted')
+
+    if args.inmem:
+        yield async_submit_requests(reqs)
+        for req in reqs:
+            add_to_history(req)
+    else:
+        yield async_submit_requests(reqs, save=True)
         
 def load_cmds(cmd):
     cmd.set_cmds({
@@ -202,6 +276,7 @@ def load_cmds(cmd):
         'nocolor': (run_without_color, None),
         'watch': (watch_proxy, None),
         'version': (version, None),
+        'submit': (submit, None)
     })
     cmd.add_aliases([
         #('rpy', ''),

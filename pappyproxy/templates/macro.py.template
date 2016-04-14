@@ -1,7 +1,4 @@
-from pappyproxy.http import Request, get_request, post_request, request_by_id
-from pappyproxy.plugin import main_context_ids 
-from pappyproxy.context import set_tag
-from pappyproxy.iter import *
+{% include 'macroheader.py.template' %}
 
 ## Iterator cheat sheet:
 # fuzz_path_trav() - Values for fuzzing path traversal
@@ -11,8 +8,6 @@ from pappyproxy.iter import *
 # common_usernames() - Common usernames
 # fuzz_dirs() - Common web paths (ie /wp-admin)
 
-MACRO_NAME = '{{macro_name}}'
-SHORT_NAME = '{{short_name}}'
 {% if req_lines %}
 ###########
 ## Requests

@@ -272,10 +272,10 @@ Using defer.inlineCallbacks With a Command
 .. note::
    This tutorial won't tell you how to use inlineCallbacks in general. Type "twisted inline callbacks" into google to figure out what they are. This is mainly just a reminder to use the ``crochet`` wrapper for console commands and warning you that some functions may return deferreds that you may have to deal with.
 
-Since you're writing a plugin, you'll probably be using functions which return a deferred. And to keep things readable, you'll want to use the ``defer.inlineCallbacks`` function wrapper. Unfortunately, you can't bind async functions to commands. Luckily, there's a library called `crochet <https://pypi.python.org/pypi/crochet>`_ which lets you add another wrapper to the function that lets it be used like a blocking function. Rather than talking about it, let's write a plugin to call :func:`pappyproxy.console.load_reqlist` to print out some requests' hosts. Let's start by pretending it's a normal function::
+Since you're writing a plugin, you'll probably be using functions which return a deferred. And to keep things readable, you'll want to use the ``defer.inlineCallbacks`` function wrapper. Unfortunately, you can't bind async functions to commands. Luckily, there's a library called `crochet <https://pypi.python.org/pypi/crochet>`_ which lets you add another wrapper to the function that lets it be used like a blocking function. Rather than talking about it, let's write a plugin to call :func:`pappyproxy.util.load_reqlist` to print out some requests' hosts. Let's start by pretending it's a normal function::
 
     import shlex
-    from pappyproxy.console import load_reqlist
+    from pappyproxy.util import load_reqlist
     
     def print_hosts(line):
         args = shlex.split(line)
@@ -309,10 +309,10 @@ And we run it::
     iteration over non-sequence
     pappy>
   
-Iteration over a non-sequence? what? Well, :func:`pappyproxy.console.load_reqlist` doesn't actually return a list of requests. It returns a deferred which returns a list of requests. I'm not going into the details (look up some stuff on using inline callbacks with Twisted if you want more info), but the way to fix it is to slap an ``inlineCallbacks`` wrapper on the function and ``yield`` the result of the function. Now it looks like this::
+Iteration over a non-sequence? what? Well, :func:`pappyproxy.util.load_reqlist` doesn't actually return a list of requests. It returns a deferred which returns a list of requests. I'm not going into the details (look up some stuff on using inline callbacks with Twisted if you want more info), but the way to fix it is to slap an ``inlineCallbacks`` wrapper on the function and ``yield`` the result of the function. Now it looks like this::
 
     import shlex
-    from pappyproxy.console import load_reqlist
+    from pappyproxy.util import load_reqlist
     from twisted.internet import defer
     
     @defer.inlineCallbacks
@@ -336,7 +336,7 @@ However, the console assumes that any functions it calls will be blocking. As a 
 
     import shlex
     import crochet
-    from pappyproxy.console import load_reqlist
+    from pappyproxy.util import load_reqlist
     from twisted.internet import defer
     
     @crochet.wait_for(timeout=None)
@@ -394,7 +394,7 @@ Here is an example plugin for storing the user-agent (if it exists) in the ``plu
     import shlex
     from twisted.internet import defer
     
-    from pappyproxy.console import load_reqlist
+    from pappyproxy.util import load_reqlist
     from pappyproxy.plugin import main_context
     from pappyproxy.util import PappyException
     
@@ -435,8 +435,7 @@ Here is an example plugin for storing the user-agent (if it exists) in the ``plu
 
 Useful Functions
 ----------------
-* Load a request by id: :func:`pappyproxy.http.Request.load_request`
-* Create a filter from a filter string: :func:`pappyproxy.context.Filter.from_filter_string`
+See :mod:`pappyproxy.plugin` and :mod:`pappyproxy.util` for useful functions
 
 Built In Plugins As Examples
 ============================

@@ -34,7 +34,7 @@ class Session(object):
                 if k not in self.headers:
                     self.headers.append(k)
 
-    def _cookie_obj(k, v):
+    def _cookie_obj(self, k, v):
         """
         Returns the value as a cookie object regardless of if the cookie is a string or a ResponseCookie.
         """
@@ -44,7 +44,7 @@ class Session(object):
             cookie_str = '%s=%s' % (k, v)
             return ResponseCookie(cookie_str)
 
-    def _cookie_val(v):
+    def _cookie_val(self, v):
         """
         Returns the value of the cookie regardless of if the value is a string or a ResponseCookie
         """
@@ -76,7 +76,7 @@ class Session(object):
         """
 
         for k, v in self.cookie_vals.iteritems():
-            val = self._cookie_obj(v)
+            val = self._cookie_obj(k, v)
             rsp.set_cookie(val)
         # Don't apply headers to responses
 
@@ -115,13 +115,14 @@ class Session(object):
                 if header in self.headers:
                     self.header_vals[header] = req.headers[header]
 
-    def save_rsp(self, rsp, cookies=None):
+    def save_rsp(self, rsp, cookies=None, save_all=False):
         """
         save_rsp(rsp, cookies=None)
 
         Update the state of the session from the response. Only cookies can be
         updated from a response. Additional values can be added to the whitelist
-        by passing in a list of values for the ``cookies`` parameter.
+        by passing in a list of values for the ``cookies`` parameter. If save_all
+        is given, all set cookies will be added to the session.
         """
         if cookies:
             for c in cookies:
@@ -136,7 +137,11 @@ class Session(object):
                     self.cookie_vals[cookie] = rsp.cookies[cookie]
         else:
             for k, v in rsp.cookies.all_pairs():
-                if v.key in self.cookies:
+                if save_all:
+                    self.cookie_vals[v.key] = v
+                    if not v.key in self.cookies:
+                        self.cookies.append(v.key)
+                elif v.key in self.cookies:
                     self.cookie_vals[v.key] = v
 
     def set_cookie(key, val):
@@ -171,5 +176,5 @@ class Session(object):
         if not key in self.cookie_vals:
             raise KeyError('Cookie is not stored in session.')
         v = self.cookie_vals[key]
-        return self._cookie_obj(v)
+        return self._cookie_obj(key, v)
 

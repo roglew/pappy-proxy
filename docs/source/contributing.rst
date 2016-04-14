@@ -35,8 +35,6 @@ Anyways, here's some ideas for things you could implement:
     Make it easy to pass a request to SQLMap to check for SQLi. Make sure you can configure which fields you do/don't want tested and by default just give either "yes it looks like SQLi" or "no it doesn't look like SQLi"
 * Additional macro templates
     Write some commands for generating additional types of macros. For example let people generate an intercepting macro that does search/replace or modifies a header. Save as much typing as possible for common actions.
-* Show requests/responses real-time as they go through the proxy
-    Let people watch requests as they pass through the proxy. It's fine to implement this as an intercepting macro since people watching the requests aren't going to notice response streaming being disabled.
 * Vim plugin to make editing HTTP messages easier
     Implement some functionality to make editing HTTP messages easier. It would be great to have a plugin to automatically add to vim when using the interceptor/repeater to make editing requests easier. Look at burp's request editor and try to implement anything you miss from it.
 * Request Diff

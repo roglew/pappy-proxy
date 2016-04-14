@@ -129,6 +129,59 @@ def repeatable_parse_qs(s):
 def request_by_id(reqid):
     req = yield Request.load_request(str(reqid))
     defer.returnValue(req)
+    
+@defer.inlineCallbacks
+def async_submit_requests(reqs, mangle=False, save=False):
+    """
+    async_submit_requests(reqs, mangle=False)
+    :param mangle: Whether to pass the requests through intercepting macros
+    :type mangle: Bool
+    :rtype: DeferredList
+
+    Submits a list of requests at the same time asynchronously.
+    Responses/unmangled versions will be attached to the request objects in the list.
+    Prints progress to stdout.
+    """
+    print 'Submitting %d request(s)' % len(reqs)
+
+    dones = 0
+    errors = 0
+    list_deferred = defer.Deferred()
+
+    deferreds = []
+    for r in reqs:
+        d = r.async_submit(mangle=mangle)
+        deferreds.append(d)
+
+    # Really not the best way to do this. If one request hangs forever the whole thing will
+    # just hang in the middle
+    for d in deferreds:
+        try:
+            yield d
+            dones += 1
+        except Exception as e:
+            errors += 1
+            print e
+
+        finished = dones+errors
+        
+        if finished % 30 == 0 or finished == len(reqs):
+            if errors > 0:
+                print '{0}/{1} complete with {3} errors ({2:.2f}%)'.format(finished, len(reqs), (float(finished)/len(reqs))*100, errors)
+            else:
+                print '{0}/{1} complete ({2:.2f}%)'.format(finished, len(reqs), (float(finished)/len(reqs))*100)
+        if finished == len(reqs):
+            list_deferred.callback(None)
+
+    if save:
+        for r in reqs:
+            yield r.async_deep_save()
+
+@crochet.wait_for(timeout=180.0)
+@defer.inlineCallbacks
+def submit_requests(*args, **kwargs):
+    ret = yield async_submit_requests(*args, **kwargs)
+    defer.returnValue(ret)
 
 ##########
 ## Classes

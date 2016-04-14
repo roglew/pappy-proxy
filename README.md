@@ -44,6 +44,8 @@ Table of Contents
       * [Useful Functions](#useful-functions)
     * [Intercepting Macros](#intercepting-macros)
       * [Enabling/Disabling Intercepting Macros](#enablingdisabling-intercepting-macros)
+    * [Macro Templates](#macro-templates)
+    * [Resubmitting Groups of Requests](#resubmitting-groups-of-requests)
     * [Logging](#logging)
     * [Additional Commands and Features](#additional-commands-and-features)
       * [Response streaming](#response-streaming)
@@ -54,6 +56,7 @@ Table of Contents
     * [Using an HTTP Proxy](#using-an-http-proxy)
     * [Using a SOCKS Proxy](#using-a-socks-proxy)
     * [Transparent Host Redirection](#transparent-host-redirection)
+    * [Project File Encryption](#project-file-encryption)
     * [FAQ](#faq)
       * [Why does my request have an id of --?!?!](#why-does-my-request-have-an-id-of---)
     * [Boring, Technical Stuff](#boring-technical-stuff)
@@ -698,6 +701,13 @@ def run_macro(args):
 
 If you enter in a value for `SHORT_NAME`, you can use it as a shortcut to run that macro. So if in a macro you set `SHORT_NAME='tm'` you can run it by running `pappy> rma tm`.
 
+Remember, you can use the wildcard to generate a macro with all in-context requests:
+
+```
+# Generate a macro with all in-context requests
+pappy> gma allreqs *
+```
+
 ### Passing Arguments to Macros
 
 When you run the macro, any additional command line arguments will be passed to the run_macro function in the `args` argument. For example, if you run your macro using
@@ -802,6 +812,7 @@ def run_macro(args):
 | get_request(url, url_params={}) | Returns a Request object that contains a GET request to the given url with the given url params |
 | post_request(url, post_params={}, url_params={}) | Returns a Request object that contains a POST request to the given url with the given url and post params |
 | request_by_id(reqid) | Get a request object from its id. |
+| main_context_ids() | Returns a list of the IDs that are in the current context. Use this for macros that need to act on every in-context request. For example, it can be used in a macro to resubmit a set of requests. |
 
 Intercepting Macros
 -------------------
@@ -902,6 +913,77 @@ You can use the following commands to start/stop intercepting macros
 | `sim <macro name> [args]` | `stop_int_macro`, `sim` | Stop an intercepting macro. If arguments are given, they will be passed to the macro's `init(args)` function if it exists. |
 | `lim` | `list_int_macros`, `lsim` | List all enabled/disabled intercepting macros |
 | `gima <name>` | `generate_int_macro`, `gima` | Generate an intercepting macro with the given name. |
+
+Macro Templates
+---------------
+Pappy also includes some other templates for generating macros. They can be generated with the `gtma` command. You can then modify the generated macros to do what you want. For example, you could modify the resubmit macro to get a new session token before submitting each request. Using a template can save you from writing boilerplate for commonly created macros.
+
+Examples:
+```
+# The same as gma foo 1,2,3
+pappy> gtma foo macro 1,2,3
+Wrote script to macro_foo.py
+
+# Generate a macro that resubmits all in-context requests
+pappy> gtma suball resubmit
+Wrote script to macro_suball.py
+
+# Generate an intercepting macro that modifies headers as they pass through the proxy
+pappy> gtma headers modheader
+Wrote script to int_headers.py
+```
+
+Command information:
+| Command | Aliases | Description |
+|:--------|:--------|:------------|
+| `gtma <name> <template name> [template arguments]` | `generate_template_macro`, `gtma` | Generate a macro using a template. |
+
+Available macro templates:
+
+| Name | Arguments | Description |
+|:-----|:----------|:------------|
+| `macro` | `[reqids]` | The template used to generate macros from request IDs. |
+| `intmacro` | None | The template used to generate an intercepting macro. |
+| `modheader` | None | Create an intercepting macro that modifies a header in the request or response. |
+| `resubmit` | None | Create a macro that resubmits all in-context requests. Includes commented out code to maintain session state using a cookie jar. |
+
+Resubmitting Groups of Requests
+-------------------------------
+You can use the `submit` request to resubmit requests. It is suggested that you use this command with a heavy use of filters and using the wildcard (`*`) to submit all in-context requests. Be careful submitting everything in context, remember, if you have to Ctl-C out you will close Pappy and lose all in-memory requests!
+
+| Command | Aliases | Description |
+|:--------|:--------|:------------|
+| `submit reqids [-m] [-u] [-p] [-c [COOKIES [COOKIES ...]]] [-d [HEADERS [HEADERS ...]]]` | `submit` | Submit a given set of requests. Request IDs must be passed in as the first argument. The wildcard (`*`) selector can be very useful. Resubmitted requests are given a `resubmitted` tag. See the arguments section for information on the arguments. |
+
+### Useful Filters For Selecting Requests to Resubmit
+
+* `before` and `after` to select requests in a time range. You can use the `after` filter on the most recent request, browse the site, then use the `before` filter to select a continuous browsing session.
+* `verb` if you only want to select GET requests
+* `path ct logout` to avoid logging out
+
+### Arguments
+
+There are a few simple parameters you can pass to the command to modify requests. These behave like normal command parameters in the terminal. If you need something more complex (ie getting CSRF tokens, refreshing the session token, reacting to Set-Cookie headers, etc.) you should consider writing a macro and using the `main_context_ids` function to get in-context IDs then iterating over them and handling them however you want.
+
+| Argument | Description |
+|:---------|:------------|
+| `-c <cookie>=<val>` | Modify a cookie on each request before submitting. Can pass more than one pair to the flag to modify more than one cookie. Does not encode the cookie values in any way. |
+| `-d <header>=<val>` | Modify a header on each request before submitting. Can pass more than one pair to the flag to modify more than one header. |
+| `-m` | Store requests in memory instead of saving to the data file. |
+| `-u` | Only submit one request per endpoint. Will count requests with the same path but different url params as *different* endpoints. |
+| `-p` | Only submit one request per endpoint. Will count requests with the same path but different url params as *the same* endpoints. |
+
+Examples:
+```
+# Resubmit all in-context requests with the SESSIONID cookie set to 1234 and SESSIONSTATE set to {'admin'='true'}
+pappy> submit * -c SESSIONID=1234 SESSIONSTATE=%7B%27admin%27%3A%27true%27%7D
+
+# Resubmit all in-context requests with the User-Agent header set to "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" then store them in memory
+pappy> submit * -m -h "User-Agent=Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+
+# Submit requests 123, 124, and 125 with a new user agent and new session cookies and store the submitted requests in memory
+pappy> submit 123,124,125 -h "User-Agent=Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -c SESSIONID=1234 SESSIONSTATE=%7B%27admin%27%3A%27true%27%7D
+```
 
 Logging
 -------
@@ -1110,6 +1192,72 @@ Or if you’re going to YOLO it do the same thing then listen on port 80/443 dir
 
 Pappy will automatically use this host to make the connection and forward the request to the new server.
 
+Project File Encryption
+-----------------------
+
+Pappy includes some basic features for automatically compressing and encrypting your project directory with a password. However, before I go into details on how to do this, I need to make one thing clear.
+
+**Don't rely on Pappy to encrypt confidential information. Use a dedicated encryption product to encrypt your project directory instead.**
+
+Other commercial and large open source crypto projects have had a much larger number of people look at their crypto implementations and are less likely to have errors in their implementation. However, for cases where you don't need enterprise level security or if you just want your project stored in a single password-protected file instead of a directory, Pappy's got you covered.
+
+Here is how Pappy's project encryption works:
+
+* Open a project by running Pappy with the `-c` flag
+* Pappy creates a `crypt/` directory in the current directory and changes the working directory into it
+* Do work as normal. You can use other tools in the created `crypt/` directory
+* When you quit Pappy, the file is compressed and encrypted with the provided password
+* The project directory is deleted
+
+Unfortunately, if Pappy hard crashes the files will not be cleaned up. However, if you start Pappy and it notices a `crypt/` directory, it will attempt to use it as the project directory and create a new encrypted project file upon exiting.
+
+Here is an of the usage:
+
+```
+$ pwd
+/tmp/exampleproj
+$ ls
+$ pappy -c example.proj
+Copying default config to ./config.json
+Proxy is listening on port 8000
+pappy> !pwd
+/tmp/exampleproj/crypt
+
+# Switch to another terminal window
+/templates/ $ echo "Hello World" >  /tmp/exampleproj/crypt/hello.txt
+
+# Back to Pappy
+pappy> !cat hello.txt
+Hello World
+pappy> exit
+Enter a password:
+$ ls
+example.proj
+```
+
+Then to work on the project again:
+
+```
+$ pappy -c example.proj
+Enter a password:
+Proxy is listening on port 8000
+pappy> !ls
+config.json     data.db         hello.txt
+pappy>
+```
+
+Example of recovering after crash:
+```
+$ ls
+crypt           project.archive
+$ pappy -c test.proj
+Proxy is listening on port 8000
+pappy> exit
+Enter a password:
+$ ls
+test.proj
+```
+
 FAQ
 ---
 
@@ -1130,6 +1278,11 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.11
+    * Project directory compression/encryption. Thanks, onizenso!
+    * Add `submit` command
+    * Add macro templates
+    * Add header replacement and resubmit in-context requests macro templates
 * 0.2.10
     * Add wildcard support for requests that can take in multiple request ids
     * Update dump_response to dump multiple requests at the same time

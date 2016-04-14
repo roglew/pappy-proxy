@@ -168,6 +168,18 @@ def main_context_ids(*args, **kwargs):
     """
     ret = yield async_main_context_ids(*args, **kwargs)
     defer.returnValue(ret)
+    
+def add_to_history(req):
+    """
+    Save a request to history without saving it to the data file. The request
+    will only be saved in memory, so when the program is exited or `clrmem`
+    is run, the request will be deleted.
+
+    :param req: The request to add to history
+    :type req: :class:`pappyproxy.http.Request`
+    """
+    pappyproxy.http.Request.cache.add(req)
+    pappyproxy.context.reset_context_caches()
 
 def run_cmd(cmd):
     """
