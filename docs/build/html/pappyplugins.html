@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Writing Plugins for the Pappy Proxy &mdash; Pappy Proxy 0.2.0 documentation</title>
+    <title>Writing Plugins for the Pappy Proxy &mdash; Pappy Proxy 0.2.11 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '0.2.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Pappy Proxy 0.2.0 documentation" href="index.html" />
+    <link rel="top" title="Pappy Proxy 0.2.11 documentation" href="index.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
     <link rel="prev" title="The Pappy Proxy Tutorial" href="tutorial.html" /> 
   </head>
   <body role="document">
@@ -37,9 +38,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
+          <a href="contributing.html" title="Contributing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
           <a href="tutorial.html" title="The Pappy Proxy Tutorial"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -113,25 +117,25 @@
 <div class="section" id="writing-a-hello-world-plugin">
 <h3><a class="toc-backref" href="#id5">Writing a Hello World Plugin</a><a class="headerlink" href="#writing-a-hello-world-plugin" title="Permalink to this headline">¶</a></h3>
 <p>It&#8217;s probably easiest to explain how to write a plugin by writing one. Here is a simple plugin that defines a <code class="docutils literal"><span class="pre">hello</span></code> command and gives an alias <code class="docutils literal"><span class="pre">hlo</span></code> (we&#8217;ll go over all the parts in a second):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## hello.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## hello.py</span>
 
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
-    <span class="k">print</span> <span class="s">&quot;Hello, world!&quot;</span>
+    <span class="k">print</span> <span class="s2">&quot;Hello, world!&quot;</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;hlo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;hlo&#39;</span><span class="p">),</span>
     <span class="p">])</span>
 </pre></div>
 </div>
 <p>Save this as <code class="docutils literal"><span class="pre">~/.pappy/plugins/hello.py</span></code> and run Pappy. You should have a new <code class="docutils literal"><span class="pre">hello</span></code> command that prints your message:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ cp hello.py ~/.pappy/plugins/
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ cp hello.py ~/.pappy/plugins/
 $ pappy -l
 Temporary datafile is /tmp/tmp1Myw6q
 Proxy is listening on port 8000
@@ -154,30 +158,30 @@ pappy&gt;
 <div class="section" id="passing-arguments-to-your-function">
 <h3><a class="toc-backref" href="#id6">Passing Arguments to Your Function</a><a class="headerlink" href="#passing-arguments-to-your-function" title="Permalink to this headline">¶</a></h3>
 <p>Each command gets bound to one function which takes one argument. That argument is all the text that was entered after the name of the command in the console. For example if we run <code class="docutils literal"><span class="pre">hello</span> <span class="pre">foo</span> <span class="pre">bar</span></code>, in our function line would be &#8220;foo bar&#8221;. <strong>I suggest using shlex.split(line) to parse multiple arguments</strong>. So let&#8217;s update our script to take some arguments:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## hello.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## hello.py</span>
 <span class="kn">import</span> <span class="nn">shlex</span>
 
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&#39;Hello, </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">print</span> <span class="s1">&#39;Hello, </span><span class="si">%s</span><span class="s1">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, world!&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, world!&quot;</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;hlo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;hlo&#39;</span><span class="p">),</span>
     <span class="p">])</span>
 </pre></div>
 </div>
 <p>Save your changes and restart pappy to reload the plugin:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy -l
 Temporary datafile is /tmp/tmpBOXyJ3
 Proxy is listening on port 8000
 pappy&gt; hello
@@ -193,26 +197,26 @@ pappy&gt;
 <div class="section" id="adding-more-aliases">
 <h3><a class="toc-backref" href="#id7">Adding More Aliases</a><a class="headerlink" href="#adding-more-aliases" title="Permalink to this headline">¶</a></h3>
 <p>So now let&#8217;s add some more aliases to our command. If we want to add a new alias, we just add another tuple to the list passed into <code class="docutils literal"><span class="pre">cmd.add_aliases</span></code>. The first element is the real name of the command (what you set with <code class="docutils literal"><span class="pre">set_cmds</span></code>) and the second value is the alias you want to type. So let&#8217;s make it so we can just type <code class="docutils literal"><span class="pre">ho</span></code> to say hello:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">## hello.py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">## hello.py</span>
 <span class="kn">import</span> <span class="nn">shlex</span>
 
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&#39;Hello, </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">print</span> <span class="s1">&#39;Hello, </span><span class="si">%s</span><span class="s1">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, world!&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, world!&quot;</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;hlo&#39;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;ho&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;hlo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;ho&#39;</span><span class="p">),</span>
     <span class="p">])</span>
 </pre></div>
 </div>
@@ -221,7 +225,7 @@ pappy&gt;
 <p class="last">You must use the actual name of the command that you used in <code class="docutils literal"><span class="pre">set_cmds</span></code>. You can&#8217;t &#8220;chain&#8221; alieases. As a result, in our example we couldn&#8217;t add the alias <code class="docutils literal"><span class="pre">('hlo',</span> <span class="pre">'ho')</span></code> to add <code class="docutils literal"><span class="pre">ho</span></code> as our alias.</p>
 </div>
 <p>Then reload the plugin:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy -l
 Temporary datafile is /tmp/tmpBOXyJ3
 Proxy is listening on port 8000
 pappy&gt; ho
@@ -237,7 +241,7 @@ pappy&gt;
 <div class="section" id="adding-another-command">
 <h3><a class="toc-backref" href="#id8">Adding Another Command</a><a class="headerlink" href="#adding-another-command" title="Permalink to this headline">¶</a></h3>
 <p>So now let&#8217;s add a <code class="docutils literal"><span class="pre">robe_and_wizard_hat</span></code> command. To do this, we will define another function, then add another entry in the dict that is passed to <code class="docutils literal"><span class="pre">set_cmds</span></code>. The second value in the tuple is the autocomplete function, but we&#8217;ll get to that later. For now, just put in <code class="docutils literal"><span class="pre">None</span></code> to say we don&#8217;t have one. We will also add a <code class="docutils literal"><span class="pre">wh</span></code> alias to it:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy -l
 Temporary datafile is /tmp/tmpyl2cEZ
 Proxy is listening on port 8000
 pappy&gt; wh
@@ -252,42 +256,42 @@ pappy&gt;
 <blockquote>
 <div><code class="docutils literal"><span class="pre">text</span></code> is the string prefix we are attempting to match: all returned matches must begin with it. <code class="docutils literal"><span class="pre">line</span></code> is the current input line with leading whitespace removed, <code class="docutils literal"><span class="pre">begidx</span></code> and <code class="docutils literal"><span class="pre">endidx</span></code> are the beginning and ending indexes of the prefix text, which could be used to provide different completion depending upon which position the argument is in.</div></blockquote>
 <p>Let&#8217;s let the user to autocomplete some names in our plugin:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">shlex</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shlex</span>
 
-<span class="n">_AUTOCOMPLETE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;alice&#39;</span><span class="p">,</span> <span class="s">&#39;allie&#39;</span><span class="p">,</span> <span class="s">&#39;sarah&#39;</span><span class="p">,</span> <span class="s">&#39;mallory&#39;</span><span class="p">,</span> <span class="s">&#39;slagathor&#39;</span><span class="p">]</span>
+<span class="n">_AUTOCOMPLETE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alice&#39;</span><span class="p">,</span> <span class="s1">&#39;allie&#39;</span><span class="p">,</span> <span class="s1">&#39;sarah&#39;</span><span class="p">,</span> <span class="s1">&#39;mallory&#39;</span><span class="p">,</span> <span class="s1">&#39;slagathor&#39;</span><span class="p">]</span>
 
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&#39;Hello, </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">print</span> <span class="s1">&#39;Hello, </span><span class="si">%s</span><span class="s1">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, world!&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, world!&quot;</span>
 
 <span class="k">def</span> <span class="nf">put_on_rope_and_wizard_hat</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> puts on their robe and wizard hat&#39;</span> <span class="o">%</span> <span class="n">line</span>
+        <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> puts on their robe and wizard hat&#39;</span> <span class="o">%</span> <span class="n">line</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;I put on my robe and wizard hat&#39;</span>
+        <span class="k">print</span> <span class="s1">&#39;I put on my robe and wizard hat&#39;</span>
 
 <span class="k">def</span> <span class="nf">complete_hello_world</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">_AUTOCOMPLETE_NAMES</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">text</span><span class="p">)]</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="n">complete_hello_world</span><span class="p">),</span>
-        <span class="s">&#39;wizard_hat&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">put_on_rope_and_wizard_hat</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="n">complete_hello_world</span><span class="p">),</span>
+        <span class="s1">&#39;wizard_hat&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">put_on_rope_and_wizard_hat</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;hlo&#39;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&#39;wizard_hat&#39;</span><span class="p">,</span> <span class="s">&#39;wh&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;hlo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;wizard_hat&#39;</span><span class="p">,</span> <span class="s1">&#39;wh&#39;</span><span class="p">),</span>
     <span class="p">])</span>
 </pre></div>
 </div>
 <p>Then restart and run:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ pappy -l
+<div class="highlight-python"><div class="highlight"><pre><span></span>$ pappy -l
 Temporary datafile is /tmp/tmp3J97rE
 Proxy is listening on port 8000
 pappy&gt; hello
@@ -302,9 +306,9 @@ pappy&gt;
 <div class="section" id="adding-help">
 <h3><a class="toc-backref" href="#id10">Adding Help</a><a class="headerlink" href="#adding-help" title="Permalink to this headline">¶</a></h3>
 <p>Now let&#8217;s say we want to add some help to the command so that when the user runs <code class="docutils literal"><span class="pre">help</span> <span class="pre">hello</span></code> they get something useful. To do that, just add a docstring to your function:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">shlex</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shlex</span>
 
-<span class="n">_AUTOCOMPLETE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;alice&#39;</span><span class="p">,</span> <span class="s">&#39;allie&#39;</span><span class="p">,</span> <span class="s">&#39;sarah&#39;</span><span class="p">,</span> <span class="s">&#39;mallory&#39;</span><span class="p">,</span> <span class="s">&#39;slagathor&#39;</span><span class="p">]</span>
+<span class="n">_AUTOCOMPLETE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alice&#39;</span><span class="p">,</span> <span class="s1">&#39;allie&#39;</span><span class="p">,</span> <span class="s1">&#39;sarah&#39;</span><span class="p">,</span> <span class="s1">&#39;mallory&#39;</span><span class="p">,</span> <span class="s1">&#39;slagathor&#39;</span><span class="p">]</span>
 
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -313,30 +317,30 @@ pappy&gt;
 
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&#39;Hello, </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">print</span> <span class="s1">&#39;Hello, </span><span class="si">%s</span><span class="s1">!&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Hello, world!&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Hello, world!&quot;</span>
 
 <span class="k">def</span> <span class="nf">put_on_rope_and_wizard_hat</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> puts on their robe and wizard hat&#39;</span> <span class="o">%</span> <span class="n">line</span>
+        <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> puts on their robe and wizard hat&#39;</span> <span class="o">%</span> <span class="n">line</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;I put on my robe and wizard hat&#39;</span>
+        <span class="k">print</span> <span class="s1">&#39;I put on my robe and wizard hat&#39;</span>
 
 <span class="k">def</span> <span class="nf">complete_hello_world</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">_AUTOCOMPLETE_NAMES</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">text</span><span class="p">)]</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="n">complete_hello_world</span><span class="p">),</span>
-        <span class="s">&#39;wizard_hat&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">put_on_rope_and_wizard_hat</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;hello&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">hello_world</span><span class="p">,</span> <span class="n">complete_hello_world</span><span class="p">),</span>
+        <span class="s1">&#39;wizard_hat&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">put_on_rope_and_wizard_hat</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;hlo&#39;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&#39;wizard_hat&#39;</span><span class="p">,</span> <span class="s">&#39;wh&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;hlo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;wizard_hat&#39;</span><span class="p">,</span> <span class="s1">&#39;wh&#39;</span><span class="p">),</span>
     <span class="p">])</span>
 </pre></div>
 </div>
@@ -351,29 +355,29 @@ pappy&gt;
 <p class="first admonition-title">Note</p>
 <p class="last">This tutorial won&#8217;t tell you how to use inlineCallbacks in general. Type &#8220;twisted inline callbacks&#8221; into google to figure out what they are. This is mainly just a reminder to use the <code class="docutils literal"><span class="pre">crochet</span></code> wrapper for console commands and warning you that some functions may return deferreds that you may have to deal with.</p>
 </div>
-<p>Since you&#8217;re writing a plugin, you&#8217;ll probably be using functions which return a deferred. And to keep things readable, you&#8217;ll want to use the <code class="docutils literal"><span class="pre">defer.inlineCallbacks</span></code> function wrapper. Unfortunately, you can&#8217;t bind async functions to commands. Luckily, there&#8217;s a library called <a class="reference external" href="https://pypi.python.org/pypi/crochet">crochet</a> which lets you add another wrapper to the function that lets it be used like a blocking function. Rather than talking about it, let&#8217;s write a plugin to call <a class="reference internal" href="pappyproxy.html#pappyproxy.console.load_reqlist" title="pappyproxy.console.load_reqlist"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.console.load_reqlist()</span></code></a> to print out some requests&#8217; hosts. Let&#8217;s start by pretending it&#8217;s a normal function:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">shlex</span>
-<span class="kn">from</span> <span class="nn">pappyproxy.console</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
+<p>Since you&#8217;re writing a plugin, you&#8217;ll probably be using functions which return a deferred. And to keep things readable, you&#8217;ll want to use the <code class="docutils literal"><span class="pre">defer.inlineCallbacks</span></code> function wrapper. Unfortunately, you can&#8217;t bind async functions to commands. Luckily, there&#8217;s a library called <a class="reference external" href="https://pypi.python.org/pypi/crochet">crochet</a> which lets you add another wrapper to the function that lets it be used like a blocking function. Rather than talking about it, let&#8217;s write a plugin to call <a class="reference internal" href="pappyproxy.html#pappyproxy.util.load_reqlist" title="pappyproxy.util.load_reqlist"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.util.load_reqlist()</span></code></a> to print out some requests&#8217; hosts. Let&#8217;s start by pretending it&#8217;s a normal function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shlex</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.util</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
 
 <span class="k">def</span> <span class="nf">print_hosts</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-    <span class="n">reqs</span> <span class="o">=</span> <span class="n">load_reqlist</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c"># It&#39;s supposed to return a list of requests, right?</span>
+    <span class="n">reqs</span> <span class="o">=</span> <span class="n">load_reqlist</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c1"># It&#39;s supposed to return a list of requests, right?</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reqs</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;The host for request </span><span class="si">%s</span><span class="s"> is: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s1">&#39;The host for request </span><span class="si">%s</span><span class="s1"> is: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;print_hosts&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">print_hosts</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;print_hosts&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">print_hosts</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
     <span class="p">])</span>
 </pre></div>
 </div>
 <p>And we run it:</p>
-<div class="highlight-python"><div class="highlight"><pre>pappy&gt; print_hosts 1
+<div class="highlight-python"><div class="highlight"><pre><span></span>pappy&gt; print_hosts 1
 Traceback (most recent call last):
   File &quot;/usr/local/lib/python2.7/dist-packages/cmd2.py&quot;, line 788, in onecmd_plus_hooks
     stop = self.onecmd(statement)
@@ -388,9 +392,9 @@ iteration over non-sequence
 pappy&gt;
 </pre></div>
 </div>
-<p>Iteration over a non-sequence? what? Well, <a class="reference internal" href="pappyproxy.html#pappyproxy.console.load_reqlist" title="pappyproxy.console.load_reqlist"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.console.load_reqlist()</span></code></a> doesn&#8217;t actually return a list of requests. It returns a deferred which returns a list of requests. I&#8217;m not going into the details (look up some stuff on using inline callbacks with Twisted if you want more info), but the way to fix it is to slap an <code class="docutils literal"><span class="pre">inlineCallbacks</span></code> wrapper on the function and <code class="docutils literal"><span class="pre">yield</span></code> the result of the function. Now it looks like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">shlex</span>
-<span class="kn">from</span> <span class="nn">pappyproxy.console</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
+<p>Iteration over a non-sequence? what? Well, <a class="reference internal" href="pappyproxy.html#pappyproxy.util.load_reqlist" title="pappyproxy.util.load_reqlist"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.util.load_reqlist()</span></code></a> doesn&#8217;t actually return a list of requests. It returns a deferred which returns a list of requests. I&#8217;m not going into the details (look up some stuff on using inline callbacks with Twisted if you want more info), but the way to fix it is to slap an <code class="docutils literal"><span class="pre">inlineCallbacks</span></code> wrapper on the function and <code class="docutils literal"><span class="pre">yield</span></code> the result of the function. Now it looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shlex</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.util</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
 <span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">defer</span>
 
 <span class="nd">@defer.inlineCallbacks</span>
@@ -398,23 +402,23 @@ pappy&gt;
     <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
     <span class="n">reqs</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">load_reqlist</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reqs</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;The host for request </span><span class="si">%s</span><span class="s"> is: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s1">&#39;The host for request </span><span class="si">%s</span><span class="s1"> is: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;print_hosts&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">print_hosts</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;print_hosts&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">print_hosts</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
     <span class="p">])</span>
 </pre></div>
 </div>
 <p>However, the console assumes that any functions it calls will be blocking. As a result, we need to add the <code class="docutils literal"><span class="pre">crochet.wait_for</span></code> wrapper:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">shlex</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shlex</span>
 <span class="kn">import</span> <span class="nn">crochet</span>
-<span class="kn">from</span> <span class="nn">pappyproxy.console</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.util</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
 <span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">defer</span>
 
 <span class="nd">@crochet.wait_for</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
@@ -423,14 +427,14 @@ pappy&gt;
     <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
     <span class="n">reqs</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">load_reqlist</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reqs</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;The host for request </span><span class="si">%s</span><span class="s"> is: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s1">&#39;The host for request </span><span class="si">%s</span><span class="s1"> is: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;print_hosts&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">print_hosts</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;print_hosts&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">print_hosts</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
     <span class="p">])</span>
@@ -462,21 +466,21 @@ pappy&gt;
 </div>
 <div class="section" id="storing-custom-request-metadata">
 <h3><a class="toc-backref" href="#id15">Storing Custom Request Metadata</a><a class="headerlink" href="#storing-custom-request-metadata" title="Permalink to this headline">¶</a></h3>
-<p><a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request" title="pappyproxy.http.Request"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.http.Request</span></code></a> objects have a <code class="docutils literal"><span class="pre">plugin_data</span></code> attribute. It is a dictionary that is intended to be used by plugins to give the request custom metadata. If you want to store metadata about a request, it is suggested that you add a key to this dictionary and store any metadata you want under that key. You can use <code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.get_plugin_dict()</span></code> to get a dictionary for a specific name. It will create an entry for that name if it doesn&#8217;t exist. I also suggest defining a function plugin-wide for getting the plugin&#8217;s data dict from a specific request. Since dictionaries are always passed by reference, any modifications you make to the returned dict will be applied to the request as well.</p>
+<p><a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request" title="pappyproxy.http.Request"><code class="xref py py-class docutils literal"><span class="pre">pappyproxy.http.Request</span></code></a> objects have a <code class="docutils literal"><span class="pre">plugin_data</span></code> attribute. It is a dictionary that is intended to be used by plugins to give the request custom metadata. If you want to store metadata about a request, it is suggested that you add a key to this dictionary and store any metadata you want under that key. You can use <a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request.get_plugin_dict" title="pappyproxy.http.Request.get_plugin_dict"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.get_plugin_dict()</span></code></a> to get a dictionary for a specific name. It will create an entry for that name if it doesn&#8217;t exist. I also suggest defining a function plugin-wide for getting the plugin&#8217;s data dict from a specific request. Since dictionaries are always passed by reference, any modifications you make to the returned dict will be applied to the request as well.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">You will need to save the request using something like <a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request.save" title="pappyproxy.http.Request.save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.save()</span></code></a> or <a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request.async_deep_save" title="pappyproxy.http.Request.async_deep_save"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.async_deep_save()</span></code></a> in order to store the changes in the data file.</p>
 </div>
 <p>Here is an example plugin for storing the user-agent (if it exists) in the <code class="docutils literal"><span class="pre">plugin_data</span></code> dict of a request under the key <code class="docutils literal"><span class="pre">agent</span></code>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">crochet</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">crochet</span>
 <span class="kn">import</span> <span class="nn">shlex</span>
 <span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">defer</span>
 
-<span class="kn">from</span> <span class="nn">pappyproxy.console</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
+<span class="kn">from</span> <span class="nn">pappyproxy.util</span> <span class="kn">import</span> <span class="n">load_reqlist</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.plugin</span> <span class="kn">import</span> <span class="n">main_context</span>
 <span class="kn">from</span> <span class="nn">pappyproxy.util</span> <span class="kn">import</span> <span class="n">PappyException</span>
 
-<span class="n">DATA_KEY</span> <span class="o">=</span> <span class="s">&#39;agent&#39;</span>
+<span class="n">DATA_KEY</span> <span class="o">=</span> <span class="s1">&#39;agent&#39;</span>
 
 <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">get_plugin_dict</span><span class="p">(</span><span class="n">DATA_KEY</span><span class="p">)</span>
@@ -485,8 +489,8 @@ pappy&gt;
 <span class="nd">@defer.inlineCallbacks</span>
 <span class="k">def</span> <span class="nf">update_agent_metadata</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">main_context</span><span class="p">()</span><span class="o">.</span><span class="n">active_requests</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s">&#39;user-agent&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
-            <span class="n">get_data</span><span class="p">(</span><span class="n">r</span><span class="p">)[</span><span class="s">&#39;agent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;user-agent&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;user-agent&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="n">get_data</span><span class="p">(</span><span class="n">r</span><span class="p">)[</span><span class="s1">&#39;agent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;user-agent&#39;</span><span class="p">]</span>
         <span class="k">yield</span> <span class="n">r</span><span class="o">.</span><span class="n">async_deep_save</span><span class="p">()</span>
 
 <span class="nd">@crochet.wait_for</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
@@ -495,18 +499,18 @@ pappy&gt;
     <span class="n">args</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
     <span class="n">reqs</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">load_reqlist</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reqs</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s">&#39;agent&#39;</span> <span class="ow">in</span> <span class="n">get_data</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
-            <span class="k">print</span> <span class="s">&#39;The user agent for </span><span class="si">%s</span><span class="s"> is &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">get_data</span><span class="p">(</span><span class="n">r</span><span class="p">)[</span><span class="s">&#39;agent&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s1">&#39;agent&#39;</span> <span class="ow">in</span> <span class="n">get_data</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s1">&#39;The user agent for </span><span class="si">%s</span><span class="s1"> is &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reqid</span><span class="p">,</span> <span class="n">get_data</span><span class="p">(</span><span class="n">r</span><span class="p">)[</span><span class="s1">&#39;agent&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;Request </span><span class="si">%s</span><span class="s"> has no user agent data&#39;</span> <span class="o">%</span> <span class="n">r</span><span class="o">.</span><span class="n">reqid</span>
+            <span class="k">print</span> <span class="s1">&#39;Request </span><span class="si">%s</span><span class="s1"> has no user agent data&#39;</span> <span class="o">%</span> <span class="n">r</span><span class="o">.</span><span class="n">reqid</span>
 
-<span class="c">###############</span>
-<span class="c">## Plugin hooks</span>
+<span class="c1">###############</span>
+<span class="c1">## Plugin hooks</span>
 
 <span class="k">def</span> <span class="nf">load_cmds</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">set_cmds</span><span class="p">({</span>
-        <span class="s">&#39;agent_update&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">update_agent_metadata</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
-        <span class="s">&#39;view_agent&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">view_agent</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;agent_update&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">update_agent_metadata</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+        <span class="s1">&#39;view_agent&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">view_agent</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
     <span class="p">})</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">add_aliases</span><span class="p">([</span>
     <span class="p">])</span>
@@ -515,10 +519,7 @@ pappy&gt;
 </div>
 <div class="section" id="useful-functions">
 <h3><a class="toc-backref" href="#id16">Useful Functions</a><a class="headerlink" href="#useful-functions" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li>Load a request by id: <a class="reference internal" href="pappyproxy.html#pappyproxy.http.Request.load_request" title="pappyproxy.http.Request.load_request"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.http.Request.load_request()</span></code></a></li>
-<li>Create a filter from a filter string: <a class="reference internal" href="pappyproxy.html#pappyproxy.context.Filter.from_filter_string" title="pappyproxy.context.Filter.from_filter_string"><code class="xref py py-func docutils literal"><span class="pre">pappyproxy.context.Filter.from_filter_string()</span></code></a></li>
-</ul>
+<p>See <a class="reference internal" href="pappyproxy.html#module-pappyproxy.plugin" title="pappyproxy.plugin"><code class="xref py py-mod docutils literal"><span class="pre">pappyproxy.plugin</span></code></a> and <a class="reference internal" href="pappyproxy.html#module-pappyproxy.util" title="pappyproxy.util"><code class="xref py py-mod docutils literal"><span class="pre">pappyproxy.util</span></code></a> for useful functions</p>
 </div>
 </div>
 <div class="section" id="built-in-plugins-as-examples">
@@ -577,6 +578,9 @@ pappy&gt;
   <h4>Previous topic</h4>
   <p class="topless"><a href="tutorial.html"
                         title="previous chapter">The Pappy Proxy Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="contributing.html"
+                        title="next chapter">Contributing</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -611,14 +615,17 @@ pappy&gt;
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
+          <a href="contributing.html" title="Contributing"
+             >next</a> |</li>
+        <li class="right" >
           <a href="tutorial.html" title="The Pappy Proxy Tutorial"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &copy; Copyright 2015, Rob Glew.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>

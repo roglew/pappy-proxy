@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Pappy Proxy 0.2.0 documentation</title>
+    <title>Index &mdash; Pappy Proxy 0.2.11 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '0.2.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Pappy Proxy 0.2.0 documentation" href="index.html" /> 
+    <link rel="top" title="Pappy Proxy 0.2.11 documentation" href="index.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -106,27 +106,15 @@
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.plugin.add_req">add_req() (in module pappyproxy.plugin)</a>
-  </dt>
-
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
-      
-  <dt><a href="pappyproxy.html#pappyproxy.context.Context.add_request">add_request() (pappyproxy.context.Context method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.plugin.add_to_history">add_to_history() (in module pappyproxy.plugin)</a>
   </dt>
 
       
   <dt><a href="pappyproxy.html#pappyproxy.http.RepeatableDict.all_pairs">all_pairs() (pappyproxy.http.RepeatableDict method)</a>
   </dt>
 
-      
-  <dt><a href="pappyproxy.html#pappyproxy.context.Context.all_reqs">all_reqs (pappyproxy.context.Context attribute)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.plugin.all_reqs">all_reqs() (in module pappyproxy.plugin)</a>
-  </dt>
-
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.http.RepeatableDict.all_vals">all_vals() (pappyproxy.http.RepeatableDict method)</a>
   </dt>
@@ -136,7 +124,19 @@
   </dt>
 
       
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session.apply_req">apply_req() (pappyproxy.session.Session method)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session.apply_rsp">apply_rsp() (pappyproxy.session.Session method)</a>
+  </dt>
+
+      
   <dt><a href="pappyproxy.html#pappyproxy.http.Request.async_deep_save">async_deep_save() (pappyproxy.http.Request method)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.plugin.async_main_context_ids">async_main_context_ids() (in module pappyproxy.plugin)</a>
   </dt>
 
       
@@ -157,6 +157,10 @@
   <dt><a href="pappyproxy.html#pappyproxy.http.Request.async_submit">async_submit() (pappyproxy.http.Request method)</a>
   </dt>
 
+      
+  <dt><a href="pappyproxy.html#pappyproxy.http.async_submit_requests">async_submit_requests() (in module pappyproxy.http)</a>
+  </dt>
+
   </dl></td>
 </tr></table>
 
@@ -165,10 +169,6 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.body">body (pappyproxy.http.HTTPMessage attribute)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.body_complete">body_complete() (pappyproxy.http.HTTPMessage method)</a>
   </dt>
 
   </dl></td>
@@ -184,13 +184,19 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.config.CERT_DIR">CERT_DIR (in module pappyproxy.config)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.cache">cache (pappyproxy.http.Request attribute)</a>
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.RepeatableDict.clear">clear() (pappyproxy.http.RepeatableDict method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.clear">clear() (pappyproxy.http.HTTPMessage method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="pappyproxy.html#pappyproxy.http.RepeatableDict.clear">(pappyproxy.http.RepeatableDict method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="pappyproxy.html#pappyproxy.iter.common_passwords">common_passwords() (in module pappyproxy.iter)</a>
   </dt>
@@ -199,10 +205,14 @@
   <dt><a href="pappyproxy.html#pappyproxy.iter.common_usernames">common_usernames() (in module pappyproxy.iter)</a>
   </dt>
 
+      
+  <dt><a href="pappyproxy.html#pappyproxy.util.confirm">confirm() (in module pappyproxy.util)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.console.confirm">confirm() (in module pappyproxy.console)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.connect_request">connect_request (pappyproxy.http.Request attribute)</a>
   </dt>
 
       
@@ -224,23 +234,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.config.DATA_DIR">DATA_DIR (in module pappyproxy.config)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.config.DATAFILE">DATAFILE (in module pappyproxy.config)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.config.DEBUG_DIR">DEBUG_DIR (in module pappyproxy.config)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.deep_delete">deep_delete() (pappyproxy.http.Request method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
-      
-  <dt><a href="pappyproxy.html#pappyproxy.http.Request.deep_delete">deep_delete() (pappyproxy.http.Request method)</a>
-  </dt>
-
       
   <dt><a href="pappyproxy.html#pappyproxy.http.Response.delete_cookie">delete_cookie() (pappyproxy.http.Response method)</a>
   </dt>
@@ -316,13 +314,25 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.get_metadata">get_metadata() (pappyproxy.http.HTTPMessage method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session.get_cookie">get_cookie() (pappyproxy.session.Session method)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.get_plugin_dict">get_plugin_dict() (pappyproxy.http.Request method)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.util.get_req_data_row">get_req_data_row() (in module pappyproxy.util)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.http.get_request">get_request() (in module pappyproxy.http)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session.get_rsp_cookie">get_rsp_cookie() (pappyproxy.session.Session method)</a>
   </dt>
 
   </dl></td>
@@ -332,27 +342,15 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.handle_header">handle_header() (pappyproxy.http.HTTPMessage method)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.handle_start_line">handle_start_line() (pappyproxy.http.HTTPMessage method)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.headers_end">headers_end() (pappyproxy.http.HTTPMessage method)</a>
-  </dt>
-
-      
   <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.headers_section">headers_section (pappyproxy.http.HTTPMessage attribute)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.headers_section_pretty">headers_section_pretty (pappyproxy.http.HTTPMessage attribute)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.http.Request.host">host (pappyproxy.http.Request attribute)</a>
   </dt>
@@ -369,10 +367,6 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.plugin.in_memory_reqs">in_memory_reqs() (in module pappyproxy.plugin)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.context.Context.in_memory_requests">in_memory_requests (pappyproxy.context.Context attribute)</a>
   </dt>
 
       
@@ -396,25 +390,25 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.Request.load_all_requests">load_all_requests() (pappyproxy.http.Request static method)</a>
-  </dt>
-
-      
   <dt><a href="pappyproxy.html#pappyproxy.macros.load_macros">load_macros() (in module pappyproxy.macros)</a>
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.console.load_reqlist">load_reqlist() (in module pappyproxy.console)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.util.load_reqlist">load_reqlist() (in module pappyproxy.util)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.load_request">load_request() (pappyproxy.http.Request static method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.Request.load_request">load_request() (pappyproxy.http.Request static method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.load_requests_by_tag">load_requests_by_tag() (pappyproxy.http.Request static method)</a>
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.Request.load_requests_by_tag">load_requests_by_tag() (pappyproxy.http.Request static method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.load_requests_by_time">load_requests_by_time() (pappyproxy.http.Request static method)</a>
   </dt>
 
       
@@ -431,10 +425,18 @@
   <dt><a href="pappyproxy.html#pappyproxy.macros.Macro">Macro (class in pappyproxy.macros)</a>
   </dt>
 
+      
+  <dt><a href="pappyproxy.html#pappyproxy.plugin.main_context_ids">main_context_ids() (in module pappyproxy.plugin)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.plugin.main_context">main_context() (in module pappyproxy.plugin)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.macros.mangle_request">mangle_request() (in module pappyproxy.macros)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.macros.mangle_response">mangle_response() (in module pappyproxy.macros)</a>
   </dt>
 
   </dl></td>
@@ -444,7 +446,75 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.config.PAPPY_DIR">PAPPY_DIR (in module pappyproxy.config)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig">PappyConfig (class in pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.archive">PappyConfig.archive (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.cert_dir">PappyConfig.cert_dir (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.config_dict">PappyConfig.config_dict (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.crypt_dir">PappyConfig.crypt_dir (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.crypt_file">PappyConfig.crypt_file (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.crypt_session">PappyConfig.crypt_session (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.data_dir">PappyConfig.data_dir (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.datafile">PappyConfig.datafile (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.debug_dir">PappyConfig.debug_dir (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.global_config_dict">PappyConfig.global_config_dict (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.http_proxy">PappyConfig.http_proxy (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.listeners">PappyConfig.listeners (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.pappy_dir">PappyConfig.pappy_dir (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.plugin_dirs">PappyConfig.plugin_dirs (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.salt_len">PappyConfig.salt_len (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.save_history">PappyConfig.save_history (in module pappyproxy.config)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.config.PappyConfig.socks_proxy">PappyConfig.socks_proxy (in module pappyproxy.config)</a>
   </dt>
 
       
@@ -463,6 +533,8 @@
   <dt><a href="pappyproxy.html#module-pappyproxy.config">pappyproxy.config (module)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#module-pappyproxy.console">pappyproxy.console (module)</a>
   </dt>
@@ -491,8 +563,6 @@
   <dt><a href="pappyproxy.html#module-pappyproxy.plugin">pappyproxy.plugin (module)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#module-pappyproxy.proxy">pappyproxy.proxy (module)</a>
   </dt>
@@ -510,6 +580,10 @@
   </dt>
 
       
+  <dt><a href="pappyproxy.html#pappyproxy.pappy.PappySession">PappySession (class in pappyproxy.pappy)</a>
+  </dt>
+
+      
   <dt><a href="pappyproxy.html#pappyproxy.http.Request.path_tuple">path_tuple (pappyproxy.http.Request attribute)</a>
   </dt>
 
@@ -522,15 +596,23 @@
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.console.print_requests">print_requests() (in module pappyproxy.console)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.util.print_request_rows">print_request_rows() (in module pappyproxy.util)</a>
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.console.print_table">print_table() (in module pappyproxy.console)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.util.print_requests">print_requests() (in module pappyproxy.util)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.util.print_table">print_table() (in module pappyproxy.util)</a>
   </dt>
 
       
   <dt><a href="pappyproxy.html#pappyproxy.util.printable_data">printable_data() (in module pappyproxy.util)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.proxy_creds">proxy_creds (pappyproxy.http.Request attribute)</a>
   </dt>
 
       
@@ -568,11 +650,11 @@
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.context.Context.remove_request">remove_request() (pappyproxy.context.Context static method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.RepeatableDict">RepeatableDict (class in pappyproxy.http)</a>
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.RepeatableDict">RepeatableDict (class in pappyproxy.http)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.plugin.req_history">req_history() (in module pappyproxy.plugin)</a>
   </dt>
 
       
@@ -582,11 +664,11 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.reserved_meta_keys">reserved_meta_keys (pappyproxy.http.HTTPMessage attribute)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.plugin.require_modules">require_modules() (in module pappyproxy.plugin)</a>
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.reset_metadata">reset_metadata() (pappyproxy.http.HTTPMessage method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.reserved_meta_keys">reserved_meta_keys (pappyproxy.http.HTTPMessage attribute)</a>
   </dt>
 
       
@@ -616,7 +698,23 @@
   </dt>
 
       
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session.save_req">save_req() (pappyproxy.session.Session method)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session.save_rsp">save_rsp() (pappyproxy.session.Session method)</a>
+  </dt>
+
+      
   <dt><a href="pappyproxy.html#pappyproxy.http.Request.saved">saved (pappyproxy.http.Request attribute)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session">Session (class in pappyproxy.session)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.pappy.session">session (in module pappyproxy.pappy)</a>
   </dt>
 
       
@@ -631,20 +729,22 @@
   <dt><a href="pappyproxy.html#pappyproxy.http.Response.set_cookie">set_cookie() (pappyproxy.http.Response method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="pappyproxy.html#pappyproxy.session.Session.set_cookie">(pappyproxy.session.Session method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="pappyproxy.html#pappyproxy.http.Response.set_cookie_kv">set_cookie_kv() (pappyproxy.http.Response method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.context.Context.set_filters">set_filters() (pappyproxy.context.Context method)</a>
   </dt>
 
-      
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.set_metadata">set_metadata() (pappyproxy.http.HTTPMessage method)</a>
-  </dt>
-
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pappyproxy.html#pappyproxy.context.set_tag">set_tag() (in module pappyproxy.context)</a>
   </dt>
@@ -655,6 +755,10 @@
 
       
   <dt><a href="pappyproxy.html#pappyproxy.http.RepeatableDict.sort">sort() (pappyproxy.http.RepeatableDict method)</a>
+  </dt>
+
+      
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.sort_time">sort_time (pappyproxy.http.Request attribute)</a>
   </dt>
 
       
@@ -680,7 +784,7 @@
   </dt>
 
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.Request.submit_new">submit_new() (pappyproxy.http.Request static method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.submit_request">submit_request() (pappyproxy.http.Request static method)</a>
   </dt>
 
   </dl></td>
@@ -700,17 +804,13 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.update_from_body">update_from_body() (pappyproxy.http.HTTPMessage method)</a>
-  </dt>
-
-      
-  <dt><a href="pappyproxy.html#pappyproxy.http.HTTPMessage.update_from_headers">update_from_headers() (pappyproxy.http.HTTPMessage method)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.url">url (pappyproxy.http.Request attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pappyproxy.html#pappyproxy.http.Request.url">url (pappyproxy.http.Request attribute)</a>
+  <dt><a href="pappyproxy.html#pappyproxy.http.Request.url_color">url_color (pappyproxy.http.Request attribute)</a>
   </dt>
 
   </dl></td>
@@ -752,12 +852,12 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Pappy Proxy 0.2.11 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &copy; Copyright 2015, Rob Glew.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>

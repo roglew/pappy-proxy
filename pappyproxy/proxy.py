@@ -14,6 +14,7 @@ from twisted.internet import defer
 from twisted.internet import reactor, ssl
 from twisted.internet.protocol import ClientFactory, ServerFactory
 from twisted.protocols.basic import LineReceiver
+from twisted.python.failure import Failure
 
 next_connection_id = 1
 
@@ -86,23 +87,49 @@ def get_endpoint(target_host, target_port, target_ssl, socks_config=None, use_ht
         tcp_endpoint = TCP4ClientEndpoint(reactor, sock_host, sock_port)
         socks_endpoint = SOCKS5ClientEndpoint(target_host, target_port, tcp_endpoint, methods=methods)
         if target_ssl:
-            endpoint = TLSWrapClientEndpoint(ClientTLSContext(), socks_endpoint)
+            endpoint = TLSWrapClientEndpoint(ssl.ClientContextFactory(), socks_endpoint)
         else:
             endpoint = socks_endpoint
     else:
         if target_ssl:
             endpoint = SSL4ClientEndpoint(reactor, target_host, target_port,
-                                          ClientTLSContext())
+                                          ssl.ClientContextFactory())
         else:
             endpoint = TCP4ClientEndpoint(reactor, target_host, target_port)
     return endpoint
+
+def is_wildcardable_domain_name(domain):
+    """
+    Guesses if this is a domain that can have a wildcard CN
+    """
+    parts = domain.split('.')
+    if len(parts) <= 2:
+        # can't wildcard single names or root domains
+        return False
+    if len(parts) != 4:
+        return True
+    for part in parts:
+        try:
+            v = int(part)
+            if v < 0 or v > 255:
+                return True
+        except ValueError:
+            return True
+    return False
+
+def get_wildcard_cn(domain):
+    """
+    Returns a wildcard CN for the domain given
+    """
+    top_parts = domain.split('.')[1:] # Wildcards the first subdomain
+    return '*.' + '.'.join(top_parts) # convert to *.example.com
+
+def get_most_general_cn(domain):
+    if is_wildcardable_domain_name(domain):
+        return get_wildcard_cn(domain)
+    else:
+        return domain
         
-class ClientTLSContext(ssl.ClientContextFactory):
-    isClient = 1
-    def getContext(self):
-        return SSL.Context(SSL.TLSv1_METHOD)
-
-
 class ProxyClient(LineReceiver):
 
     def __init__(self, request):
@@ -113,6 +140,7 @@ class ProxyClient(LineReceiver):
         self.data_defer = defer.Deferred()
         self.completed = False
         self.stream_response = True # used so child classes can temporarily turn off response streaming
+        self.data_received = False # we assume something's wrong until we get some data
 
         self._response_obj = http.Response()
 
@@ -143,6 +171,7 @@ class ProxyClient(LineReceiver):
             self._response_obj.add_data(data)
 
     def dataReceived(self, data):
+        self.data_received = True
         if self.factory.stream_response and self.stream_response:
             self.factory.return_transport.write(data)
         LineReceiver.dataReceived(self, data)
@@ -166,11 +195,36 @@ class ProxyClient(LineReceiver):
         assert self._response_obj.full_response
         self.data_defer.callback(self.request)
 
+    def respond_failure(self, message):
+        """
+        Closes the connection to the remote server and returns an error message.
+        The request object will have a response of None.
+        """
+        #self.transport.loseConnection()
+        self.data_defer.errback(PappyException(message))
+
     def clientConnectionFailed(self, connector, reason):
         self.log("Connection with remote server failed: %s" % reason)
 
     def clientConnectionLost(self, connector, reason):
         self.log("Connection with remote server lost: %s" % reason)
+
+    def _guess_failure_reason(self, failure):
+        message = failure.getErrorMessage()
+        try:
+            failure.raiseException()
+        except SSL.Error as e:
+            message = 'Error performing SSL handshake'
+        except Exception as e:
+            pass
+        return message
+
+    def connectionLost(self, reason):
+        self.log("Connection lost: %s" % reason)
+        if not self.data_received:
+            self.request.response = None
+            message = self._guess_failure_reason(reason)
+            self.respond_failure("Connection lost: %s" % message)
 
 class UpstreamHTTPProxyClient(ProxyClient):
 
@@ -240,7 +294,7 @@ class UpstreamHTTPProxyClient(ProxyClient):
             self._sent = False
 
             self.log("Starting TLS", verbosity_level=3)
-            self.transport.startTLS(ClientTLSContext())
+            self.transport.startTLS(ssl.ClientContextFactory())
             self.log("TLS started", verbosity_level=3)
             lines = self.request.full_message.splitlines()
             for l in lines:
@@ -284,6 +338,7 @@ class ProxyClientFactory(ClientFactory):
         p.factory = self
         self.log("Building protocol", verbosity_level=3)
         p.data_defer.addCallback(self.return_request_pair)
+        p.data_defer.addErrback(self._data_defer_errback)
         return p
 
     def clientConnectionFailed(self, connector, reason):
@@ -416,6 +471,9 @@ class ProxyClientFactory(ClientFactory):
             yield endpoint.connect(self)
             self.log("Connected")
 
+    def _data_defer_errback(self, message):
+        self.data_defer.errback(message)
+
 class ProxyServerFactory(ServerFactory):
 
     def __init__(self, save_all=False):
@@ -479,15 +537,16 @@ class ProxyServer(LineReceiver):
             host = self._request_obj.host
         else:
             host = cert_host
+        cn_host = get_most_general_cn(host)
         if not host in cached_certs:
-            log("Generating cert for '%s'" % host,
+            log("Generating cert for '%s'" % cn_host,
                 verbosity_level=3)
-            (pkey, cert) = generate_cert(host,
+            (pkey, cert) = generate_cert(cn_host,
                                          session.config.cert_dir)
-            cached_certs[host] = (pkey, cert)
+            cached_certs[cn_host] = (pkey, cert)
         else:
-            log("Using cached cert for %s" % host, verbosity_level=3)
-            (pkey, cert) = cached_certs[host]
+            log("Using cached cert for %s" % cn_host, verbosity_level=3)
+            (pkey, cert) = cached_certs[cn_host]
         ctx = ServerTLSContext(
             private_key=pkey,
             certificate=cert,
@@ -537,6 +596,7 @@ class ProxyServer(LineReceiver):
                                        stream_transport=return_transport)
             if return_transport is None:
                 d.addCallback(self.send_response_back)
+            d.addErrback(self.send_error_back)
         self._reset()
         
     def _reset(self):
@@ -567,6 +627,19 @@ class ProxyServer(LineReceiver):
                                         'X-Frame-Options: DENY\r\n\r\n'))
             self.transport.write(droppedrsp.full_message)
         self.log("Response sent back, losing connection")
+        self.transport.loseConnection()
+
+    def send_error_back(self, failure):
+        errorrsp = http.Response(('HTTP/1.1 200 OK\r\n'
+                                  'Connection: close\r\n'
+                                  'Cache-control: no-cache\r\n'
+                                  'Pragma: no-cache\r\n'
+                                  'Cache-control: no-store\r\n'
+                                  'X-Frame-Options: DENY\r\n'
+                                  'Content-Length: %d\r\n\r\n'
+                                  '%s') % (len(str(failure.getErrorMessage())), str(failure.getErrorMessage())))
+        self.transport.write(errorrsp.full_message)
+        self.log("Error response sent back, losing connection")
         self.transport.loseConnection()
         
     def connectionMade(self):

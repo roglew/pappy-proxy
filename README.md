@@ -1,6 +1,6 @@
 The Pappy Proxy
 ===============
-[Documentation](https://roglew.github.io/pappy-proxy/) - [Tutorial](https://roglew.github.io/pappy-proxy/tutorial.html)
+[Documentation](https://roglew.github.io/pappy-proxy/) - [Tutorial](https://roglew.github.io/pappy-proxy/tutorial.html) - [Website](http://www.pappyproxy.com) - [Blog](http://blog.pappyproxy.com)
 
 Table of Contents
 =================
@@ -58,6 +58,7 @@ Table of Contents
     * [Transparent Host Redirection](#transparent-host-redirection)
     * [Project File Encryption](#project-file-encryption)
     * [FAQ](#faq)
+      * [Text just appeared over my prompt! What do I do?!](#text-just-appeared-over-my-prompt-what-do-i-do)
       * [Why does my request have an id of --?!?!](#why-does-my-request-have-an-id-of---)
     * [Boring, Technical Stuff](#boring-technical-stuff)
       * [Request Cache / Memory usage](#request-cache--memory-usage)
@@ -1261,6 +1262,11 @@ test.proj
 FAQ
 ---
 
+### Text just appeared over my prompt! What do I do?!
+Unfortunately I've been a bit lazy when it comes to printing errors to the terminal. A lot of stuff is just printed to stdout using `print`. This has the side effect of printing over your input. I'm very sorry and I'm trying to work on better solutions, but for now:
+
+* Hit Ctl-L to clear the terminal. Your input will be saved.
+
 ### Why does my request have an id of `--`?!?!
 You can't do anything with a request/response until it is decoded and saved to disk. In between the time when a request is decoded and when it's saved to disk, it will have an ID of `--`. So just wait a little bit and it will get an ID you can use.
 
@@ -1278,6 +1284,9 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.12
+    * Add error handling for if creating a connection fails
+    * Minor bugfixes
 * 0.2.11
     * Project directory compression/encryption. Thanks, onizenso!
     * Add `submit` command

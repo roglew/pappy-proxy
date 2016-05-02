@@ -110,3 +110,24 @@ def test_cache_inmem_evict():
     assert reqs[1] in cache.inmem_reqs
     assert reqs[2] in cache.inmem_reqs
     assert reqs[3] in cache.inmem_reqs
+
+def test_req_ids():
+    reqs = gen_reqs(5)
+    cache = RequestCache(3)
+    cache.add(reqs[0])
+    cache.add(reqs[1])
+    cache.add(reqs[2])
+    cache.add(reqs[3])
+    assert cache.req_ids() == ['4', '3', '2', '1']
+
+def test_req_ids_unmangled():
+    reqs = gen_reqs(5)
+    cache = RequestCache(3)
+    reqs[0].unmangled = reqs[4]
+    cache.add(reqs[0])
+    cache.add(reqs[4])
+    cache.add(reqs[1])
+    cache.add(reqs[2])
+    cache.add(reqs[3])
+    assert cache.req_ids() == ['4', '3', '2', '1']
+    assert cache.req_ids(include_unmangled=True) == ['4', '3', '2', '5', '1']

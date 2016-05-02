@@ -3,6 +3,9 @@ if !has('python')
     finish
 endif
 
+" Settings to make life easier
+set hidden
+
 let s:pyscript = resolve(expand('<sfile>:p:h') . '/repeater.py')
 
 function! RepeaterAction(...)

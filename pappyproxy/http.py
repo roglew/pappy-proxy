@@ -1108,6 +1108,15 @@ class Request(HTTPMessage):
         if self.unmangled:
             retreq.unmangled = self.unmangled.copy()
         return retreq
+
+    def duplicate(self):
+        retreq = self.copy()
+        retreq.reqid = self.reqid
+        if self.unmangled:
+            retreq.unmangled = self.unmangled.duplicate()
+        if self.response:
+            retreq.response = self.response.duplicate()
+        return retreq
             
     @property
     def rsptime(self):
@@ -1907,8 +1916,9 @@ class Request(HTTPMessage):
 
         if use_cache:
             use_cache.evict(self.reqid)
-            Request.cache.ordered_ids.remove(self.reqid)
             Request.cache.all_ids.remove(self.reqid)
+            if self.reqid in Request.cache.ordered_ids:
+                Request.cache.ordered_ids.remove(self.reqid)
             if self.reqid in Request.cache.req_times:
                 del Request.cache.req_times[self.reqid]
             if self.reqid in Request.cache.inmem_reqs:
@@ -2143,16 +2153,17 @@ class Request(HTTPMessage):
             if ret_unmangled:
                 if not r.unmangled:
                     raise PappyException("Request %s was not mangled"%r.reqid)
-                return r.unmangled
+                return r.unmangled.duplicate()
             if rsp_unmangled:
                 if not r.response:
                     raise PappyException("Request %s does not have a response" % r.reqid)
                 if not r.response.unmangled:
                     raise PappyException("Response to request %s was not mangled" % r.reqid)
-                r.response = r.response.unmangled
-                return r
+                retreq = r.duplicate()
+                retreq.response = retreq.response.unmangled
+                return retreq
             else:
-                return r
+                return r.duplicate()
 
         # Get it through the cache
         if use_cache and cache_to_use:
@@ -2234,9 +2245,13 @@ class Request(HTTPMessage):
         # Set up factory settings
         factory.intercepting_macros = intercepting_macros
         factory.connection_id = get_next_connection_id()
-        factory.connect()
-        new_req = yield factory.data_defer
-        request.response = new_req.response
+        try:
+            yield factory.connect()
+            new_req = yield factory.data_defer
+            request.response = new_req.response
+        except Exception as e:
+            request.response = None
+            raise e
         defer.returnValue(request)
 
     @defer.inlineCallbacks
@@ -2271,9 +2286,14 @@ class Request(HTTPMessage):
         Submits the request using its host, port, etc. and updates its response value
         to the resulting response.
         Cannot be called in async functions.
+        If an error is encountered while submitting the request, it is printed
+        to the console.
         This is what you should use to submit your requests in macros.
         """
-        yield self.async_submit(mangle=mangle)
+        try:
+            yield self.async_submit(mangle=mangle)
+        except Exception as e:
+            print 'Submitting request to %s failed: %s' % (self.host, str(e))
 
 
 class Response(HTTPMessage):
@@ -2314,6 +2334,13 @@ class Response(HTTPMessage):
         retrsp.rspid = None
         if self.unmangled:
             retrsp.unmangled = self.unmangled.copy()
+        return retrsp
+
+    def duplicate(self):
+        retrsp = self.copy()
+        retrsp.rspid = self.rspid
+        if self.unmangled:
+            retrsp.unmangled = self.unmangled.duplicate()
         return retrsp
 
     @property

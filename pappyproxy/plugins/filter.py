@@ -139,7 +139,7 @@ def scope_list(line):
     """
     pappyproxy.context.print_scope()
 
-@crochet.wait_for(timeout=None)
+#@crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
 def filter_prune(line):
     """
@@ -155,11 +155,11 @@ def filter_prune(line):
 
     # We copy so that we're not removing items from a set we're iterating over
     act_reqs = yield pappyproxy.pappy.main_context.get_reqs()
-    inact_reqs = Request.cache.all_ids.difference(set(act_reqs))
-    inact_reqs = inact_reqs.difference(set(Request.cache.unmangled_ids))
+    inact_reqs = set(Request.cache.req_ids()).difference(set(act_reqs))
     message = 'This will delete %d/%d requests. You can NOT undo this!! Continue?' % (len(inact_reqs), (len(inact_reqs) + len(act_reqs)))
-    if not confirm(message, 'n'):
-        defer.returnValue(None)
+    print message
+    # if not confirm(message, 'n'):
+    #     defer.returnValue(None)
     
     for reqid in inact_reqs:
         try:

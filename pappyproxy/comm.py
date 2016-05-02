@@ -12,7 +12,7 @@ Handles creating a listening server bound to localhost that other processes can
 use to interact with the proxy.
 """
 
-debug = True
+debug = False
 
 class CommServer(LineReceiver):
     MAX_LENGTH=sys.maxint

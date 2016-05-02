@@ -185,6 +185,24 @@ class RequestCache(object):
                 if count >= num and num != -1:
                     break
 
+    def req_ids(self, num=-1, ids=None, include_unmangled=False):
+        """
+        Returns a list of IDs
+        """
+        retids = []
+        
+        over = list(self.ordered_ids)
+        for reqid in over:
+            if ids is not None and reqid not in ids:
+                continue
+            if not include_unmangled and reqid in self.unmangled_ids:
+                continue
+            if reqid in self.all_ids:
+                retids.append(reqid)
+                if len(retids) >= num and num != -1:
+                    break
+        return retids
+
     @defer.inlineCallbacks
     def load_by_tag(self, tag):
         reqs = yield pappyproxy.http.Request.load_requests_by_tag(tag, cust_cache=self, cust_dbpool=self.dbpool)
