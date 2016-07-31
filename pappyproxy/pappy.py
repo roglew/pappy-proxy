@@ -276,10 +276,10 @@ def inturrupt_handler(signal, frame):
     global quit_confirm_time
     if not quit_confirm_time or datetime.datetime.now() > quit_confirm_time:
         print ''
-        print ('Inturrupting will cause Pappy to quit completely. This will '
+        print ('Interrupting will cause Pappy to quit completely. This will '
                'cause any in-memory only requests to be lost, but all other '
                'data will be saved.')
-        print ('Inturrupt a second time to confirm.')
+        print ('Interrupt a second time to confirm.')
         print ''
         quit_confirm_time = datetime.datetime.now() + datetime.timedelta(0, 10)
     else:
