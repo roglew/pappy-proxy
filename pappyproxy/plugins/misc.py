@@ -200,7 +200,7 @@ def submit(line):
     """
     Resubmit some requests, optionally with modified headers and cookies.
 
-    Usage: submit reqids [-h] [-m] [-u] [-p] [-c [COOKIES [COOKIES ...]]] [-d [HEADERS [HEADERS ...]]]
+    Usage: submit reqids [-h] [-m] [-u] [-p] [-o REQID] [-c [COOKIES [COOKIES ...]]] [-d [HEADERS [HEADERS ...]]]
     """
     
     parser = argparse.ArgumentParser(prog="submit", usage=submit.__doc__)
@@ -210,15 +210,24 @@ def submit(line):
     parser.add_argument('-p', '--uniquepath', action='store_true', help='Only resubmit one request per endpoint (ignoring URL parameters)')
     parser.add_argument('-c', '--cookies', nargs='*', help='Apply a cookie to requests before submitting')
     parser.add_argument('-d', '--headers', nargs='*', help='Apply a header to requests before submitting')
+    parser.add_argument('-o', '--copycookies', help='Copy the cookies used in another request')
     args = parser.parse_args(shlex.split(line))
 
     headers = {}
     cookies = {}
+    clear_cookies = False
 
     if args.headers:
         for h in args.headers:
             k, v = h.split('=', 1)
             headers[k] = v
+
+    if args.copycookies:
+        reqid = args.copycookies
+        req = yield Request.load_request(reqid)
+        clear_cookies = True
+        for k, v in req.cookies.all_pairs():
+            cookies[k] = v
 
     if args.cookies:
         for c in args.cookies:
@@ -232,23 +241,9 @@ def submit(line):
     
     reqs = yield load_reqlist(args.reqids)
 
-    if args.unique or args.uniquepath:
-        endpoints = set()
-        new_reqs = []
-        for r in reqs:
-            if args.unique:
-                s = r.url
-            else:
-                s = r.path
-
-            if not s in endpoints:
-                new_reqs.append(r.copy())
-                endpoints.add(s)
-        reqs = new_reqs
-    else:
-        reqs = [r.copy() for r in reqs]
-
     for req in reqs:
+        if clear_cookies:
+            req.cookies.clear()
         newsession.apply_req(req)
 
     conf_message = "You're about to submit %d requests, continue?" % len(reqs)
@@ -258,12 +253,9 @@ def submit(line):
     for r in reqs:
         r.tags.add('resubmitted')
 
-    if args.inmem:
-        yield async_submit_requests(reqs)
-        for req in reqs:
-            add_to_history(req)
-    else:
-        yield async_submit_requests(reqs, save=True)
+    save = not args.inmem
+    yield async_submit_requests(reqs, save=save, save_in_mem=args.inmem,
+        unique_paths=args.uniquepath, unique_path_and_args=args.unique)
         
 def load_cmds(cmd):
     cmd.set_cmds({

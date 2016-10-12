@@ -13,8 +13,6 @@ import stat
 import crochet
 
 from twisted.internet import defer
-from .proxy import add_intercepting_macro as proxy_add_intercepting_macro
-from .proxy import remove_intercepting_macro as proxy_remove_intercepting_macro
 from .colors import Colors
 from .util import PappyException
 
@@ -95,7 +93,7 @@ def add_intercepting_macro(name, macro):
     passed along.
     """
     for factory in pappyproxy.pappy.session.server_factories:
-        proxy_add_intercepting_macro(name, macro, factory.intercepting_macros)
+        factory.add_intercepting_macro(macro, name=name)
     
 def remove_intercepting_macro(name):
     """
@@ -105,17 +103,18 @@ def remove_intercepting_macro(name):
     macro you would like to stop.
     """
     for factory in pappyproxy.pappy.session.server_factories:
-        proxy_remove_intercepting_macro(name, factory.intercepting_macros)
+        factory.remove_intercepting_macro(name=name)
     
 def active_intercepting_macros():
     """
     Returns a dict of the active intercepting macro objects. Modifying
     this list will not affect which macros are active.
     """
-    ret = {}
-    for factory in pappyproxy.pappy.session.server_factories:
-        for k, v in factory.intercepting_macros.iteritems():
-            ret[k] = v
+    # every factory should have the same int macros so screw it we'll
+    # just use the macros from the first one
+    ret = []
+    if len(pappyproxy.pappy.session.server_factories) > 0:
+        ret = pappyproxy.pappy.session.server_factories[0].get_macro_list()
     return ret
 
 def in_memory_reqs():
@@ -181,6 +180,16 @@ def add_to_history(req):
     pappyproxy.http.Request.cache.add(req)
     pappyproxy.context.reset_context_caches()
 
+def get_active_filter_strings():
+    """
+    Returns a list of filter strings representing the currently active filters
+    """
+    filts = pappyproxy.pappy.main_context.active_filters
+    strs = []
+    for f in filts:
+        strs.append(f.filter_string)
+    return strs
+
 def run_cmd(cmd):
     """
     Run a command as if you typed it into the console. Try and use
@@ -217,3 +226,32 @@ def require_modules(*largs):
                 return func(*args, **kwargs)
         return wr2
     return wr
+
+def set_context_to_saved(name):
+    """
+    Sets the current context to the context saved under the given name.
+    Raises PappyException if name does not exist
+    """
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def delete_saved_context(name):
+    """
+    Deletes the saved context with the given name.
+    Raises PappyException if name does not exist
+    """
+    
+def save_current_context(name):
+    """
+    Saves the current context under the given name.
+    """
+    
+def save_context(name, filter_strs):
+    """
+    Takes a list of filter strings and saves it as a context under the given name.
+    
+    :param name: The name to save the context under
+    :type name: string
+    :param filter_strs: The in-order list of filter strings of the context to save.
+    :type filter_strs: List of strings
+    """

@@ -8,26 +8,17 @@ Table of Contents
   * [Overview](#overview)
     * [Introduction](#introduction)
     * [Contributing](#contributing)
-    * [I still like Burp, but Pappy looks interesting, can I use both?](#i-still-like-burp-but-pappy-looks-interesting-can-i-use-both)
   * [How to Use It](#how-to-use-it)
     * [Installation](#installation)
     * [Quickstart](#quickstart)
     * [Lite Mode](#lite-mode)
     * [Adding The CA Cert to Your Browser](#adding-the-ca-cert-to-your-browser)
-      * [Firefox](#firefox)
-      * [Chrome](#chrome)
-      * [Safari](#safari)
-      * [Internet Explorer](#internet-explorer)
     * [Configuration](#configuration)
     * [General Console Techniques](#general-console-techniques)
-      * [Run a shell command](#run-a-shell-command)
-      * [Running Python Code](#running-python-code)
-      * [Redirect Output To File](#redirect-output-to-file)
     * [Generating Pappy's CA Cert](#generating-pappys-ca-cert)
     * [Browsing Recorded Requests/Responses](#browsing-recorded-requestsresponses)
     * [Tags](#tags)
     * [Request IDs](#request-ids)
-      * [Passing Multiple Request IDs to a Command](#passing-multiple-request-ids-to-a-command)
     * [Context](#context)
     * [Filter Strings](#filter-strings)
       * [List of fields](#list-of-fields)
@@ -39,19 +30,14 @@ Table of Contents
     * [Interceptor](#interceptor)
     * [Repeater](#repeater)
     * [Macros](#macros)
-      * [Generating Macros From Requests](#generating-macros-from-requests)
-      * [Request Objects](#request-objects)
-      * [Useful Functions](#useful-functions)
     * [Intercepting Macros](#intercepting-macros)
-      * [Enabling/Disabling Intercepting Macros](#enablingdisabling-intercepting-macros)
     * [Macro Templates](#macro-templates)
     * [Resubmitting Groups of Requests](#resubmitting-groups-of-requests)
     * [Logging](#logging)
     * [Additional Commands and Features](#additional-commands-and-features)
-      * [Response streaming](#response-streaming)
     * [Viewing Responses In Browser](#viewing-responses-in-browser)
+    * [Websockets](#websockets)
     * [Plugins](#plugins)
-      * [Should I Write a Plugin or a Macro?](#should-i-write-a-plugin-or-a-macro)
     * [Global Settings](#global-settings)
     * [Using an HTTP Proxy](#using-an-http-proxy)
     * [Using a SOCKS Proxy](#using-a-socks-proxy)
@@ -99,11 +85,14 @@ How to Use It
 Installation
 ------------
 Pappy supports OS X and Linux (sorry Windows). Installation requires `pip` or some other command that can handle a `setup.py` with requirements. Once the requirements are installed, you can check that it installed correctly by running `pappy -l` to start the proxy.
+
 ```
 $ git clone --recursive https://github.com/roglew/pappy-proxy.git
 $ cd pappy-proxy
 $ pip install .
 ```
+
+It is also possible (and encouraged!) to install pappy into a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/). After installing into a virtual environment, you will have to enter the virtual environment each time you want to run Pappy.
 
 Quickstart
 ----------
@@ -313,8 +302,9 @@ The following commands can be used to view requests and responses
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
 | `ls [a|<num>]`| list, ls |List requests that are in the current context (see Context section). Has information like the host, target path, and status code. With no arguments, it will print the 25 most recent requests in the current context. If you pass 'a' or 'all' as an argument, it will print all the requests in the current context. If you pass a number "n" as an argument, it will print the n most recent requests in the current context. |
-| `sm [p]` | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. If the `p` option is given, it will print the paths as paths rather than as a tree. | | `viq <id(s)>` | view_request_info, viq | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information. |
-| `vfq <id(s)>` | view_full_request, vfq, kjq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. |
+| `sm [p]` | sm, site_map | Print a tree showing the site map. It will display all requests in the current context that did not have a 404 response. This has to go through all of the requests in the current context so it may be slow. If the `p` option is given, it will print the paths as paths rather than as a tree. |
+| `viq <id(s)>` | view_request_info, viq | View additional information about requests. Includes the target port, if SSL was used, applied tags, and other information. |
+| `vfq <id(s)>` | view_full_request, vfq, kjq | [V]iew [F]ull Re[Q]uest, prints the full request including headers and data. If the request is part of a websocket handshake, it will also print the messages sent over the websocket. |
 | `vbq <id(s)>` | view_request_bytes, vbq | [V]iew [B]ytes of Re[Q]uest, prints the full request including headers and data without coloring or additional newlines. Use this if you want to write a request to a file. |
 | `ppq <format> <id(s)> ` | pretty_print_request, ppq | Pretty print a request with a specific format. See the table below for a list of formats. |
 | `vhq <id(s)>` | view_request_headers, vhq | [V]iew [H]eaders of a Re[Q]uest. Prints just the headers of a request. |
@@ -324,6 +314,7 @@ The following commands can be used to view requests and responses
 | `pps <format> <id(s)>` | pretty_print_response, pps | Pretty print a response with a specific format. See the table below for a list of formats. |
 | `pprm <id(s)>` | print_params, pprm | Print a summary of the parameters submitted with the request. It will include URL params, POST params, and/or cookies |
 | `pri [ct] [key(s)]` | param_info, pri | Print a summary of the parameters and values submitted by in-context requests. You can pass in keys to limit which values will be shown. If you also provide `ct` as the first argument, it will include any keys that are passed as arguments. |
+| `urls <id(s)>` | urls | Search the full request and response of the given IDs for urls and prints them. Especially useful with a wildcard (`*`) to find URLs from all history. |
 | `watch` | watch | Print requests and responses in real time as they pass through the proxy. |
 
 Available formats for `ppq` and `pps` commands:
@@ -401,6 +392,98 @@ The context is a set of filters that define which requests are considered "activ
 | `fu` | filter_up, fu | Removes the most recently applied filter |
 | `fls` | filter_list, fls | Print the filters that make up the current context |
 | `filter_prune` | filter_prune | Delete all the requests that aren't in the current context from the data file |
+
+You are also able to save and load contexts. When saving a context you pass the command a name. The context can then be loaded with that name. Whenever you load a context, the current context is saved with the name `_` to make it easier to quickly load a context, view requests, then return to the original context.
+
+| Command | Aliases | Description |
+|:--------|:------------|:---|
+| `sc <name>` | `sc`, `save_context` | Save the current filters with the provided name. |
+| `lc <name>` | `lc`, `load_context` | Load a saved context by its name. |
+| `dc <name>` | `dc`, `delete_context` | Delete a saved context by its name. |
+| `cls` | `cls`, `list_contexts` | Show a list of saved contexts and the filters for each of them. |
+
+Here is an example session demonstrating saving/loading contexts:
+
+```
+pappy> ls
+ID  Verb  Host                 Path                                      S-Code         Req Len  Rsp Len  Time  Mngl
+16  GET   cdn.sstatic.net      /img/developer-story/announcement_ban...  200 OK         0        10515    0.06  --
+15  GET   cdn.sstatic.net      /Sites/stackoverflow/img/sprites.svg?...  200 OK         0        8131     0.05  --
+14  GET   i.stack.imgur.com    /eoNf5.png                                403 Forbidden  0        173      0.07  --
+13  GET   cdn.sstatic.net      /img/developer-story/announcement_ban...  200 OK         0        12919    0.07  --
+12  GET   cdn.sstatic.net      /img/favicons-sprite16.png?v=4b071e01...  200 OK         0        66460    0.09  --
+11  GET   i.stack.imgur.com    /xqoqk.png                                403 Forbidden  0        173      0.07  --
+10  GET   i.stack.imgur.com    /6HFc3.png                                403 Forbidden  0        173      0.06  --
+9   GET   i.stack.imgur.com    /tKsDb.png                                403 Forbidden  0        173      0.06  --
+8   GET   i.stack.imgur.com    /5d55j.png                                403 Forbidden  0        173      0.08  --
+7   GET   cdn.sstatic.net      /Js/full-anon.en.js?v=a65ef7e053bb        200 OK         0        116828   0.27  --
+6   GET   cdn.sstatic.net      /img/share-sprite-new.svg?v=78be252218f3  200 OK         0        34771    0.93  --
+5   GET   cdn.sstatic.net      /clc/clc.min.js?v=6f49b407ccbc            200 OK         0        6969     0.92  --
+4   GET   cdn.sstatic.net      /Sites/stackoverflow/all.css?v=40629f...  200 OK         0        476855   0.07  --
+3   GET   cdn.sstatic.net      /Js/stub.en.js?v=5cc84a62e045             200 OK         0        38661    0.08  --
+2   GET   ajax.googleapis.com  /ajax/libs/jquery/1.12.4/jquery.min.js    200 OK         0        97163    0.09  --
+1   GET   stackoverflow.com    /                                         200 OK         0        244280   0.43  --
+pappy> fbi not_jscss
+path nctr "(\.js$|\.css$)"
+pappy> fbi not_image
+path nctr "(\.png$|\.jpg$|\.gif$)"
+pappy> sc clean
+Filters saved to clean:
+  path nctr "(\.js$|\.css$)"
+  path nctr "(\.png$|\.jpg$|\.gif$)"
+pappy> cls
+Saved contexts:
+clean
+  path nctr "(\.js$|\.css$)"
+  path nctr "(\.png$|\.jpg$|\.gif$)"
+
+pappy> sr
+pappy> fls
+pappy> f host ct sstatic
+pappy> ls
+ID  Verb  Host             Path                                      S-Code  Req Len  Rsp Len  Time  Mngl
+16  GET   cdn.sstatic.net  /img/developer-story/announcement_ban...  200 OK  0        10515    0.06  --
+15  GET   cdn.sstatic.net  /Sites/stackoverflow/img/sprites.svg?...  200 OK  0        8131     0.05  --
+13  GET   cdn.sstatic.net  /img/developer-story/announcement_ban...  200 OK  0        12919    0.07  --
+12  GET   cdn.sstatic.net  /img/favicons-sprite16.png?v=4b071e01...  200 OK  0        66460    0.09  --
+7   GET   cdn.sstatic.net  /Js/full-anon.en.js?v=a65ef7e053bb        200 OK  0        116828   0.27  --
+6   GET   cdn.sstatic.net  /img/share-sprite-new.svg?v=78be252218f3  200 OK  0        34771    0.93  --
+5   GET   cdn.sstatic.net  /clc/clc.min.js?v=6f49b407ccbc            200 OK  0        6969     0.92  --
+4   GET   cdn.sstatic.net  /Sites/stackoverflow/all.css?v=40629f...  200 OK  0        476855   0.07  --
+3   GET   cdn.sstatic.net  /Js/stub.en.js?v=5cc84a62e045             200 OK  0        38661    0.08  --
+pappy> lc clean
+Set the context to:
+  path nctr "(\.js$|\.css$)"
+  path nctr "(\.png$|\.jpg$|\.gif$)"
+pappy> ls
+ID  Verb  Host               Path                                      S-Code  Req Len  Rsp Len  Time  Mngl
+16  GET   cdn.sstatic.net    /img/developer-story/announcement_ban...  200 OK  0        10515    0.06  --
+15  GET   cdn.sstatic.net    /Sites/stackoverflow/img/sprites.svg?...  200 OK  0        8131     0.05  --
+13  GET   cdn.sstatic.net    /img/developer-story/announcement_ban...  200 OK  0        12919    0.07  --
+6   GET   cdn.sstatic.net    /img/share-sprite-new.svg?v=78be252218f3  200 OK  0        34771    0.93  --
+1   GET   stackoverflow.com  /                                         200 OK  0        244280   0.43  --
+pappy> cls
+Saved contexts:
+_
+  host ct sstatic
+
+clean
+  path nctr "(\.js$|\.css$)"
+  path nctr "(\.png$|\.jpg$|\.gif$)"
+
+pappy> lc _
+Set the context to:
+  host ct sstatic
+pappy> fls
+host ct sstatic
+pappy> dc clean
+pappy> cls
+Saved contexts:
+_
+  path nctr "(\.js$|\.css$)"
+  path nctr "(\.png$|\.jpg$|\.gif$)"
+
+```
 
 Filter Strings
 --------------
@@ -497,6 +580,7 @@ A few filters don't conform to the field, comparer, value format. You can still 
 | before <reqid> | before, bf, b4 | Filters out any request that is not before the given request. Filters out any request without a time. |
 | after <reqid> | after, af | Filters out any request that is not before the given request. Filters out any request without a time. |
 | inv <filter string> | inf | Inverts a filter string. Anything that matches the filter string will not pass the filter. |
+| ws | websocket, ws | Filters out any request that is not part of a websocket connection. |
 
 Examples:
 
@@ -935,6 +1019,7 @@ Wrote script to int_headers.py
 ```
 
 Command information:
+
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
 | `gtma <name> <template name> [template arguments]` | `generate_template_macro`, `gtma` | Generate a macro using a template. |
@@ -973,6 +1058,7 @@ There are a few simple parameters you can pass to the command to modify requests
 | `-m` | Store requests in memory instead of saving to the data file. |
 | `-u` | Only submit one request per endpoint. Will count requests with the same path but different url params as *different* endpoints. |
 | `-p` | Only submit one request per endpoint. Will count requests with the same path but different url params as *the same* endpoints. |
+| `-o <id>` | Copy the cookies used in another request |
 
 Examples:
 ```
@@ -1011,6 +1097,90 @@ If you don't have any intercepting macros running, Pappy will forward data to th
 Viewing Responses In Browser
 ----------------------------
 You can view responses in your browser by visiting `http://pappy/rsp/<rspid>` (NOT pappy.com) in your browser while connected to the proxy. For example, if you want to view the response to request 123, you can visit `http://pappy/rsp/123` to view the response. Pappy will return a response with the same body as the original response and will not make a request to the server. The response will not have the same headers as the original response (aside from the Content-Type header). In addition, Pappy doesn't modify any URLs in the page which means your browser will still fetch external resources like images, JavaScript etc from external servers.
+
+Websockets
+----------
+While information on websockets is scattered throughout the readme, this section will collect it all into one place. Websockets can be intercepted/modified, viewed, etc just like regular requests and responses.
+
+### Viewing a WebSocket Session
+
+Websocket sessions are referred to by the request that was used to initiate their handshake. In the following example, we look at all our websocket connections to an echo websocket server. In both connections, we send "Hello" from the browser. In the second connection, we sent "Hello" twice and used the interceptor to change the second "Hello" message to say "HelloFool" instead.
+
+```
+pappy> f ws
+pappy> ls
+ID  Verb  Host            Path               S-Code            Req Len  Rsp Len  Time  Mngl
+6   GET   localhost:9000  /?compressed=true  101 Switching...  0        0        0.34  --
+1   GET   localhost:9000  /?compressed=true  101 Switching...  0        0        0.32  --
+pappy> vfq 1
+Websocket session handshake
+GET /?compressed=true HTTP/1.1
+Host: localhost:9000
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:49.0) Gecko/20100101 Firefox/49.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Sec-WebSocket-Version: 13
+Origin: null
+Sec-WebSocket-Extensions: permessage-deflate
+Sec-WebSocket-Key: 8rdZsJpDn7FAbdDE6IkHnw==
+Connection: keep-alive, Upgrade
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade: websocket
+
+Websocket session
+> Outgoing, binary = True
+Hello
+< Incoming, binary = True
+Hello
+
+pappy> vfq 6
+Websocket session handshake
+GET /?compressed=true HTTP/1.1
+Host: localhost:9000
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:49.0) Gecko/20100101 Firefox/49.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Sec-WebSocket-Version: 13
+Origin: http://localhost:8090
+Sec-WebSocket-Extensions: permessage-deflate
+Sec-WebSocket-Key: 0oPJkDuwP5rrBYyCM7Hh0A==
+Connection: keep-alive, Upgrade
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade: websocket
+
+Websocket session
+> Outgoing, binary = True
+Hello
+< Incoming, binary = True
+Hello
+> Outgoing, mangled, binary = True
+HelloFool
+---------- ^^ UNMANGLED ^^ ----------
+> Outgoing, binary = True
+Hello
+-------------------------------------
+< Incoming, binary = True
+HelloFool
+
+pappy>
+```
+
+### Intercepting WebSocket Messages
+
+You can intercept websocket messages by running `ic` with a `ws` argument:
+
+```
+pappy> ic ws
+```
+
+### Intercepting Macros
+
+You can automatically mangle websocket messages similarly to requests and responses. Just define a `mangle_ws` function or an `async_mangle_ws` (see the [Intercepting Macros](#intercepting-macros) section for more details).
+
 
 Plugins
 -------
@@ -1225,7 +1395,7 @@ pappy> !pwd
 /tmp/exampleproj/crypt
 
 # Switch to another terminal window
-/templates/ $ echo "Hello World" >  /tmp/exampleproj/crypt/hello.txt
+$ echo "Hello World" >  /tmp/exampleproj/crypt/hello.txt
 
 # Back to Pappy
 pappy> !cat hello.txt
@@ -1248,6 +1418,7 @@ pappy>
 ```
 
 Example of recovering after crash:
+
 ```
 $ ls
 crypt           project.archive
@@ -1284,6 +1455,12 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.13
+    * Refactor proxy core
+    * WEBSOCKETS
+    * Saved contexts
+    * New features in `submit` command
+    * Fixed bugs, added bugs
 * 0.2.12
     * Add error handling for if creating a connection fails
     * Minor bugfixes

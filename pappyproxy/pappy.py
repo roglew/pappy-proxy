@@ -9,8 +9,13 @@ The :class:`pappyproxy.pappy.PappySession` object for the current session. Mainl
 used for accessing the session's config information.
 """
 
-import argparse
 import crochet
+import txaio
+
+crochet.no_setup()
+txaio.use_twisted()
+
+import argparse
 import datetime
 import os
 import schema.update
@@ -33,7 +38,6 @@ from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import ServerFactory
 from twisted.internet.threads import deferToThread
 
-crochet.no_setup()
 main_context = context.Context()
 all_contexts = [main_context]
 
@@ -107,7 +111,8 @@ class PappySession(object):
         listen_strs = []
         self.ports = []
         for listener in self.config.listeners:
-            server_factory = proxy.ProxyServerFactory(save_all=True)
+            #server_factory = proxy.ProxyServerFactory(save_all=True)
+            server_factory = proxy.ProxyProtocolFactory()
             try:
                 if 'forward_host_ssl' in listener and listener['forward_host_ssl']:
                     server_factory.force_ssl = True
@@ -284,8 +289,8 @@ def inturrupt_handler(signal, frame):
         quit_confirm_time = datetime.datetime.now() + datetime.timedelta(0, 10)
     else:
         d = session.cleanup()
-        d.addCallback(lambda _: reactor.stop())
-        d.addCallback(lambda _: os._exit(1)) # Sorry blocking threads :(
+        d.addBoth(lambda _: reactor.stop())
+        d.addBoth(lambda _: os._exit(1)) # Sorry blocking threads :(
     
 if __name__ == '__main__':
     start()

@@ -1,8 +1,9 @@
 import crochet
 import re
 import shlex
+import json
 
-from .http import Request, RepeatableDict
+from .http import Request, Response, RepeatableDict
 from twisted.internet import defer
 from util import PappyException
 
@@ -52,6 +53,15 @@ class Context(object):
         """
         self.active_filters.append(filt)
         self.cache_reset()
+
+    @defer.inlineCallbacks
+    def add_filter_string(self, filtstr):
+        """
+        Add a filter to the context by filter string
+        """
+        f = Filter(filtstr)
+        yield f.generate()
+        self.add_filter(f)
 
     def filter_up(self):
         """
@@ -452,6 +462,15 @@ def gen_filter_by_inverse(args):
     def f(req):
         return not filt(req)
     defer.returnValue(f)
+    
+def gen_filter_by_websocket(args):
+    def f(req):
+        if not req.response:
+            return False
+        if Response.is_ws_upgrade(req.response):
+            return True
+        return False
+    return f
 
 @defer.inlineCallbacks
 def filter_reqs(reqids, filters):
@@ -568,6 +587,64 @@ def async_set_tag(tag, reqs):
         Request.cache.add(req)
     reset_context_caches()
 
+@defer.inlineCallbacks
+def save_context(name, filter_strings, dbpool):
+    """
+    Saves the filter strings to the datafile using their name
+    """
+    rows = yield dbpool.runQuery(
+        """
+        SELECT id FROM saved_contexts WHERE context_name=?;
+        """, (name,)
+    )
+    list_str = json.dumps(filter_strings)
+    if len(rows) > 0:
+        yield dbpool.runQuery(
+            """
+            UPDATE saved_contexts SET filter_strings=?
+            WHERE context_name=?;
+            """, (list_str, name)
+        )
+    else:
+        yield dbpool.runQuery(
+            """
+            INSERT INTO saved_contexts (context_name, filter_strings)
+            VALUES (?,?);
+            """, (name, list_str)
+        )
+        
+@defer.inlineCallbacks
+def delete_saved_context(name, dbpool):
+    yield dbpool.runQuery(
+        """
+        DELETE FROM saved_contexts WHERE context_name=?;
+        """, (name,)
+    )
+    
+@defer.inlineCallbacks
+def get_saved_context(name, dbpool):
+    rows = yield dbpool.runQuery(
+        """
+        SELECT filter_strings FROM saved_contexts WHERE context_name=?;
+        """, (name,)
+    )
+    if len(rows) == 0:
+        raise PappyException("Saved context with name %s does not exist" % name)
+    filter_strs = json.loads(rows[0][0])
+    defer.returnValue(filter_strs)
+
+@defer.inlineCallbacks
+def get_all_saved_contexts(dbpool):
+    rows = yield dbpool.runQuery(
+        """
+        SELECT context_name, filter_strings FROM saved_contexts;
+        """,
+    )
+    all_strs = {}
+    for row in rows:
+        all_strs[row[0]] = json.loads(row[1])
+    defer.returnValue(all_strs)
+
 @crochet.wait_for(timeout=180.0)
 @defer.inlineCallbacks
 def set_tag(tag, reqs):
@@ -660,6 +737,9 @@ class Filter(object):
         
         "saved": gen_filter_by_saved,
         "svd": gen_filter_by_saved,
+
+        "websocket": gen_filter_by_websocket,
+        "ws": gen_filter_by_websocket,
     }
 
     _async_filter_functions = {

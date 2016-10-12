@@ -24,12 +24,15 @@ def by_lines_and_full_helper(Type, id_attr, load_func, header_lines, data=''):
     #  after calling update() on it,
     #  created by serializing and unserializing to json)
     
+    print '-'*30
     t_lines = Type()
-    for l in header_lines:
-        t_lines.add_line(l)
+    t_lines.add_data('\r\n'.join(header_lines) + '\r\n')
+    # for l in header_lines:
+    #     t_lines.add_line(l)
 
     if data:
         t_lines.add_data(data)
+    print '-'*30
 
     t_fulls = '\r\n'.join(header_lines)+'\r\n'
     t_fulls += data
@@ -396,10 +399,10 @@ def test_message_build():
            'Content-Length: 100\r\n\r\n')
     raw += 'A'*100
     m = http.HTTPMessage()
-    m.add_line('foobar')
-    m.add_line('a: b')
-    m.add_line('Content-Length: 100')
-    m.add_line('')
+    m.add_data('foobar\r\n')
+    m.add_data('a: b\r\n')
+    m.add_data('Content-Length: 100\r\n')
+    m.add_data('\r\n')
     assert not m.complete
     m.add_data('A'*50)
     assert not m.complete
@@ -421,10 +424,10 @@ def test_message_build_chunked():
            'Content-Length: 100\r\n\r\n')
     raw += 'A'*100
     m = http.HTTPMessage()
-    m.add_line('foobar')
-    m.add_line('a: b')
-    m.add_line('Transfer-Encoding: chunked')
-    m.add_line('')
+    m.add_data('foobar\r\n')
+    m.add_data('a: b\r\n')
+    m.add_data('Transfer-Encoding: chunked\r\n')
+    m.add_data('\r\n')
     assert not m.complete
     m.add_data('%x\r\n' % 50)
     m.add_data('A'*50)
@@ -588,7 +591,7 @@ def test_headers_end():
     ]
     r = http.Request()
     for l in header_lines:
-        r.add_line(l)
+        r.add_data(l+'\r\n')
     assert not r.complete
     assert r.headers_complete
     
@@ -761,17 +764,18 @@ def test_request_update_content_length():
                       'Content-Length: 4\r\n\r\n'
                       'AAAAAAAAAA'), update_content_length=True)
 
+    assert r.complete
     assert r.full_request == (('GET / HTTP/1.1\r\n'
                                'Content-Length: 10\r\n\r\n'
                                'AAAAAAAAAA'))
     
 def test_request_blank_url_params():
     r = http.Request()
-    r.add_line('GET /this/??-asdf/ HTTP/1.1')
+    r.add_data('GET /this/??-asdf/ HTTP/1.1\r\n')
     assert r.full_request == ('GET /this/??-asdf/ HTTP/1.1\r\n\r\n')
 
     r = http.Request()
-    r.add_line('GET /this/??-asdf/?a=b&c&d=ef HTTP/1.1')
+    r.add_data('GET /this/??-asdf/?a=b&c&d=ef HTTP/1.1\r\n')
     assert r.full_request == ('GET /this/??-asdf/?a=b&c&d=ef HTTP/1.1\r\n\r\n')
     assert r.url_params['?-asdf/?a'] == 'b'
     assert r.url_params['c'] == None
@@ -784,26 +788,26 @@ def test_request_blank():
 def test_request_blank_headers():
     r = http.Request(('GET / HTTP/1.1\r\n'
                       'Header: \r\n'
-                      'Header2:\r\n'))
+                      'Header2:\r\n\r\n'))
 
     assert r.headers['header'] == ''
     assert r.headers['header2'] == ''
     
 def test_request_blank_cookies():
     r = http.Request(('GET / HTTP/1.1\r\n'
-                      'Cookie: \r\n'))
+                      'Cookie: \r\n\r\n'))
     assert r.cookies[''] == ''
 
     r = http.Request(('GET / HTTP/1.1\r\n'
-                      'Cookie: a=b; ; c=d\r\n'))
+                      'Cookie: a=b; ; c=d\r\n\r\n'))
     assert r.cookies[''] == ''
 
     r = http.Request(('GET / HTTP/1.1\r\n'
-                      'Cookie: a=b; foo; c=d\r\n'))
+                      'Cookie: a=b; foo; c=d\r\n\r\n'))
     assert r.cookies['foo'] == ''
 
 def test_request_set_url():
-    r = http.Request('GET / HTTP/1.1\r\n')
+    r = http.Request('GET / HTTP/1.1\r\n\r\n')
     r.url = 'www.AAAA.BBBB'
     assert r.host == 'www.AAAA.BBBB'
     assert r.port == 80
@@ -830,7 +834,7 @@ def test_request_set_url():
     assert r.is_ssl
     
 def test_request_set_url_params():
-    r = http.Request('GET / HTTP/1.1\r\n')
+    r = http.Request('GET / HTTP/1.1\r\n\r\n')
     r.url = 'www.AAAA.BBBB?a=b&c=d#foo'
     assert r.url_params.all_pairs() == [('a','b'), ('c','d')]
     assert r.fragment == 'foo'
@@ -889,13 +893,16 @@ def test_request_absolute_url():
     r = http.Request(('GET /foo/path HTTP/1.1\r\n'
                       'Host: www.example.faketld\r\n\r\n'))
     assert r.full_message == ('GET /foo/path HTTP/1.1\r\n'
-                              'Host: www.example.faketld\r\n\r\n')
+                              'Host: www.example.faketld\r\n'
+                              '\r\n')
     r.path_type = http.PATH_ABSOLUTE
     assert r.full_message == ('GET http://www.example.faketld/foo/path HTTP/1.1\r\n'
-                              'Host: www.example.faketld\r\n\r\n')
+                              'Host: www.example.faketld\r\n'
+                              '\r\n')
     r.is_ssl = True
     assert r.full_message == ('GET https://www.example.faketld/foo/path HTTP/1.1\r\n'
-                              'Host: www.example.faketld\r\n\r\n')
+                              'Host: www.example.faketld\r\n'
+                              '\r\n')
 
 def test_proxy_auth():
     r = http.Request(('GET /foo/path HTTP/1.1\r\n'
@@ -1075,9 +1082,9 @@ def test_response_chunked_gzip():
 def test_response_early_completion():
     r = http.Response()
     r.start_line = 'HTTP/1.1 200 OK'
-    r.add_line('Content-Length: 0')
+    r.add_data('Content-Length: 0\r\n')
     assert not r.complete
-    r.add_line('')
+    r.add_data('\r\n')
     assert r.complete
 
 def test_response_cookies():
@@ -1117,6 +1124,7 @@ def test_response_repeated_cookies():
                        'Set-Cookie: foo=buzz\r\n'
                        '\r\n'))
     expected_pairs = [('foo', 'bar'), ('baz', 'buzz'), ('foo', 'buzz')]
+    assert r.complete
     check_response_cookies(expected_pairs, r)
 
 def test_repeated_response_headers():
@@ -1175,6 +1183,7 @@ def test_response_update_modified_headers():
                                'content-length: 4\r\n\r\n'
                                'AAAA')
     assert r.headers['content-length'] == '4'
+    assert r.complete
 
 def test_response_update_cookies():
     r = http.Response()
@@ -1204,6 +1213,7 @@ def test_response_update_content_length():
                        'Content-Length: 4\r\n\r\n'
                        'AAAAAAAAAA'), update_content_length=True)
 
+    assert r.complete
     assert r.full_response == (('HTTP/1.1 200 OK\r\n'
                                'Content-Length: 10\r\n\r\n'
                                'AAAAAAAAAA'))
@@ -1273,7 +1283,7 @@ def test_response_blank():
 def test_response_blank_headers():
     r = http.Response(('HTTP/1.1 200 OK\r\n'
                       'Header: \r\n'
-                      'Header2:\r\n'))
+                      'Header2:\r\n\r\n'))
 
     assert r.headers['header'] == ''
     assert r.headers['header2'] == ''
@@ -1311,7 +1321,7 @@ def test_response_add_cookie():
 
 def test_response_set_cookie():
     r = http.Response(('HTTP/1.1 200 OK\r\n'
-                       'Content-Length: 0\r\n'))
+                       'Content-Length: 0\r\n\r\n'))
     r.set_cookie(http.ResponseCookie('foo=bar'))
     assert r.full_response == ('HTTP/1.1 200 OK\r\n'
                                'Content-Length: 0\r\n'
@@ -1344,3 +1354,4 @@ def test_response_short_statusline():
     assert r.response_text == ''
     assert r.version == 'HTTP/1.1'
     assert r.response_code == 407
+

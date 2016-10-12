@@ -48,10 +48,10 @@ class PappyConfig(object):
     
     .. data:: listeners
     
-    The list of active listeners. It is a list of tuples of the format (port, interface)
+    The list of active listeners. It is a list of dictionaries of the form `{"port": 8000, "interface": "127.0.0.1"}`
     Not modifiable after startup. Configured in the ``config.json`` file for the project.
     
-    :Default: ``[(8000, '127.0.0.1')]``
+    :Default: ``[]``
     
     .. data:: socks_proxy
     
@@ -149,7 +149,7 @@ class PappyConfig(object):
         self.debug_to_file = False
         self.debug_verbosity = 0
 
-        self.listeners = [(8000, '127.0.0.1')]
+        self.listeners = []
         self.socks_proxy = None
         self.http_proxy = None
 

@@ -1,34 +1,29 @@
 import sys
 {% include 'macroheader.py.template' %}
+from pappyproxy.http import submit_requests
 
 def run_macro(args):
     # Get IDs of in-context requests
     reqids = main_context_ids()
     reqids.reverse() # Resubmit earliest first
-    reqs = []
-
-    # Create session jar (uncomment jar functions to use)
-    #jar = Session() # Create a cookie jar
 
     # Iterate over each request and submit it
+    to_submit = []
     for rid in reqids:
-        print rid,
-        sys.stdout.flush()
-        r = request_by_id(rid)
-        r = r.copy()
+        req = request_by_id(rid).copy()
 
-        #jar.apply_req(r) # Apply headers/cookies from the cookie jar
-
-        #####################
-        # Modify request here
+        ###################
+        # Modify `req` here
         
-        r.submit()
-        #jar.save_rsp(r.response, save_all=True) # Update the cookie jar from the response
-
-        #r.save() # Save the request to the data file
-        reqs.append(r)
-
-    print ''
-
-    # Store the requests in memory
-    set_tag('resubmit', reqs)
+        req.tags.add('resubmit')
+        to_submit.append(req)
+        
+    #############################
+    # Modify resubmit params here
+    submit_requests(to_submit,
+                    mangle=False,
+                    save=False,
+                    save_in_mem=False,
+                    unique_paths=False,
+                    unique_paths_and_args=False,
+    )

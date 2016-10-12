@@ -3,6 +3,7 @@ import pappyproxy
 
 from pappyproxy.util import PappyException, confirm, autocomplete_startswith
 from pappyproxy.http import Request
+from pappyproxy.context import save_context, delete_saved_context, get_saved_context, get_all_saved_contexts
 from twisted.internet import defer
 
 class BuiltinFilters(object):
@@ -157,9 +158,9 @@ def filter_prune(line):
     act_reqs = yield pappyproxy.pappy.main_context.get_reqs()
     inact_reqs = set(Request.cache.req_ids()).difference(set(act_reqs))
     message = 'This will delete %d/%d requests. You can NOT undo this!! Continue?' % (len(inact_reqs), (len(inact_reqs) + len(act_reqs)))
-    print message
-    # if not confirm(message, 'n'):
-    #     defer.returnValue(None)
+    #print message
+    if not confirm(message, 'n'):
+        defer.returnValue(None)
     
     for reqid in inact_reqs:
         try:
@@ -169,6 +170,55 @@ def filter_prune(line):
             print e
     print 'Deleted %d requests' % len(inact_reqs)
     defer.returnValue(None)
+
+@defer.inlineCallbacks
+def _save_filters_to(key):
+    if key == '':
+        raise PappyException("Must give name to save filters as")
+    strs = pappyproxy.plugin.get_active_filter_strings()
+    yield save_context(key, strs, pappyproxy.http.dbpool)
+    defer.returnValue(strs)
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def save_filter_set(line):
+    if line == '':
+        raise PappyException("Must give name to save filters as")
+    strs = yield _save_filters_to(line)
+    print 'Filters saved to %s:' % line
+    for s in strs:
+        print '  %s' % s
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def load_filter_set(line):
+    if line == '':
+        raise PappyException("Must give name to save filters as")
+    strs = yield get_saved_context(line, pappyproxy.http.dbpool)
+    yield _save_filters_to('_')
+    pappyproxy.pappy.main_context.set_filters([])
+    for s in strs:
+        yield pappyproxy.pappy.main_context.add_filter_string(s)
+    print 'Set the context to:'
+    for s in strs:
+        print '  %s' % s
+
+def delete_filter_set(line):
+    if line == '':
+        raise PappyException("Must give name to save filters as")
+    delete_saved_context(line, pappyproxy.http.dbpool)
+
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def list_filter_set(line):
+    print 'Saved contexts:'
+    contexts = yield get_all_saved_contexts(pappyproxy.http.dbpool)
+    for k in sorted(contexts.keys()):
+        v = contexts[k]
+        print '%s' % k
+        for s in v:
+            print '  %s' % s
+        print ''
 
 ###############
 ## Plugin hooks
@@ -185,6 +235,10 @@ def load_cmds(cmd):
         'filter_up': (filter_up, None),
         'builtin_filter': (builtin_filter, complete_builtin_filter),
         'filter': (filtercmd, complete_filtercmd),
+        'save_context': (save_filter_set, None),
+        'load_context': (load_filter_set, None),
+        'delete_context': (delete_filter_set, None),
+        'list_contexts': (list_filter_set, None),
     })
     cmd.add_aliases([
         #('filter_prune', ''),
@@ -198,4 +252,8 @@ def load_cmds(cmd):
         ('builtin_filter', 'fbi'),
         ('filter', 'f'),
         ('filter', 'fl'),
+        ('save_context', 'sc'),
+        ('load_context', 'lc'),
+        ('delete_context', 'dc'),
+        ('list_contexts', 'cls'),
     ])

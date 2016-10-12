@@ -92,9 +92,11 @@ class InterceptMacro(object):
         self.short_name = None
         self.intercept_requests = False
         self.intercept_responses = False
+        self.intercept_ws = False
 
         self.async_req = False
         self.async_rsp = False
+        self.async_ws = False
 
     def __repr__(self):
         return "<InterceptingMacro (%s)>" % self.name
@@ -108,6 +110,9 @@ class InterceptMacro(object):
     def mangle_response(self, request):
         return request.response
 
+    def mangle_ws(self, request, message):
+        return message
+
     @defer.inlineCallbacks
     def async_mangle_request(self, request):
         defer.returnValue(request)
@@ -115,6 +120,10 @@ class InterceptMacro(object):
     @defer.inlineCallbacks
     def async_mangle_response(self, request):
         defer.returnValue(request.response)
+
+    @defer.inlineCallbacks
+    def async_mangle_ws(self, request, message):
+        defer.returnValue(messsage)
             
 class FileInterceptMacro(InterceptMacro):
     """
@@ -165,6 +174,9 @@ class FileInterceptMacro(InterceptMacro):
             if hasattr(self.source, 'mangle_response') and \
                hasattr(self.source, 'async_mangle_response'):
                 raise PappyException('Intercepting macro in %s cannot define both mangle_response and async_mangle_response' % self.filename)
+            if hasattr(self.source, 'mangle_ws') and \
+               hasattr(self.source, 'async_mangle_ws'):
+                raise PappyException('Intercepting macro in %s cannot define both mangle_ws and async_mangle_ws' % self.filename)
         else:
             self.source = None
 
@@ -187,6 +199,15 @@ class FileInterceptMacro(InterceptMacro):
         else:
             self.intercept_responses = False
 
+        if self.source and hasattr(self.source, 'mangle_ws'):
+            self.intercept_ws = True
+            self.async_ws = False
+        elif self.source and hasattr(self.source, 'async_mangle_ws'):
+            self.intercept_ws = True
+            self.async_ws = True
+        else:
+            self.intercept_ws = False
+
     def init(self, args):
         if hasattr(self.source, 'init'):
             self.source.init(args)
@@ -203,6 +224,12 @@ class FileInterceptMacro(InterceptMacro):
             return rsp
         return request.response
 
+    def mangle_ws(self, request, message):
+        if hasattr(self.source, 'mangle_ws'):
+            mangled_ws = self.source.mangle_ws(request, message)
+            return mangled_ws
+        return message
+
     @defer.inlineCallbacks
     def async_mangle_request(self, request):
         if hasattr(self.source, 'async_mangle_request'):
@@ -216,6 +243,73 @@ class FileInterceptMacro(InterceptMacro):
             rsp = yield self.source.async_mangle_response(request)
             defer.returnValue(rsp)
         defer.returnValue(request.response)
+        
+class MacroTemplate(object):
+    _template_data = {
+        'macro': ('macro.py.template',
+                  'Generic macro template',
+                  '[reqids]',
+                  'macro_{fname}.py',
+                  gen_template_args_macro),
+
+        'intmacro': ('intmacro.py.template',
+                     'Generic intercepting macro template',
+                     '',
+                     'int_{fname}.py',
+                     gen_template_generator_noargs('intmacro')),
+
+        'modheader': ('macro_header.py.template',
+                      'Modify a header in the request and the response if it exists.',
+                      '',
+                      'int_{fname}.py',
+                      gen_template_generator_noargs('modheader')),
+
+        'resubmit': ('macro_resubmit.py.template',
+                     'Resubmit all in-context requests',
+                     '',
+                     'macro_{fname}.py',
+                     gen_template_generator_noargs('resubmit')),
+    }
+
+    @classmethod
+    def fill_template(cls, template, subs):
+        loader = FileSystemLoader(session.config.pappy_dir+'/templates')
+        env = Environment(loader=loader)
+        template = env.get_template(cls._template_data[template][0])
+        return template.render(zip=zip, **subs)
+
+    @classmethod
+    @defer.inlineCallbacks
+    def fill_template_args(cls, template, args=[]):
+        ret = cls._template_data[template][4](args)
+        if isinstance(ret, defer.Deferred):
+            ret = yield ret
+        defer.returnValue(ret)
+
+    @classmethod
+    def template_filename(cls, template, fname):
+        return cls._template_data[template][3].format(fname=fname)
+
+    @classmethod
+    def template_list(cls):
+        return [k for k, v in cls._template_data.iteritems()]
+    
+    @classmethod
+    def template_description(cls, template):
+        return cls._template_data[template][1]
+
+    @classmethod
+    def template_argstring(cls, template):
+        return cls._template_data[template][2]
+
+## Other functions
+
+    @defer.inlineCallbacks
+    def async_mangle_ws(self, request, message):
+        if hasattr(self.source, 'async_mangle_ws'):
+            mangled_ws = yield self.source.async_mangle_ws(request, message)
+            defer.returnValue(mangled_ws)
+        defer.returnValue(message)
         
 class MacroTemplate(object):
     _template_data = {
@@ -376,7 +470,7 @@ def mangle_request(request, intmacros):
         defer.returnValue((request, False))
 
     cur_req = request.copy()
-    for k, macro in intmacros.iteritems():
+    for macro in intmacros:
         if macro.intercept_requests:
             if macro.async_req:
                 cur_req = yield macro.async_mangle_request(cur_req.copy())
@@ -389,7 +483,8 @@ def mangle_request(request, intmacros):
     mangled = False
     if not cur_req == request or \
        not cur_req.host == request.host or \
-       not cur_req.port == request.port:
+       not cur_req.port == request.port or \
+       not cur_req.is_ssl == request.is_ssl:
         # copy unique data to new request and clear it off old one
         cur_req.unmangled = request
         cur_req.unmangled.is_unmangled_version = True
@@ -415,10 +510,10 @@ def mangle_response(request, intmacros):
         defer.returnValue(False)
 
     old_rsp = request.response
-    # We copy so that changes to request.response doesn't mangle the original response
-    request.response = request.response.copy()
-    for k, macro in intmacros.iteritems():
+    for macro in intmacros:
         if macro.intercept_responses:
+            # We copy so that changes to request.response doesn't mangle the original response
+            request.response = request.response.copy()
             if macro.async_rsp:
                 request.response = yield macro.async_mangle_response(request)
             else:
@@ -437,3 +532,31 @@ def mangle_response(request, intmacros):
     else:
         request.response = old_rsp
     defer.returnValue(mangled)
+
+@defer.inlineCallbacks
+def mangle_websocket_message(message, request, intmacros):
+    # Mangle messages with list of intercepting macros
+    if not intmacros:
+        defer.returnValue((message, False))
+
+    cur_msg = message.copy()
+    for macro in intmacros:
+        if macro.intercept_ws:
+            if macro.async_ws:
+                cur_msg = yield macro.async_mangle_ws(request, cur_msg.copy())
+            else:
+                cur_msg = macro.mangle_ws(request, cur_msg.copy())
+
+            if cur_msg is None:
+                defer.returnValue((None, True))
+
+    mangled = False
+    if not cur_msg == message:
+        # copy unique data to new request and clear it off old one
+        cur_msg.unmangled = message
+        cur_msg.unmangled.is_unmangled_version = True
+        mangled = True
+    else:
+        # return the original request
+        cur_msg = message
+    defer.returnValue((cur_msg, mangled))

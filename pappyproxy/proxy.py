@@ -6,15 +6,14 @@ import random
 
 from OpenSSL import SSL
 from OpenSSL import crypto
-from pappyproxy import context
-from pappyproxy import http
-from pappyproxy import macros
-from pappyproxy.util import PappyException, printable_data
+from pappyproxy.util import PappyException, printable_data, short_data
 from twisted.internet import defer
 from twisted.internet import reactor, ssl
-from twisted.internet.protocol import ClientFactory, ServerFactory
+from twisted.internet.protocol import ClientFactory, ServerFactory, Protocol
 from twisted.protocols.basic import LineReceiver
 from twisted.python.failure import Failure
+#from twisted.web.client import BrowserLikePolicyForHTTPS
+from pappyproxy.util import hexdump
 
 next_connection_id = 1
 
@@ -25,16 +24,6 @@ def get_next_connection_id():
     ret_id = next_connection_id
     next_connection_id += 1
     return ret_id
-
-def add_intercepting_macro(key, macro, int_macro_dict):
-    if key in int_macro_dict:
-        raise PappyException('Macro with key %s already exists' % key)
-    int_macro_dict[key] = macro
-
-def remove_intercepting_macro(key, int_macro_dict):
-    if not key in int_macro_dict:
-        raise PappyException('Macro with key %s not currently running' % key)
-    del int_macro_dict[key]
 
 def log(message, id=None, symbol='*', verbosity_level=1):
     from pappyproxy.pappy import session
@@ -63,41 +52,6 @@ def log_request(request, id=None, symbol='*', verbosity_level=3):
         for l in r_split:
             log(l, id, symbol, verbosity_level)
             
-def get_endpoint(target_host, target_port, target_ssl, socks_config=None, use_http_proxy=False, debugid=None):
-    # Imports go here to allow mocking for tests
-    from twisted.internet.endpoints import SSL4ClientEndpoint, TCP4ClientEndpoint
-    from txsocksx.client import SOCKS5ClientEndpoint
-    from txsocksx.tls import TLSWrapClientEndpoint
-    from pappyproxy.pappy import session
-
-    log("Getting endpoint for host '%s' on port %d ssl=%s, socks_config=%s, use_http_proxy=%s" % (target_host, target_port, target_ssl, str(socks_config), use_http_proxy), id=debugid, verbosity_level=3)
-
-    if session.config.http_proxy and use_http_proxy:
-        target_host = session.config.http_proxy['host']
-        target_port = session.config.http_proxy['port']
-        target_ssl = False # We turn on ssl after CONNECT request if needed
-        log("Connecting to http proxy at %s:%d" % (target_host, target_port), id=debugid, verbosity_level=3)
-
-    if socks_config is not None:
-        sock_host = socks_config['host']
-        sock_port = int(socks_config['port'])
-        methods = {'anonymous': ()}
-        if 'username' in socks_config and 'password' in socks_config:
-            methods['login'] = (socks_config['username'], socks_config['password'])
-        tcp_endpoint = TCP4ClientEndpoint(reactor, sock_host, sock_port)
-        socks_endpoint = SOCKS5ClientEndpoint(target_host, target_port, tcp_endpoint, methods=methods)
-        if target_ssl:
-            endpoint = TLSWrapClientEndpoint(ssl.ClientContextFactory(), socks_endpoint)
-        else:
-            endpoint = socks_endpoint
-    else:
-        if target_ssl:
-            endpoint = SSL4ClientEndpoint(reactor, target_host, target_port,
-                                          ssl.ClientContextFactory())
-        else:
-            endpoint = TCP4ClientEndpoint(reactor, target_host, target_port)
-    return endpoint
-
 def is_wildcardable_domain_name(domain):
     """
     Guesses if this is a domain that can have a wildcard CN
@@ -129,554 +83,6 @@ def get_most_general_cn(domain):
         return get_wildcard_cn(domain)
     else:
         return domain
-        
-class ProxyClient(LineReceiver):
-
-    def __init__(self, request):
-        self.factory = None
-        self._response_sent = False
-        self._sent = False
-        self.request = request
-        self.data_defer = defer.Deferred()
-        self.completed = False
-        self.stream_response = True # used so child classes can temporarily turn off response streaming
-        self.data_received = False # we assume something's wrong until we get some data
-
-        self._response_obj = http.Response()
-
-    def log(self, message, symbol='*', verbosity_level=1):
-        log(message, id=self.factory.connection_id, symbol=symbol, verbosity_level=verbosity_level)
-
-    def lineReceived(self, *args, **kwargs):
-        line = args[0]
-        if line is None:
-            line = ''
-        self.log(line, symbol='r<', verbosity_level=3)
-        self._response_obj.add_line(line)
-        if self._response_obj.headers_complete:
-            self.setRawMode()
-
-    def rawDataReceived(self, *args, **kwargs):
-        from pappyproxy.pappy import session
-
-        data = args[0]
-        self.log('Returning data back through stream')
-        if not self._response_obj.complete:
-            if data:
-                if session.config.debug_to_file or session.config.debug_verbosity > 0:
-                    s = printable_data(data)
-                    dlines = s.split('\n')
-                    for l in dlines:
-                        self.log(l, symbol='<rd', verbosity_level=3)
-            self._response_obj.add_data(data)
-
-    def dataReceived(self, data):
-        self.data_received = True
-        if self.factory.stream_response and self.stream_response:
-            self.factory.return_transport.write(data)
-        LineReceiver.dataReceived(self, data)
-        if not self.completed:
-            if self._response_obj.complete:
-                self.completed = True
-                self.handle_response_end()
-        
-    def connectionMade(self):
-        self.log("Connection made, sending request", verbosity_level=3)
-        lines = self.request.full_request.splitlines()
-        for l in lines:
-            self.log(l, symbol='>r', verbosity_level=3)
-        self.transport.write(self.request.full_request)
-        
-    def handle_response_end(self, *args, **kwargs):
-        self.log("Remote response finished, returning data to original stream")
-        self.request.response = self._response_obj
-        self.log('Response ended, losing connection')
-        self.transport.loseConnection()
-        assert self._response_obj.full_response
-        self.data_defer.callback(self.request)
-
-    def respond_failure(self, message):
-        """
-        Closes the connection to the remote server and returns an error message.
-        The request object will have a response of None.
-        """
-        #self.transport.loseConnection()
-        self.data_defer.errback(PappyException(message))
-
-    def clientConnectionFailed(self, connector, reason):
-        self.log("Connection with remote server failed: %s" % reason)
-
-    def clientConnectionLost(self, connector, reason):
-        self.log("Connection with remote server lost: %s" % reason)
-
-    def _guess_failure_reason(self, failure):
-        message = failure.getErrorMessage()
-        try:
-            failure.raiseException()
-        except SSL.Error as e:
-            message = 'Error performing SSL handshake'
-        except Exception as e:
-            pass
-        return message
-
-    def connectionLost(self, reason):
-        self.log("Connection lost: %s" % reason)
-        if not self.data_received:
-            self.request.response = None
-            message = self._guess_failure_reason(reason)
-            self.respond_failure("Connection lost: %s" % message)
-
-class UpstreamHTTPProxyClient(ProxyClient):
-
-    def __init__(self, request):
-        ProxyClient.__init__(self, request)
-        self.connect_response = False
-        self.proxy_connected = False
-        self.stream_response = False
-        self.creds = None
-
-    def write_proxied_request(self, request):
-        """
-        Takes an unencrypted request and sends it to the proxy server to be
-        forwarded.
-        """
-        sendreq = request.copy()
-        sendreq.path_type = http.PATH_ABSOLUTE
-        if self.creds is not None:
-            sendreq.proxy_creds = self.creds
-        lines = sendreq.full_request.splitlines()
-        for l in lines:
-            self.log(l, symbol='>rp', verbosity_level=3)
-        self.transport.write(sendreq.full_message)
-
-    def connectionMade(self):
-        self.log("Connection made to http proxy", verbosity_level=3)
-        if not self.proxy_connected:
-            if self.request.is_ssl:
-                connreq = self.request.connect_request
-                self.connect_response = True
-                if self.creds is not None:
-                    connreq.proxy_creds = self.creds
-                lines = connreq.full_message.splitlines()
-                for l in lines:
-                    self.log(l, symbol='>p', verbosity_level=3)
-                self.transport.write(connreq.full_message)
-            else:
-                self.proxy_connected = True
-                self.stream_response = True
-                lines = self.request.full_message.splitlines()
-                for l in lines:
-                    self.log(l, symbol='>p', verbosity_level=3)
-                self.write_proxied_request(self.request)
-
-    def handle_response_end(self, *args, **kwargs):
-        if self._response_obj.response_code == 407:
-            print "Incorrect credentials for HTTP proxy. Please check your username and password."
-            self.transport.loseConnection()
-            return
-        if self.proxy_connected:
-            self.log("Received request while connected, forwarding to http proxy", verbosity_level=3)
-            self.request.response = self._response_obj
-            self.transport.loseConnection()
-            assert self._response_obj.full_response
-            self.data_defer.callback(self.request)
-        elif self._response_obj.response_code != 200:
-            print "Error establishing connection to proxy"
-            self.transport.loseConnection()
-            return
-        elif self.connect_response:
-            self.log("Response to CONNECT request recieved from http proxy", verbosity_level=3)
-            self.proxy_connected = True
-            self.stream_response = True
-            self._response_obj = http.Response()
-            self.setLineMode()
-            self.completed = False
-            self._sent = False
-
-            self.log("Starting TLS", verbosity_level=3)
-            self.transport.startTLS(ssl.ClientContextFactory())
-            self.log("TLS started", verbosity_level=3)
-            lines = self.request.full_message.splitlines()
-            for l in lines:
-                self.log(l, symbol='>rpr', verbosity_level=3)
-            self.transport.write(self.request.full_message)
-
-class ProxyClientFactory(ClientFactory):
-
-    def __init__(self, request, save_all=False, stream_response=False,
-                 return_transport=None):
-        self.request = request
-        self.connection_id = -1
-        self.data_defer = defer.Deferred()
-        self.start_time = datetime.datetime.utcnow()
-        self.end_time = None
-        self.save_all = save_all
-        self.stream_response = stream_response
-        self.return_transport = return_transport
-        self.intercepting_macros = {}
-        self.use_as_proxy = False
-        self.sendback_function = None
-        self.dropped_request = False
-
-        # Only used for unit tests. Do not use.
-        self._use_string_transport = False
-        self._conn_info = None
-
-    def log(self, message, symbol='*', verbosity_level=1):
-        log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
-
-    def buildProtocol(self, addr):
-        from pappyproxy.pappy import session
-        if self.use_as_proxy and context.in_scope(self.request):
-            p = UpstreamHTTPProxyClient(self.request)
-            if 'username' in session.config.http_proxy and 'password' in session.config.http_proxy:
-                username = session.config.http_proxy['username']
-                password = session.config.http_proxy['password']
-                p.creds = (username, password)
-        else:
-            p = ProxyClient(self.request)
-        p.factory = self
-        self.log("Building protocol", verbosity_level=3)
-        p.data_defer.addCallback(self.return_request_pair)
-        p.data_defer.addErrback(self._data_defer_errback)
-        return p
-
-    def clientConnectionFailed(self, connector, reason):
-        self.log("Connection failed with remote server: %s" % reason.getErrorMessage())
-
-    def clientConnectionLost(self, connector, reason):
-        self.log("Connection lost with remote server: %s" % reason.getErrorMessage())
-
-    @defer.inlineCallbacks
-    def prepare_request(self):
-        """
-        Prepares request for submitting
-        
-        Saves the associated request with a temporary start time, mangles it, then
-        saves the mangled version with an update start time. Also updates flags
-        and values needed for submitting the request.
-        """
-        from pappyproxy.pappy import session
-
-        sendreq = self.request
-        if context.in_scope(sendreq):
-            mangle_macros = copy.copy(self.intercepting_macros)
-            self.request.time_start = datetime.datetime.utcnow()
-            if self.save_all:
-                if self.stream_response and not mangle_macros:
-                    self.request.async_deep_save()
-                else:
-                    yield self.request.async_deep_save()
-
-            (mangreq, mangled) = yield macros.mangle_request(sendreq, mangle_macros)
-            if mangreq is None:
-                self.log("Request dropped. Closing connections.")
-                self.request.tags.add('dropped')
-                self.request.response = None
-                self.dropped_request = True
-                defer.returnValue(None)
-            else:
-                sendreq = mangreq
-                if sendreq and mangled and self.save_all:
-                    self.start_time = datetime.datetime.utcnow()
-                    sendreq.time_start = self.start_time
-                    yield sendreq.async_deep_save()
-
-                if session.config.http_proxy:
-                    self.use_as_proxy = True
-                    if (not self.stream_response) and self.sendback_function:
-                        self.data_defer.addCallback(self.sendback_function)
-        else:
-            self.log("Request out of scope, passing along unmangled")
-        self.request = sendreq
-        defer.returnValue(self.request)
-
-    @defer.inlineCallbacks
-    def return_request_pair(self, request):
-        """
-        If the request is in scope, it saves the completed request,
-        sets the start/end time, mangles the response, saves the
-        mangled version, then calls back data_defer with the mangled
-        request
-        """
-        from pappyproxy.pappy import session
-
-        self.end_time = datetime.datetime.utcnow()
-        if session.config.debug_to_file or session.config.debug_verbosity > 0 and request.response:
-            log_request(printable_data(request.response.full_response), id=self.connection_id, symbol='<m', verbosity_level=3)
-
-        request.time_start = self.start_time
-        request.time_end = self.end_time
-        if context.in_scope(request):
-            mangle_macros = copy.copy(self.intercepting_macros)
-
-            if self.save_all:
-                if self.stream_response and not mangle_macros:
-                    request.async_deep_save()
-                else:
-                    yield request.async_deep_save()
-
-            if request.response:
-                mangled = yield macros.mangle_response(request, mangle_macros)
-
-                if mangled and self.save_all:
-                    yield request.async_deep_save()
-
-                if request.response and (session.config.debug_to_file or session.config.debug_verbosity > 0):
-                    log_request(printable_data(request.response.full_response),
-                                id=self.connection_id, symbol='<', verbosity_level=3)
-        else:
-            self.log("Response out of scope, passing along unmangled")
-        self.data_defer.callback(request)
-        defer.returnValue(None)
-
-    @defer.inlineCallbacks
-    def connect(self):
-        from pappyproxy.pappy import session
-
-        yield self.prepare_request()
-        if self.dropped_request:
-            self.data_defer.callback(self.request)
-            defer.returnValue(None)
-
-        if context.in_scope(self.request):
-            # Get connection using config
-            endpoint = get_endpoint(self.request.host,
-                                    self.request.port,
-                                    self.request.is_ssl,
-                                    socks_config=session.config.socks_proxy,
-                                    use_http_proxy=True)
-        else:
-            # Just forward it normally
-            endpoint = get_endpoint(self.request.host,
-                                    self.request.port,
-                                    self.request.is_ssl,
-                                    socks_config=None,
-                                    use_http_proxy=False)
-
-        if self._use_string_transport:
-            from pappyproxy.tests.testutil import TLSStringTransport
-            # "Connect" via string transport
-            protocol = self.buildProtocol(('127.0.0.1', 0))
-
-            # Pass the protocol back to the test
-            if self._conn_info:
-                self._conn_info['protocol'] = protocol
-
-            tr = TLSStringTransport()
-            protocol.makeConnection(tr)
-        else:
-            # Connect via the endpoint
-            self.log("Accessing using endpoint")
-            yield endpoint.connect(self)
-            self.log("Connected")
-
-    def _data_defer_errback(self, message):
-        self.data_defer.errback(message)
-
-class ProxyServerFactory(ServerFactory):
-
-    def __init__(self, save_all=False):
-        from pappyproxy.site import PappyWebServer
-        
-        self.intercepting_macros = collections.OrderedDict()
-        self.save_all = save_all
-        self.force_ssl = False
-        self.web_server = PappyWebServer()
-        self.forward_host = None
-
-    def buildProtocol(self, addr):
-        prot = ProxyServer()
-        prot.factory = self
-        return prot
-
-class ProxyServer(LineReceiver):
-
-    def log(self, message, symbol='*', verbosity_level=1):
-        log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
-
-    def __init__(self, *args, **kwargs):
-        global next_connection_id
-        self.connection_id = get_next_connection_id()
-
-        self._request_obj = http.Request()
-        self._connect_response = False
-        self._forward = True
-        self._connect_uri = None
-        self._connect_host = None
-        self._connect_ssl = None
-        self._connect_port = None
-        self._client_factory = None
-
-    def lineReceived(self, *args, **kwargs):
-        line = args[0]
-        self.log(line, symbol='>', verbosity_level=3)
-        self._request_obj.add_line(line)
-
-        if self._request_obj.headers_complete:
-            self.setRawMode()
-            
-    def rawDataReceived(self, *args, **kwargs):
-        data = args[0]
-        self._request_obj.add_data(data)
-        self.log(data, symbol='d>', verbosity_level=3)
-
-    def dataReceived(self, *args, **kwargs):
-        # receives the data then checks if the request is complete.
-        # if it is, it calls full_Request_received
-        LineReceiver.dataReceived(self, *args, **kwargs)
-
-        if self._request_obj.complete:
-            self.full_request_received()
-        
-    def _start_tls(self, cert_host=None):
-        from pappyproxy.pappy import session
-
-        # Generate a cert for the hostname and start tls
-        if cert_host is None:
-            host = self._request_obj.host
-        else:
-            host = cert_host
-        cn_host = get_most_general_cn(host)
-        if not host in cached_certs:
-            log("Generating cert for '%s'" % cn_host,
-                verbosity_level=3)
-            (pkey, cert) = generate_cert(cn_host,
-                                         session.config.cert_dir)
-            cached_certs[cn_host] = (pkey, cert)
-        else:
-            log("Using cached cert for %s" % cn_host, verbosity_level=3)
-            (pkey, cert) = cached_certs[cn_host]
-        ctx = ServerTLSContext(
-            private_key=pkey,
-            certificate=cert,
-        )
-        self.transport.startTLS(ctx, self.factory)
-
-    def _connect_okay(self):
-        self.log('Responding to browser CONNECT request', verbosity_level=3)
-        okay_str = 'HTTP/1.1 200 Connection established\r\n\r\n'
-        self.transport.write(okay_str)
-                
-    @defer.inlineCallbacks
-    def full_request_received(self):
-        from pappyproxy.http import Request
-
-        global cached_certs
-        
-        self.log('End of request', verbosity_level=3)
-
-        forward = True
-        if self._request_obj.verb.upper() == 'CONNECT':
-            self._connect_okay()
-            self._start_tls()
-            self._connect_uri = self._request_obj.url
-            self._connect_host = self._request_obj.host
-            self._connect_ssl = True # do we just assume connect means ssl?
-            self._connect_port = self._request_obj.port
-            self.log('uri=%s, ssl=%s, connect_port=%s' % (self._connect_uri, self._connect_ssl, self._connect_port), verbosity_level=3)
-            forward = False
-
-        if self._request_obj.host == 'pappy':
-            yield self.factory.web_server.handle_request(self._request_obj)
-            self.transport.write(self._request_obj.response.full_message)
-            forward = False
-
-        # if _request_obj.host is a listener, forward = False
-
-        if self.factory.intercepting_macros:
-            return_transport = None
-        else:
-            return_transport = self.transport
-
-        if forward:
-            d = Request.submit_request(self._request_obj,
-                                       save_request=True,
-                                       intercepting_macros=self.factory.intercepting_macros,
-                                       stream_transport=return_transport)
-            if return_transport is None:
-                d.addCallback(self.send_response_back)
-            d.addErrback(self.send_error_back)
-        self._reset()
-        
-    def _reset(self):
-        # Reset per-request variables and have the request default to using
-        # some parameters from the connect request
-        self.log("Resetting per-request data", verbosity_level=3)
-        self._connect_response = False
-        self._request_obj = http.Request()
-        if self._connect_uri:
-            self._request_obj.url = self._connect_uri
-        if self._connect_host:
-            self._request_obj._host = self._connect_host
-        if self._connect_ssl:
-            self._request_obj.is_ssl = self._connect_ssl
-        if self._connect_port:
-            self._request_obj.port = self._connect_port
-        self.setLineMode()
-
-    def send_response_back(self, request):
-        if request.response is not None:
-            self.transport.write(request.response.full_response)
-        else:
-            droppedrsp = http.Response(('HTTP/1.1 200 OK\r\n'
-                                        'Connection: close\r\n'
-                                        'Cache-control: no-cache\r\n'
-                                        'Pragma: no-cache\r\n'
-                                        'Cache-control: no-store\r\n'
-                                        'X-Frame-Options: DENY\r\n\r\n'))
-            self.transport.write(droppedrsp.full_message)
-        self.log("Response sent back, losing connection")
-        self.transport.loseConnection()
-
-    def send_error_back(self, failure):
-        errorrsp = http.Response(('HTTP/1.1 200 OK\r\n'
-                                  'Connection: close\r\n'
-                                  'Cache-control: no-cache\r\n'
-                                  'Pragma: no-cache\r\n'
-                                  'Cache-control: no-store\r\n'
-                                  'X-Frame-Options: DENY\r\n'
-                                  'Content-Length: %d\r\n\r\n'
-                                  '%s') % (len(str(failure.getErrorMessage())), str(failure.getErrorMessage())))
-        self.transport.write(errorrsp.full_message)
-        self.log("Error response sent back, losing connection")
-        self.transport.loseConnection()
-        
-    def connectionMade(self):
-        if self.factory.force_ssl:
-            self._start_tls(self.factory.forward_host)
-                
-    def connectionLost(self, reason):
-        self.log('Connection lost with browser: %s' % reason.getErrorMessage())
-        
-        
-class ServerTLSContext(ssl.ContextFactory):
-    def __init__(self, private_key, certificate):
-        self.private_key = private_key
-        self.certificate = certificate
-        self.sslmethod = SSL.TLSv1_METHOD
-        self.cacheContext()
-
-    def cacheContext(self):
-        ctx = SSL.Context(self.sslmethod)
-        ctx.use_certificate(self.certificate)
-        ctx.use_privatekey(self.private_key)
-        self._context = ctx
-   
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        del d['_context']
-        return d
-   
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.cacheContext()
-   
-    def getContext(self):
-        """Create an SSL context.
-        """
-        return self._context
-
         
 def generate_cert_serial():
     # Generates a random serial to be used for the cert
@@ -717,6 +123,27 @@ def generate_cert(hostname, cert_dir):
     cert.sign(ca_key, "sha256")
 
     return (key, cert)
+
+def generate_tls_context(cert_host):
+    from pappyproxy.pappy import session
+
+    # Generate a cert for the hostname and start tls
+    host = cert_host
+    cn_host = get_most_general_cn(host)
+    if not host in cached_certs:
+        log("Generating cert for '%s'" % cn_host,
+            verbosity_level=3)
+        (pkey, cert) = generate_cert(cn_host,
+                                     session.config.cert_dir)
+        cached_certs[cn_host] = (pkey, cert)
+    else:
+        log("Using cached cert for %s" % cn_host, verbosity_level=3)
+        (pkey, cert) = cached_certs[cn_host]
+    ctx = ServerTLSContext(
+        private_key=pkey,
+        certificate=cert,
+    )
+    return ctx
 
 
 def generate_ca_certs(cert_dir):
@@ -761,4 +188,458 @@ def generate_ca_certs(cert_dir):
     with os.fdopen(os.open(cert_dir+'/'+session.config.ssl_ca_file, os.O_WRONLY | os.O_CREAT, 0o0600), 'w') as f:
         f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
     print "Done!"
+    
+def make_proxied_connection(protocol_factory, target_host, target_port, use_ssl,
+                            socks_config=None, log_id=None, http_error_transport=None):
+    from twisted.internet.endpoints import SSL4ClientEndpoint, TCP4ClientEndpoint
+    from txsocksx.client import SOCKS5ClientEndpoint
+    from txsocksx.tls import TLSWrapClientEndpoint
+    from pappyproxy.pappy import session
 
+    if socks_config is not None:
+        log("Connecting to socks proxy", id=log_id)
+        sock_host = socks_config['host']
+        sock_port = int(socks_config['port'])
+        methods = {'anonymous': ()}
+        if 'username' in socks_config and 'password' in socks_config:
+            methods['login'] = (socks_config['username'], socks_config['password'])
+        tcp_endpoint = TCP4ClientEndpoint(reactor, sock_host, sock_port)
+        socks_endpoint = SOCKS5ClientEndpoint(target_host, target_port, tcp_endpoint, methods=methods)
+        if use_ssl:
+            log("Using SSL over proxy to connect to %s:%d ssl=%s" % (target_host, target_port, use_ssl), id=log_id)
+            endpoint = TLSWrapClientEndpoint(ssl.ClientContextFactory(), socks_endpoint)
+        else:
+            log("Using TCP over proxy to connect to %s:%d ssl=%s" % (target_host, target_port, use_ssl), id=log_id)
+            endpoint = socks_endpoint
+    else:
+        log("Connecting directly to host", id=log_id)
+        if use_ssl:
+            log("Using SSL to connect to %s:%d ssl=%s" % (target_host, target_port, use_ssl), id=log_id)
+            #context = BrowserLikePolicyForHTTPS().creatorForNetloc(target_host, target_port)
+            context = ssl.ClientContextFactory()
+            endpoint = SSL4ClientEndpoint(reactor, target_host, target_port, context)
+        else:
+            log("Using TCP to connect to %s:%d ssl=%s" % (target_host, target_port, use_ssl), id=log_id)
+            endpoint = TCP4ClientEndpoint(reactor, target_host, target_port)
+
+    connection_deferred = endpoint.connect(protocol_factory)
+    if http_error_transport:
+        connection_deferred.addErrback(connection_error_http_response,
+                                       http_error_transport, log_id)
+        
+def connection_error_http_response(error, transport, log_id):
+    from .http import Response
+    from .util import html_escape
+    rsp = Response(('HTTP/1.1 200 OK\r\n'
+                    'Connection: close\r\n'
+                    'Cache-control: no-cache\r\n'
+                    'Pragma: no-cache\r\n'
+                    'Cache-control: no-store\r\n'
+                    'X-Frame-Options: DENY\r\n\r\n'))
+    rsp.body = ('<html><head><title>Pappy Error</title></head>'
+                '<body>'
+                '<h1>Pappy Error</h1><h2>Pappy could not connect to the remote host:</h2><p>{0}</p>'
+                '</body>'
+                '</html>').format(html_escape(error.getErrorMessage()))
+    log("Error connecting to remote host. Sending error response.", id=log_id,
+        verbosity_level=3)
+    log("pc< %s" % rsp.full_message, id=log_id, verbosity_level=3)
+    transport.write(rsp.full_message)
+
+def get_http_proxy_addr():
+    """
+    Returns the main session's 
+    """
+    from pappyproxy import pappy
+
+    if not pappy.session.config.http_proxy:
+        return None
+    host = pappy.session.config.http_proxy['host']
+    port = pappy.session.config.http_proxy['port']
+    return (host, port)
+
+def start_maybe_tls(transport, tls_host, start_tls_callback=None):
+    
+    newprot = MaybeTLSProtocol(transport.protocol,
+            tls_host=tls_host,
+            start_tls_callback=start_tls_callback)
+    newprot.transport = transport
+    transport.protocol = newprot
+
+class ServerTLSContext(ssl.ContextFactory):
+    def __init__(self, private_key, certificate):
+        self.private_key = private_key
+        self.certificate = certificate
+        self.sslmethod = SSL.TLSv1_METHOD
+        self.cacheContext()
+
+    def cacheContext(self):
+        ctx = SSL.Context(self.sslmethod)
+        ctx.use_certificate(self.certificate)
+        ctx.use_privatekey(self.private_key)
+        self._context = ctx
+   
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        del d['_context']
+        return d
+   
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.cacheContext()
+   
+    def getContext(self):
+        """Create an SSL context.
+        """
+        return self._context
+
+
+class ProtocolProxy(object):
+    """
+    A base object to be used to implement a proxy for an object.
+    Responsible for taking in data from the client and the server.
+    Base class contains minimum for the protocol to hook into the
+    listener.
+    """
+
+    def __init__(self):
+        self.client_transport = None
+        self.client_connected = False
+        self.client_buffer = ''
+        self.client_start_tls = False
+        self.client_protocol = None
+
+        self.server_transport = None
+        self.server_connected = False
+        self.server_buffer = ''
+        self.server_start_tls = False
+        self.server_protocol = None
+
+        self.conn_host = None
+        self.conn_port = None
+        self.conn_is_ssl = None
+        self.connection_id = get_next_connection_id()
+
+    def log(self, message, symbol='*', verbosity_level=3):
+        if self.client_protocol:
+            log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
+        else:
+            log(message, symbol=symbol, verbosity_level=verbosity_level)
+
+    def connect(self, host, port, use_ssl, use_socks=False):
+        from pappyproxy.pappy import session
+
+        self.connecting = True
+        self.log("Connecting to %s:%d ssl=%s" % (host, port, use_ssl))
+        factory = PassthroughProtocolFactory(self.server_data_received,
+                                             self.server_connection_made,
+                                             self.server_connection_lost)
+        self.conn_host = host
+        self.conn_port = port
+        self.conn_is_ssl = use_ssl
+        if use_socks:
+            socks_config = session.config.socks_proxy
+        else:
+            socks_config = None
+
+        make_proxied_connection(factory, host, port, use_ssl, socks_config=socks_config,
+                                log_id=self.connection_id, http_error_transport=self.client_transport)
+
+    ## Client interactions
+
+    def send_client_data(self, data):
+        self.log("pc< %s" % short_data(data))
+        if self.client_connected:
+            self.client_transport.write(data)
+        else:
+            self.client_buffer += data
+
+    def client_connection_made(self, protocol):
+        self.client_transport = self.client_protocol.transport
+        self.client_connected = True
+        self.connecting = False
+
+        if self.client_start_tls:
+            self.start_client_tls()
+        if self.client_buffer != '':
+            self.client_transport.write(self.client_buffer)
+            self.client_buffer = ''
+
+    def client_connection_lost(self, reason):
+        self.client_connected = False
+
+    def add_client_data(self, data):
+        """
+        Called when data is received from the client.
+        """
+        pass
+
+    def start_server_tls(self):
+        if self.server_connected:
+            self.log("Starting TLS on server transport")
+            self.server_transport.startTLS(ssl.ClientContextFactory())
+        else:
+            self.log("Server not yet connected, will start TLS on connect")
+            self.start_server_tls = True
+
+    def start_client_maybe_tls(self, cert_host):
+        ctx = generate_tls_context(cert_host)
+        start_maybe_tls(self.client_transport,
+                tls_host=cert_host,
+                start_tls_callback=self.start_server_tls)
+
+    def start_client_tls(self, cert_host):
+        if self.client_connected:
+            self.log("Starting TLS on client transport")
+            ctx = generate_tls_context(cert_host)
+            self.client_transport.startTLS(ctx)
+        else:
+            self.log("Client not yet connected, will start TLS on connect")
+            self.start_client_tls = True
+
+    ## Server interactions
+
+    def send_server_data(self, data):
+        if self.server_connected:
+            self.log("ps> %s" % short_data(data))
+            self.server_transport.write(data)
+        else:
+            self.log("Buffering...")
+            self.log("pb> %s" % short_data(data))
+            self.server_buffer += data
+
+    def server_connection_made(self, protocol):
+        """
+        self.server_protocol must be set before calling
+        """
+        self.log("Connection made")
+        self.server_protocol = protocol
+        self.server_transport = protocol.transport
+        self.server_connected = True
+
+        if self.server_start_tls:
+            self.start_server_tls()
+        if self.server_buffer != '':
+            self.log("Writing buffer to server")
+            self.log("ps> %s" % short_data(self.server_buffer))
+            self.server_transport.write(self.server_buffer)
+            self.server_buffer = ''
+
+    def server_connection_lost(self, reason):
+        self.server_connected = False
+
+    def add_server_data(self, data):
+        """
+        Called when data is received from the server.
+        """
+        pass
+
+    def close_server_connection(self):
+        if self.server_transport:
+            self.log("Manually closing server connection")
+            self.server_transport.loseConnection()
+            self.server_transport = None
+            self.server_connected = False
+            self.server_buffer = ''
+            self.server_protocol = None
+
+    def close_client_connection(self):
+        if self.client_transport:
+            self.log("Manually closing client connection")
+            self.client_transport.loseConnection()
+            self.client_transport = None
+            self.client_connected = False
+            self.client_buffer = ''
+            self.client_protocol = None
+
+    def close_connections(self):
+        self.close_server_connection()
+        self.close_client_connection()
+        
+
+class PassthroughProtocolFactory(ClientFactory):
+
+    def __init__(self,
+                 data_callback,
+                 connection_made_callback,
+                 connection_lost_callback):
+        self.data_callback = data_callback
+        self.connection_made_callback = connection_made_callback
+        self.connection_lost_callback = connection_lost_callback
+        self.protocol = None
+
+    def buildProtocol(self, addr):
+        prot = PassthroughProtocol(self.data_callback,
+                                   self.connection_made_callback,
+                                   self.connection_lost_callback)
+        self.protocol = prot
+        prot.factory = self
+        log("addr: %s" % str(addr))
+        return prot
+        
+    def clientConnectionFailed(self, connector, reason):
+        pass
+        
+    def clientConnectionLost(self, connector, reason):
+        pass
+        
+class PassthroughProtocol(Protocol):
+    """
+    A protocol that makes a connection to a remote server and makes callbacks to
+    functions to handle network events
+    """
+    def __init__(self, data_callback, connection_made_callback, connection_lost_callback):
+        self.data_callback = data_callback
+        self.connection_made_callback = connection_made_callback
+        self.connection_lost_callback = connection_lost_callback
+        self.connected = False
+
+    def dataReceived(self, data):
+        self.data_callback(data)
+
+    def connectionMade(self):
+        self.connected = True
+        self.connection_made_callback(self)
+
+    def connectionLost(self, reason):
+        self.connected = False
+        self.connection_lost_callback(reason)
+
+class ProxyProtocolFactory(ServerFactory):
+
+    next_int_macro_id = 0
+
+    def __init__(self):
+        self._int_macros = {}
+        self._macro_order = []
+        self._macro_names = {}
+
+    def add_intercepting_macro(self, macro, name=None):
+        new_id = self._get_int_macro_id()
+        self._int_macros[new_id] = macro
+        self._macro_order.append(new_id)
+        self._macro_names[new_id] = name
+
+    def remove_intercepting_macro(self, macro_id=None, name=None):
+        if macro_id is None and name is None:
+            raise PappyException("Either macro_id or name must be given")
+
+        ids_to_remove = []
+        if macro_id:
+            ids_to_remove.append(macro_id)
+        if name:
+            for k, v in self._macro_names.iteritems():
+                if v == name:
+                    ids_to_remove.append(k)
+
+        for i in ids_to_remove:
+            if i in self._macro_order:
+                self._macro_order.remove(i)
+            if i in self._macro_names:
+                del self._macro_names[i]
+            if i in self._int_macros:
+                del self._int_macros[i]
+
+    def get_macro_list(self):
+        return [self._int_macros[i] for i in self._macro_order]
+
+    @staticmethod
+    def _get_int_macro_id():
+        i = ProxyProtocolFactory.next_int_macro_id
+        ProxyProtocolFactory.next_int_macro_id += 1
+        return i
+    
+    def buildProtocol(self, addr):
+        prot = ProxyProtocol()
+        prot.factory = self
+        return prot
+
+class ProxyProtocol(Protocol):
+    """
+    The protocol hooked on to a listening port.
+    """
+
+    protocol = "http"
+
+    def __init__(self):
+        from pappyproxy.http import HTTPProtocolProxy
+        self.protocol_proxy = HTTPProtocolProxy()
+        self.protocol_proxy.client_protocol = self
+
+    def dataReceived(self, data):
+        self.protocol_proxy.client_data_received(data)
+
+    def connectionMade(self):
+        self.protocol_proxy.client_connection_made(self)
+
+    def connectionLost(self, reason):
+        self.protocol_proxy.client_connection_lost(reason)
+
+class MaybeTLSProtocol(Protocol):
+    """
+    A protocol that wraps another protocol and will guess whether the incoming
+    data is TLS and if it is, attempts to strip the TLS before passing it to
+    the protocol
+    """
+
+    STATE_DECIDING = 0
+    STATE_PASSTHROUGH = 1
+
+    def __init__(self, protocol, tls_host, start_tls_callback=None):
+        self.protocol = protocol
+        self.state = MaybeTLSProtocol.STATE_DECIDING
+        self._data_buffer = ''
+        self.start_tls_callback = start_tls_callback
+        self.tls_host = tls_host
+
+    def log(self, message, symbol='*', verbosity_level=3):
+        if hasattr(self, "connection_id"):
+            log(message, id=self.connection_id, symbol=symbol, verbosity_level=verbosity_level)
+        else:
+            log(message, symbol=symbol, verbosity_level=verbosity_level)
+
+    def decide_plaintext(self):
+        self.protocol.dataReceived(self._data_buffer)
+        self._data_buffer = ''
+        self.state = MaybeTLSProtocol.STATE_PASSTHROUGH
+
+    def decide_tls(self):
+        # Store the original transport. I think that startTLS changes self.transport
+        transport = self.transport
+
+        # Calling startTLS wraps whatever protocol is currently associated with the
+        # transport in another protocol that handles TLS. We want to send the data
+        # we already received to that protocol since the data we received is part
+        # of the TLS handshake
+        self.transport.startTLS(generate_tls_context(self.tls_host))
+        transport.protocol.dataReceived(self._data_buffer)
+
+        # The TLS protocol wrapper will send us the decrypted data so we should go
+        # into passthrough mode
+        self._data_buffer = ''
+        self.state = MaybeTLSProtocol.STATE_PASSTHROUGH
+
+        # Make the callback
+        if self.start_tls_callback is not None:
+            self.start_tls_callback()
+
+    def guess_if_tls(self):
+        if self._data_buffer == '':
+            return
+
+        # Is the first byte the byte of a ClientHello?
+        if ord(self._data_buffer[0]) == 0x16:
+            # Yes! Assume TLS
+            self.decide_tls()
+        else:
+            # Nope! It's plaintext
+            self.decide_plaintext()
+
+    def dataReceived(self, data):
+        if self.state == MaybeTLSProtocol.STATE_DECIDING:
+            self._data_buffer += data
+            self.guess_if_tls()
+        elif self.state == MaybeTLSProtocol.STATE_PASSTHROUGH:
+            self.protocol.dataReceived(data)
+        else:
+            raise Exception("Protocol in invalid state")

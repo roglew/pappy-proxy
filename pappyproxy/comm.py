@@ -54,7 +54,7 @@ class CommServer(LineReceiver):
     def action_error_handler(self, error, result):
         if debug:
             print error.getTraceback()
-        return_data = {'success': False, 'message': str(error.getErrorMessage())}
+        return_data = {'success': False, 'message': str(error.getTraceback())}
         result.update(result)
         error.trap(Exception)
         self.sendLine(json.dumps(return_data))
@@ -85,7 +85,7 @@ class CommServer(LineReceiver):
             raise PappyException("Request with given ID does not exist, cannot fetch associated response.")
 
         if req.response:
-            rsp = yield Response.load_response(req.response.rspid)
+            rsp = req.response
             dat = json.loads(rsp.to_json())
         else:
             dat = {}
@@ -100,9 +100,7 @@ class CommServer(LineReceiver):
         req.host = data['host'].encode('utf-8')
         req.port = data['port']
         req.is_ssl = data['is_ssl']
-        yield Request.submit_request(req,
-                                     save_request=True,
-                                     intercepting_macros=active_intercepting_macros())
+        yield req.async_submit(mangle=True)
         if 'tags' in data:
             req.tags = set(data['tags'])
         yield req.async_deep_save()

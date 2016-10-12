@@ -1,0 +1,14 @@
+* Todo
+** DONE Modify schema to save websocket sessions
+** DONE OTHER: Modify schema to save saved contexts
+** DONE Save saved contexts to data file
+** TODO Add websocket classes to Request object
+*** TODO include in JSON
+** TODO Add console commands to view websocket communications
+*** TODO ls-type command
+*** TODO Add websocket info to viq
+** TODO Implement websocket saving/loading
+** TODO Add websocket data loading to request object
+** TODO Wedge websocket parser/saver into http proxy
+** TODO Implement websocket mangling macros
+** TODO Implement injecting into existing websocket streams

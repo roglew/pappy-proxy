@@ -1,5 +1,6 @@
 import StringIO
 import datetime
+import hashlib
 import re
 import string
 import sys
@@ -34,6 +35,11 @@ class PappyStringTransport(StringTransport):
     def finish(self):
         # Called when a finishable producer finishes
         self.producerState = 'stopped'
+
+    def pop_value(self):
+        v = self.value()
+        self.clear()
+        return v
         
     def registerProducer(self, producer, streaming):
         StringTransport.registerProducer(self, producer, streaming)
@@ -43,13 +49,14 @@ class PappyStringTransport(StringTransport):
             self.producer.resumeProducing()
 
     def loseConnection(self):
-        StringTransport.loseconnection(self)
+        assert False
+        StringTransport.loseConnection(self)
         self.complete_deferred.callback(None)
 
     def startTLS(self, context, factory):
         pass
 
-def printable_data(data):
+def printable_data(data, colors=True):
     """
     Return ``data``, but replaces unprintable characters with periods.
 
@@ -61,15 +68,17 @@ def printable_data(data):
     colored = False
     for c in data:
         if c in string.printable:
-            if colored:
+            if colored and colors:
                 chars.append(Colors.ENDC)
-                colored = False
+            colored = False
             chars.append(c)
         else:
-            if not colored:
+            if (not colored) and colors:
                 chars.append(Styles.UNPRINTABLE_DATA)
-                colored = True
+            colored = True
             chars.append('.')
+    if colors:
+        chars.append(Colors.ENDC)
     return ''.join(chars)
 
 def remove_color(s):
@@ -92,6 +101,11 @@ def hexdump(src, length=16):
         printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or Styles.UNPRINTABLE_DATA+'.'+Colors.ENDC) for x in chars])
         lines.append("%04x  %-*s  %s\n" % (c, length*3, hex, printable))
     return ''.join(lines)
+
+def maybe_hexdump(s):
+    if any(c not in string.printable for c in s):
+        return hexdump(s)
+    return s
 
 # Taken from http://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
 # then modified
@@ -356,3 +370,40 @@ def autocomplete_startswith(text, lst, allow_spaces=False):
         ret = [s for s in ret if ' ' not in s]
     return ret
     
+def short_data(data):
+    l = 1024
+    if len(data) > l:
+        return printable_data(data[:l], colors=False)
+    else:
+        return printable_data(data, colors=False)
+
+def print_traceback():
+    import traceback; print '\n'.join([l.strip() for l in traceback.format_stack()])
+
+def traceback_on_call(obj, func):
+    old = getattr(obj, func)
+    def patched(*args, **kwargs):
+        print_traceback()
+        old(*args, **kwargs)
+    setattr(obj, func, patched)
+
+def sha1(data):
+    m = hashlib.sha1()
+    m.update(data)
+    return m.digest()
+
+def datetime_string(dt):
+    dtobj = utc2local(dt)
+    time_made_str = dtobj.strftime('%a, %b %d, %Y, %I:%M:%S.%f %p')
+    return time_made_str
+
+def html_escape(s, quote=None):
+    '''Replace special characters "&", "<" and ">" to HTML-safe sequences.
+    If the optional flag quote is true, the quotation mark character (")
+is also translated.'''
+    s = s.replace("&", "&amp;") # Must be done first!
+    s = s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
+    if quote:
+        s = s.replace('"', "&quot;")
+    return s

@@ -4,10 +4,11 @@ import json
 import pappyproxy
 import pygments
 import pprint
+import re
 import shlex
 import urllib
 
-from pappyproxy.util import PappyException, utc2local, load_reqlist, print_table, print_request_rows, get_req_data_row
+from pappyproxy.util import PappyException, utc2local, load_reqlist, print_table, print_request_rows, get_req_data_row, datetime_string, maybe_hexdump
 from pappyproxy.http import Request, repeatable_parse_qs
 from twisted.internet import defer
 from pappyproxy.plugin import async_main_context_ids
@@ -19,11 +20,58 @@ from pygments.lexers.html import XmlLexer
 ###################
 ## Helper functions
 
-def view_full_message(request, headers_only=False):
+def view_full_message(request, headers_only=False, try_ws=False):
+    def _print_message(mes):
+        print_str = ''
+        if mes.direction == 'INCOMING':
+            print_str += Colors.BLUE
+            print_str += '< Incoming'
+        elif mes.direction == 'OUTGOING':
+            print_str += Colors.GREEN
+            print_str += '> Outgoing'
+        else:
+            print_str += Colors.RED
+            print_str += '? ERROR: Unknown direction'
+        if mes.unmangled:
+            print_str += ', mangled'
+        print_str += ', binary = %s\n' % mes.is_binary
+        print_str += Colors.ENDC
+        print_str += maybe_hexdump(mes.contents)
+        print_str += '\n'
+        return print_str
+
     if headers_only:
         print request.headers_section_pretty
     else:
-        print request.full_message_pretty
+        if try_ws and request.websocket_messages:
+            print_str = ''
+            print_str += Styles.TABLE_HEADER
+            print_str += "Websocket session handshake\n"
+            print_str += Colors.ENDC
+            print_str += request.full_message_pretty
+            print_str += '\n'
+            print_str += Styles.TABLE_HEADER
+            print_str += "Websocket session \n"
+            print_str += Colors.ENDC
+            for mes in request.websocket_messages:
+                print_str += _print_message(mes)
+                if mes.unmangled:
+                    print_str += Colors.YELLOW
+                    print_str += '-'*10
+                    print_str += Colors.ENDC
+                    print_str += ' ^^ UNMANGLED ^^ '
+                    print_str += Colors.YELLOW
+                    print_str += '-'*10
+                    print_str += Colors.ENDC
+                    print_str += '\n'
+                    print_str += _print_message(mes.unmangled)
+                    print_str += Colors.YELLOW
+                    print_str += '-'*20 + '-'*len(' ^^ UNMANGLED ^^ ')
+                    print_str += '\n'
+                    print_str += Colors.ENDC
+            print print_str
+        else:
+            print request.full_message_pretty
 
 def print_request_extended(request):
     # Prints extended info for the request
@@ -63,8 +111,7 @@ def print_request_extended(request):
         is_ssl = 'NO'
 
     if request.time_start:
-        dtobj = utc2local(request.time_start)
-        time_made_str = dtobj.strftime('%a, %b %d, %Y, %I:%M:%S %p')
+        time_made_str = datetime_string(request.time_start)
     else:
         time_made_str = '--'
 
@@ -325,7 +372,7 @@ def view_full_request(line):
     for req in reqs:
         if len(reqs) > 1:
             print 'Request %s:' % req.reqid
-        view_full_message(req)
+        view_full_message(req, try_ws=True)
         if len(reqs) > 1:
             print '-'*30
             print ''
@@ -498,6 +545,20 @@ def get_param_info(line):
                 add_param(found_params, 'Cookie', k, v, req.reqid)
     print_param_info(found_params)
 
+@crochet.wait_for(timeout=None)
+@defer.inlineCallbacks
+def find_urls(line):
+    args = shlex.split(line)
+    reqs = yield load_reqlist(args[0])
+
+    url_regexp = r'((?:http|ftp|https)://(?:[\w_-]+(?:(?:\.[\w_-]+)+))(?:[\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?)'
+    urls = set()
+    for req in reqs:
+        urls |= set(re.findall(url_regexp, req.full_message))
+        if req.response:
+            urls |= set(re.findall(url_regexp, req.response.full_message))
+    for url in sorted(urls):
+        print url
 
 @crochet.wait_for(timeout=None)
 @defer.inlineCallbacks
@@ -568,6 +629,7 @@ def load_cmds(cmd):
         'param_info': (get_param_info, None),
         'site_map': (site_map, None),
         'dump_response': (dump_response, None),
+        'urls': (find_urls, None),
     })
     cmd.add_aliases([
         ('list', 'ls'),

@@ -111,7 +111,7 @@ def complete_run_int_macro(text, line, begidx, endidx):
     running = []
     not_running = []
     for macro in loaded_int_macros:
-        if macro.name in [m.name for k, m in active_intercepting_macros().iteritems()]:
+        if macro.name in [m.name for m in active_intercepting_macros()]:
             running.append(macro)
         else:
             not_running.append(macro)
@@ -151,7 +151,7 @@ def complete_stop_int_macro(text, line, begidx, endidx):
     running = []
     not_running = []
     for macro in loaded_int_macros:
-        if macro.name in [m.name for k, m in active_intercepting_macros().iteritems()]:
+        if macro.name in [m.name for m in active_intercepting_macros()]:
             running.append(macro)
         else:
             not_running.append(macro)
@@ -187,7 +187,7 @@ def list_int_macros(line):
     running = []
     not_running = []
     for macro in loaded_int_macros:
-        if macro.name in [m.name for k, m in active_intercepting_macros().iteritems()]:
+        if macro.name in [m.name for m in active_intercepting_macros()]:
             running.append(macro)
         else:
             not_running.append(macro)

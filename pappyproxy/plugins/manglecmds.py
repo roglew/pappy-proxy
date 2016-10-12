@@ -27,8 +27,10 @@ class MangleInterceptMacro(InterceptMacro):
         self.name = 'Pappy Interceptor Macro'
         self.intercept_requests = False
         self.intercept_responses = False
+        self.intercept_ws = False
         self.async_req = True
         self.async_rsp = True
+        self.async_ws = True
 
     def __repr__(self):
         return "<MangleInterceptingMacro>"
@@ -99,6 +101,38 @@ class MangleInterceptMacro(InterceptMacro):
             retrsp = mangled_rsp
 
         defer.returnValue(retrsp)
+
+    @defer.inlineCallbacks
+    def async_mangle_ws(self, request, message):
+        # This function gets called to mangle/edit respones passed through the proxy
+
+        retmsg = message
+        # Write original message to the temp file
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
+            tfName = tf.name
+            tf.write(retmsg.contents)
+
+        # Have the console edit the file
+        yield edit_file(tfName, front=True)
+
+        # Create new mangled message from edited file
+        with open(tfName, 'r') as f:
+            text = f.read()
+
+        os.remove(tfName)
+
+        # Check if dropped
+        if text == '':
+            pappyproxy.proxy.log('Websocket message dropped!')
+            defer.returnValue(None)
+
+        mangled_message = message.copy()
+        mangled_message.contents = text
+
+        if mangled_message.contents != message.contents:
+            retmsg = mangled_message
+
+        defer.returnValue(retmsg)
             
 
 ###############
@@ -155,29 +189,38 @@ def intercept(line):
     args = shlex.split(line)
     intercept_requests = False
     intercept_responses = False
+    intercept_ws = True
+    intercept_ws
 
     req_names = ('req', 'request', 'requests')
     rsp_names = ('rsp', 'response', 'responses')
+    ws_names = ('ws', 'websocket')
 
     if any(a in req_names for a in args):
         intercept_requests = True
     if any(a in rsp_names for a in args):
         intercept_responses = True
+    if any(a in req_names for a in args):
+        intercept_ws = True
     if not args:
         intercept_requests = True
 
-    if intercept_requests and intercept_responses:
-        intercept_str = 'Requests and responses'
-    elif intercept_requests:
-        intercept_str = 'Requests'
-    elif intercept_responses:
-        intercept_str = 'Responses'
-    else:
+    intercepting = []
+    if intercept_requests:
+        intercepting.append('Requests')
+    if intercept_responses:
+        intercepting.append('Responses')
+    if intercept_ws:
+        intercepting.append('Websocket Messages')
+    if not intercept_requests and not intercept_responses and not intercept_ws:
         intercept_str = 'NOTHING'
+    else:
+        intercept_str = ', '.join(intercepting)
 
     mangle_macro = MangleInterceptMacro()
     mangle_macro.intercept_requests = intercept_requests
     mangle_macro.intercept_responses = intercept_responses
+    mangle_macro.intercept_ws = intercept_ws
 
     add_intercepting_macro('pappy_intercept', mangle_macro)
 

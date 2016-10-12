@@ -11,13 +11,18 @@ import time
 import urlparse
 import zlib
 import weakref
+import Queue
 
-from .util import PappyException, printable_data
+from .util import PappyException, printable_data, short_data, PappyStringTransport, sha1, print_traceback
 from .requestcache import RequestCache
 from .colors import Colors, host_color, path_formatter
+from .proxy import ProtocolProxy, make_proxied_connection, get_http_proxy_addr, start_maybe_tls
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_mimetype, HttpLexer
 from twisted.internet import defer
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketClientFactory, WebSocketServerProtocol, WebSocketClientProtocol
+from autobahn.websocket.protocol import WebSocketProtocol
+from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 
 ENCODE_NONE = 0
 ENCODE_DEFLATE = 1
@@ -28,6 +33,7 @@ PATH_ABSOLUTE = 1
 PATH_HOST = 2
 
 dbpool = None
+web_server = None
 
 def init(pool):
     """
@@ -36,9 +42,13 @@ def init(pool):
     :param pool: The ConnectionPool to use to store the request/response objects
     :type pool: SQLite ConnectionPool
     """
+    from .site import PappyWebServer
+
     global dbpool
+    global web_server
     if dbpool is None:
         dbpool = pool
+    web_server = PappyWebServer()
     assert(dbpool)
 
 def destruct():
@@ -131,25 +141,54 @@ def request_by_id(reqid):
     defer.returnValue(req)
     
 @defer.inlineCallbacks
-def async_submit_requests(reqs, mangle=False, save=False):
+def async_submit_requests(reqs, mangle=False, save=False, save_in_mem=False, unique_paths=False,
+                          unique_path_and_args=False, use_cookie_jar=False, tag=None):
     """
     async_submit_requests(reqs, mangle=False)
     :param mangle: Whether to pass the requests through intercepting macros
     :type mangle: Bool
     :rtype: DeferredList
 
-    Submits a list of requests at the same time asynchronously.
+    Copies and submits a list of requests at the same time asynchronously.
     Responses/unmangled versions will be attached to the request objects in the list.
     Prints progress to stdout.
+    Returns list of submitted requests
     """
-    print 'Submitting %d request(s)' % len(reqs)
+    import sys
+    from pappyproxy.plugin import add_to_history
+
+    if unique_paths and unique_path_and_args:
+        raise PappyException("Cannot use both unique_paths and unique_paths_and_argts")
+    if save and save_in_mem:
+        raise PappyException("Cannot use both save and save_in_mem")
+
+    to_submit = [r.copy() for r in reqs]
+
+    if unique_paths or unique_path_and_args:
+        endpoints = set()
+        new_reqs = []
+        for r in reqs:
+            if unique_path_and_args:
+                s = r.url
+            else:
+                s = r.path
+
+            if not s in endpoints:
+                new_reqs.append(r)
+                endpoints.add(s)
+        to_submit = new_reqs
+
+    print 'Submitting %d request(s)' % len(to_submit)
+    sys.stdout.flush()
 
     dones = 0
     errors = 0
     list_deferred = defer.Deferred()
 
     deferreds = []
-    for r in reqs:
+    for r in to_submit:
+        if tag is not None:
+            r.tags.add(tag)
         d = r.async_submit(mangle=mangle)
         deferreds.append(d)
 
@@ -165,23 +204,42 @@ def async_submit_requests(reqs, mangle=False, save=False):
 
         finished = dones+errors
         
-        if finished % 30 == 0 or finished == len(reqs):
+        if finished % 30 == 0 or finished == len(to_submit):
             if errors > 0:
-                print '{0}/{1} complete with {3} errors ({2:.2f}%)'.format(finished, len(reqs), (float(finished)/len(reqs))*100, errors)
+                print '{0}/{1} complete with {3} errors ({2:.2f}%)'.format(finished, len(to_submit), (float(finished)/len(to_submit))*100, errors)
             else:
-                print '{0}/{1} complete ({2:.2f}%)'.format(finished, len(reqs), (float(finished)/len(reqs))*100)
-        if finished == len(reqs):
+                print '{0}/{1} complete ({2:.2f}%)'.format(finished, len(to_submit), (float(finished)/len(to_submit))*100)
+        sys.stdout.flush()
+        if finished == len(to_submit):
             list_deferred.callback(None)
 
     if save:
-        for r in reqs:
+        for r in to_submit:
             yield r.async_deep_save()
+    elif save_in_mem:
+        for r in to_submit:
+            add_to_history(r)
 
 @crochet.wait_for(timeout=180.0)
 @defer.inlineCallbacks
 def submit_requests(*args, **kwargs):
     ret = yield async_submit_requests(*args, **kwargs)
     defer.returnValue(ret)
+
+def apply_http_proxy_creds(req):
+    from pappyproxy import pappy
+
+    if not pappy.session.config.http_proxy:
+        return
+    if 'username' in pappy.session.config.http_proxy and \
+       'password' in pappy.session.config.http_proxy:
+        req.proxy_creds = (pappy.session.config.http_proxy['username'],
+                           pappy.session.config.http_proxy['password'])
+
+@defer.inlineCallbacks
+def handle_webserver_request(req):
+    global web_server
+    yield web_server.handle_request(req)
 
 ##########
 ## Classes
@@ -231,7 +289,7 @@ class RepeatableDict:
         self.set_val(key, val)
 
     def __delitem__(self, key):
-        self._keys.remove(key)
+        self._remove_key(key)
         self._pairs = [p for p in self._pairs if self._ef_key(p[0]) != self._ef_key(key)]
         self._mod_callback()
 
@@ -366,19 +424,23 @@ class LengthData:
         self.complete = False
         self.length = length or 0
 
-        if self.length == 0:
+        if self.length == 0 or self.length == -1:
             self.complete = True
 
     def add_data(self, data):
-        if self.complete:
+        if self.complete and self.length != -1:
             raise PappyException("Data already complete!")
         remaining_length = self.length-len(self.body)
-        if len(data) >= remaining_length:
-            self.body += data[:remaining_length]
-            assert(len(self.body) == self.length)
-            self.complete = True
-        else:
+        if self.length == -1:
             self.body += data
+            complete = True
+        else:
+            if len(data) >= remaining_length:
+                self.body += data[:remaining_length]
+                assert(len(self.body) == self.length)
+                self.complete = True
+            else:
+                self.body += data
 
 class ChunkedData:
 
@@ -570,6 +632,464 @@ class ResponseCookie(object):
                 self._parse_cookie_av(cookie_av)
         else:
             self.key, self.val = set_cookie_string.split('=',1)
+            
+class WebSocketMessage(object):
+    """
+    A class representing a websocket message
+    """
+
+    DIRECTION_OUTGOING = 0
+    DIRECTION_INCOMING = 1
+
+    TYPE_MESSAGE = 0
+
+    def __init__(self, direction=None, contents=None, message_type=None, time_sent=None, is_binary=None):
+        self.direction = None
+        self.contents = None
+        self.message_type = WebSocketMessage.TYPE_MESSAGE
+        self.time_sent = None
+        self.unmangled = None
+        self.parent_request = None
+        self.is_unmangled_version = False
+        self.is_binary = False
+        self.msgid = '--'
+
+    def __eq__(self, other):
+        if self.contents != other.contents:
+            return False
+        if self.is_binary != other.is_binary:
+            return False
+        return True
+
+    def __copy__(self):
+        new_msg = WebSocketMessage()
+        new_msg.direction = self.direction
+        new_msg.contents = self.contents
+        new_msg.message_type = self.message_type
+        new_msg.is_binary = self.is_binary
+        return new_msg
+
+    def copy(self):
+        return self.__copy__()
+
+    def duplicate(self):
+        m = self.copy()
+        m.msgid = self.msgid
+        m.time_sent = self.time_sent
+        if self.unmangled:
+            m.unmangled = self.unmangled.duplicate()
+        return m
+
+    @defer.inlineCallbacks
+    def async_save(self, cust_dbpool=None):
+        from .pappy import main_context
+
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+        else:
+            use_dbpool = dbpool
+
+        assert(use_dbpool)
+        if not self.msgid:
+            self.msgid = '--'
+        try:
+            # Check for intyness
+            _ = int(self.msgid)
+
+            # If we have msgid, we're updating
+            yield use_dbpool.runInteraction(self._update)
+            assert(self.msgid is not None)
+        except (ValueError, TypeError):
+            # Either no id or in-memory
+            yield use_dbpool.runInteraction(self._insert)
+            assert(self.msgid is not None)
+        main_context.cache_reset()
+
+    @defer.inlineCallbacks
+    def async_deep_save(self):
+        if self.unmangled:
+            yield self.unmangled.async_deep_save()
+        yield self.async_save()
+
+    def _update(self, txn):
+        setnames = ['is_binary=?', 'contents=?']
+        queryargs = [self.is_binary, self.contents]
+
+        # Direction
+        if self.direction == 'OUTGOING':
+            setnames.append('direction=?')
+            queryargs.append(0)
+        elif self.direction == 'INCOMING':
+            setnames.append('direction=?')
+            queryargs.append(1)
+        else:
+            setnames.append('direction=?')
+            queryargs.append(-1)
+
+        # Unmangled
+        if self.unmangled:
+            setnames.append('unmangled_id=?')
+            assert(self.unmangled.msgid is not None) # should be saved first
+            queryargs.append(self.unmangled.msgid)
+
+        # Message time
+        if self.time_sent:
+            setnames.append('time_sent=?')
+            queryargs.append((self.time_sent-datetime.datetime(1970,1,1)).total_seconds())
+
+        # Parent request
+        if self.parent_request:
+            assert(self.parent_request.reqid)
+            setnames.append('parent_request=?')
+            queryargs.append(self.parent_request.reqid)
+
+        queryargs.append(self.msgid)
+        txn.execute(
+            """
+            UPDATE websocket_messages SET %s WHERE id=?;
+            """ % ','.join(setnames),
+            tuple(queryargs)
+        )
+
+    def _insert(self, txn):
+        colnames = ['is_binary', 'contents']
+        colvals = [self.is_binary, self.contents]
+        
+        # Direction
+        if self.direction == 'OUTGOING':
+            colnames.append('direction')
+            colvals.append(0)
+        elif self.direction == 'INCOMING':
+            colnames.append('direction')
+            colvals.append(1)
+        else:
+            colnames.append('direction')
+            colvals.append(-1)
+
+        # Unmangled
+        if self.unmangled:
+            colnames.append('unmangled_id')
+            assert(self.unmangled.msgid is not None) # should be saved first
+            colvals.append(self.unmangled.msgid)
+
+        # Message time
+        if self.time_sent:
+            colnames.append('time_sent')
+            colvals.append((self.time_sent-datetime.datetime(1970,1,1)).total_seconds())
+
+        # Parent request
+        if self.parent_request:
+            assert(self.parent_request.reqid)
+            colnames.append('parent_request')
+            colvals.append(self.parent_request.reqid)
+        txn.execute(
+            """
+            INSERT INTO websocket_messages (%s) VALUES (%s);
+            """ % (','.join(colnames), ','.join(['?']*len(colvals))),
+            tuple(colvals)
+        )
+        self.msgid = str(txn.lastrowid)
+        
+class WebSocketProxy(object):
+
+    def __init__(self, server_transport, client_transport, client_handshake, server_handshake, parent_proxy, log_id=None):
+        self.message_callback = None
+        self.close_callback = None
+        self.log_id = log_id
+        self.intercepting_macros = None
+        self.parent_http_proxy = parent_proxy
+
+        # The raw http messages from the handshake
+        self.client_handshake = client_handshake
+        self.server_handshake = server_handshake
+
+        self.server_factory = WebSocketServerFactory()
+        self.server_factory.protocol = WebSocketServerProtocol
+        self.server_transport = server_transport
+
+        self.client_factory = WebSocketClientFactory()
+        self.client_factory.protocol = WebSocketClientProtocol
+        self.client_transport = client_transport
+
+        self._fake_handshake()
+
+    def log(self, message, symbol='*', verbosity_level=3):
+        from pappyproxy.proxy import log
+
+        if self.log_id:
+            log(message, id=log_id, symbol=symbol, verbosity_level=verbosity_level)
+        else:
+            log(message, symbol=symbol, verbosity_level=verbosity_level)
+
+    def _build_server_protocol(self):
+        self.server_protocol = self.server_factory.buildProtocol(None)
+        self.server_protocol.makeConnection(self.server_transport)
+        self._patch_server_protocol()
+
+    def _build_client_protocol(self):
+        """
+        Builds the client protocol then returns the bytes written to the
+        transport after creation
+        """
+        self.client_protocol = self.client_factory.buildProtocol(None)
+        tr = PappyStringTransport()
+        self.client_protocol.makeConnection(tr)
+        tval = tr.pop_value()
+        self.client_protocol.transport = self.client_transport
+        self._patch_client_protocol()
+        return tval
+
+    def _patch_server_protocol(self):
+        self.log("Patching server protocol")
+        self._add_hook(self.server_protocol, 'onMessage', '_on_server_message')
+
+    def _patch_client_protocol(self):
+        self.log("Patching client protocol")
+        self._add_hook(self.client_protocol, 'onMessage', '_on_client_message')
+
+    def _add_hook(self, c, their_method, my_method):
+        """
+        Make it so that c.their_method(*args, **kwargs) calls self.my_method(*args, **kwargs)
+        before calling their method
+        """
+        old = getattr(c, their_method)
+        def patched(*args, **kwargs):
+            getattr(self, my_method)(*args, **kwargs)
+            old(*args, **kwargs)
+        setattr(c, their_method, patched)
+
+    @staticmethod
+    def _gen_sec_websocket_accept(token):
+        MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+        concatenated = token + MAGIC_STRING
+        hashed = sha1(concatenated)
+        reencoded = base64.b64encode(hashed)
+        return reencoded
+
+    def _parse_extension_header(self, hd):
+        """
+        Parses the extension header and returns a list of offers
+        """
+        offers = []
+        extensions = self.server_protocol._parseExtensionsHeader(hd)
+        for (extension, params) in extensions:
+            if extension in PERMESSAGE_COMPRESSION_EXTENSION:
+
+                PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
+
+                try:
+                    offer = PMCE['Offer'].parse(params)
+                    offers.append(offer)
+                except Exception as e:
+                    raise PappyException(str(e))
+            else:
+                self.log("Bad extension: %s" % extension)
+        return offers
+
+    def _set_up_ws_client(self, ws_server_factory, ws_client_factory, hs_req, hs_rsp):
+        """
+        Sets up a WebSocketClientProtocolFactory from a WebSocketServerProtocolFactory
+        """
+        self.log("Setting up websocket client")
+        client_settings = {}
+
+        # Common attributes
+        skip_attrs = ('logFrames','trackTimings','logOctets')
+        for attr in WebSocketProtocol.CONFIG_ATTRS_COMMON:
+            if attr not in skip_attrs:
+                client_settings[attr] = getattr(ws_server_factory, attr)
+
+        def accept(response):
+            from autobahn.websocket.compress import PerMessageDeflateResponse, \
+                   PerMessageDeflateResponseAccept, \
+                   PerMessageBzip2Response, \
+                   PerMessageBzip2ResponseAccept, \
+                   PerMessageSnappyResponse, \
+                   PerMessageSnappyResponseAccept
+            if isinstance(response, PerMessageDeflateResponse):
+                return PerMessageDeflateResponseAccept(response)
+
+            elif isinstance(response, PerMessageBzip2Response):
+                return PerMessageBzip2ResponseAccept(response)
+
+            elif isinstance(response, PerMessageSnappyResponse):
+                return PerMessageSnappyResponseAccept(response)
+
+        # Client specific attributes
+        client_settings['version'] = int(hs_req.headers['Sec-WebSocket-Version'])
+        client_settings['acceptMaskedServerFrames'] = True
+        client_settings['maskClientFrames'] = True
+        #client_settings['serverConnectionDropTimeout'] = None
+
+        offers = self._parse_extension_header(hs_req.headers['Sec-WebSocket-Extensions'])
+        client_settings['perMessageCompressionOffers'] = offers
+        client_settings['perMessageCompressionAccept'] = accept
+
+        # debug
+        client_settings['openHandshakeTimeout'] = 8
+
+        self.log("Setting client options: %s" % client_settings)
+        ws_client_factory.setProtocolOptions(**client_settings)
+
+    def _fake_handshake(self):
+        self.log("Performing fake handshake")
+
+        # Set up our server listener
+        self._build_server_protocol()
+        old_server_transport = self.server_protocol.transport
+        self.server_protocol.transport = PappyStringTransport()
+        self.log("Sending fake handshake response to server protocol:")
+        self.log("pf> %s" % printable_data(self.server_handshake.full_message))
+        self.server_protocol.dataReceived(self.server_handshake.full_message)
+        tval = self.server_protocol.transport.pop_value()
+        self.log("<fp %s" % printable_data(tval))
+        assert tval
+        self.server_protocol.transport = old_server_transport
+
+        # Set up our client
+        self._set_up_ws_client(self.server_factory,
+                               self.client_factory,
+                               self.server_handshake,
+                               self.client_handshake)
+        # Perform rest of client handshake
+        tval = self._build_client_protocol()
+        self.log("Getting handshake request start from client protocol")
+        self.log("<fp %s" % printable_data(tval))
+        # Revert transport handshake so that any data sent after our response is
+        # sent to the real transport
+        self.log("Reverting client transport")
+        self.log("Sending fake handshake response to client protocol:")
+        handshake_req = Request(tval)
+        handshake_rsp = self.client_handshake.copy()
+        sec_ws_key = handshake_req.headers['Sec-WebSocket-Key']
+        self.log("Generating Sec-WebSocket-Accept for %s" % sec_ws_key)
+        sec_ws_accept = WebSocketProxy._gen_sec_websocket_accept(sec_ws_key)
+        self.log("Sec-WebSocket-Accept = %s" % sec_ws_accept)
+        handshake_rsp.headers['Sec-WebSocket-Accept'] = sec_ws_accept
+        self.log("pf> %s" % printable_data(handshake_rsp.full_message))
+        self.client_protocol.dataReceived(handshake_rsp.full_message) # Tell it whatever the remote server told us
+        self.log("Compressed after handshake? %s" % self.client_protocol._perMessageCompress)
+
+        self.log("Fake handshake complete")
+
+    def _on_server_message(self, payload, is_binary):
+        """
+        Wrapper to convert arguments to onMessage into an object and call on_server_message
+        """
+        # Turn into object
+        m = WebSocketMessage()
+        m.direction = 'OUTGOING'
+        m.contents = payload
+        m.time_sent = datetime.datetime.utcnow()
+        m.is_binary = is_binary
+        self.log("rp< (websocket, binary=%s) %s" % (m.is_binary, m.contents))
+
+        self.on_server_message(m)
+
+    def _on_client_message(self, payload, is_binary):
+        """
+        Wrapper function for when the client protocol gets a data frame
+        """
+        # Turn into object
+        m = WebSocketMessage()
+        m.direction = 'INCOMING'
+        m.contents = payload
+        m.time_sent = datetime.datetime.utcnow()
+        m.is_binary = is_binary
+        self.log("cp> (websocket, binary=%s) %s" % (m.is_binary, m.contents))
+
+        self.on_client_message(m)
+
+    @defer.inlineCallbacks
+    def mangle_message(self, message):
+        from pappyproxy import context, macros
+
+        # Mangle object
+        sendreq = self.server_handshake
+        custom_macros = self.parent_http_proxy.custom_macros
+        mangle_macros = self.parent_http_proxy.mangle_macros
+        client_protocol = self.parent_http_proxy.client_protocol
+        save_requests = self.parent_http_proxy.save_requests
+        dropped = False
+        sendmsg = message
+
+        if context.in_scope(sendreq) or custom_macros:
+            self.log("Passing ws message through macros")
+            if not custom_macros:
+                mangle_macros = client_protocol.factory.get_macro_list()
+
+            if save_requests:
+                yield sendreq.async_deep_save()
+
+            (mangmsg, mangled) = yield macros.mangle_websocket_message(message, sendreq, mangle_macros)
+            if mangmsg is None:
+                self.log("Message dropped")
+                dropped = True
+            elif mangled:
+                self.log("Message mangled")
+                sendmsg.time_sent = None
+                mangmsg.unmangled = sendmsg
+                sendmsg = mangmsg
+            else:
+                self.log("Message not modified")
+
+            mangmsg.time_sent = datetime.datetime.utcnow()
+            if not dropped:
+                sendreq.add_websocket_message(sendmsg)
+            if save_requests:
+                yield sendreq.async_deep_save()
+        else:
+            sendreq.add_websocket_message(sendmsg)
+            self.log("Request out of scope, passing ws message along unmangled")
+
+        # Send data frame through server object to the client
+        defer.returnValue((sendmsg, dropped))
+
+    @defer.inlineCallbacks
+    def on_server_message(self, message):
+        """
+        Wrapper function for when the server protocol gets a data frame
+        """
+        # Mangle object
+        sendmsg, dropped = yield self.mangle_message(message)
+
+        # Send data frame through client object to remote server
+        if not dropped:
+            self.send_server_message(sendmsg.contents, sendmsg.is_binary)
+
+    @defer.inlineCallbacks
+    def on_client_message(self, message):
+        """
+        Wrapper function for when the client protocol gets a data frame
+        """
+        sendmsg, dropped = yield self.mangle_message(message)
+
+        # Send data frame through server object to the client
+        if not dropped:
+            self.send_client_message(sendmsg.contents, sendmsg.is_binary)
+
+    def client_data_received(self, data):
+        # Called when data is received from the client
+        # Sends RAW DATA to server protocol. NOT frame data
+        self.server_protocol.dataReceived(data)
+
+    def server_data_received(self, data):
+        # Called when data is received from the server
+        # Sends RAW DATA to client protocol. NOT frame data
+        self.client_protocol.dataReceived(data)
+
+    def send_client_message(self, message_data, is_binary=False):
+        # Write a message to the client over the actual transport
+        self.server_protocol.sendMessage(message_data, is_binary)
+
+    def send_server_message(self, message_data, is_binary=False):
+        # Write a message to the remote server over the actual transport
+        self.client_protocol.sendMessage(message_data, is_binary)
+
+    def on_client_frame(self, frame_data, is_binary=False):
+        # Call callback and have callback return mangled frame data
+        self.server_protocol.sendFrame(frame_data, is_binary)
 
 class HTTPMessage(object):
     """
@@ -657,6 +1177,7 @@ class HTTPMessage(object):
         self._first_line = True
         self._data_obj = None
         self._end_after_headers = False
+        self._data_buffer = ''
 
     def _from_full_message(self, full_message, update_content_length=False, meta=None):
         # Set defaults for metadata
@@ -666,34 +1187,16 @@ class HTTPMessage(object):
         if full_message == '':
             return
 
-        lines = full_message.splitlines(True)
-        header_len = 0
-        for line in lines:
-            if line[-2] == '\r':
-                l = line[:-2]
-            else:
-                l = line[:-1]
-            self.add_line(l)
-            header_len += len(line)
-            if self.headers_complete:
-                break
-        remaining = full_message[header_len:]
-            
-        if not self.headers_complete:
-            self.add_line('')
+        self.add_data(full_message, enforce_content_length=(not update_content_length))
 
         if meta:
             self.set_metadata(meta)
 
-        # We keep track of encoding here since if it's encoded, after
-        # we call add_data it will update content-length automatically
-        # and we won't have to update the content-length manually
-        if not self.complete:
-            # We do add data since just setting the body will keep the
-            # object from decoding chunked/compressed messages
-            self.add_data(remaining)
-        if update_content_length and (not self._decoded):
-            self.body = remaining
+        if update_content_length:
+            # If we have no body and didn't have a content-length header in the first
+            # place, don't add one
+            if 'Content-Length' in self.headers or len(self.body) > 0:
+                self.headers['Content-Length'] = str(len(self.body))
         assert(self.complete)
 
     ###############################
@@ -722,7 +1225,7 @@ class HTTPMessage(object):
         Same thing as :func:`pappyproxy.http.HTTPMessage.headers_section` except
         that the headers are colorized for terminal printing.
         """
-        to_ret = printable_data(self.headers_section)
+        to_ret = printable_data(self.headers_section, colors=False)
         to_ret = pygments.highlight(to_ret, HttpLexer(), TerminalFormatter())
         return to_ret
 
@@ -755,7 +1258,9 @@ class HTTPMessage(object):
         Same thing as :func:`pappy.http.HTTPMessage.body` but the output is
         colorized for the terminal.
         """
-        to_ret = printable_data(self.body)
+        if self.body == '':
+            return ''
+        to_ret = printable_data(self.body, colors=False)
         if 'content-type' in self.headers:
             try:
                 lexer = get_lexer_for_mimetype(self.headers['content-type'].split(';')[0])
@@ -780,12 +1285,15 @@ class HTTPMessage(object):
         Same as :func:`pappyproxy.http.HTTPMessage.full_message` except the
         output is colorized
         """
-        return (self.headers_section_pretty + '\r\n' + self.body_pretty)
+        if self.body:
+            return (self.headers_section_pretty + '\r\n' + self.body_pretty)
+        else:
+            return self.headers_section_pretty
 
     ###############
     ## Data loading
 
-    def add_line(self, line):
+    def add_line(self, line, enforce_content_length=True):
         """
         Used for building a message from a Twisted protocol.
         Add a line (for status line and headers). Lines must be added in order
@@ -802,12 +1310,16 @@ class HTTPMessage(object):
         if not line:
             self.headers_complete = True
 
+            if not self._data_obj:
+                self._data_obj = LengthData(0)
+
             if self._end_after_headers:
                 self.complete = True
                 return
 
-            if not self._data_obj:
-                self._data_obj = LengthData(0)
+            if not enforce_content_length or 'content-length' not in self.headers:
+                if isinstance(self._data_obj, LengthData):
+                    self._data_obj = LengthData(-1)
             self.complete = self._data_obj.complete
             self.headers_end()
             return
@@ -825,7 +1337,7 @@ class HTTPMessage(object):
             if self.handle_header(key, val):
                 self.headers.append(key, val, do_callback=False)
 
-    def add_data(self, data):
+    def add_data(self, data, enforce_content_length=True):
         """
         Used for building a message from a Twisted protocol.
         Add data to the message. The data must conform to the content encoding
@@ -836,13 +1348,33 @@ class HTTPMessage(object):
         :param data: The data to add
         :type data: string
         """
-        assert(self._data_obj)
-        assert(not self._data_obj.complete)
-        assert not self.complete
-        self._data_obj.add_data(data)
-        if self._data_obj.complete:
-            self.complete = True
-            self.body_complete()
+        assert not self.complete or not enforce_content_length
+        self._data_buffer += data
+
+        def popline(s):
+            parts = s.split('\n', 1)
+            if len(parts) == 1:
+                return (s, '')
+            line, rest = (parts[0], ''.join(parts[1:]))
+            if line[-1] == '\r':
+                line = line[:-1]
+            return (line, rest)
+
+        # Add headers from the data buffer if headers aren't complete
+        if not self.headers_complete:
+            while '\n' in self._data_buffer and not self.headers_complete:
+                line, self._data_buffer = popline(self._data_buffer)
+                self.add_line(line, enforce_content_length=enforce_content_length)
+
+        # Add the data section if the headers are complete and we have stuff left in the buffer
+        if self.headers_complete:
+            if self._data_buffer:
+                to_add = self._data_buffer
+                self._data_buffer = ''
+                self._data_obj.add_data(to_add)
+            if self._data_obj.complete:
+                self.complete = True
+                self.body_complete()
 
     ###############
     ## Data parsing
@@ -1022,6 +1554,7 @@ class HTTPMessage(object):
         # self.update_from_headers()
         # self.update_from_body()
 
+
 class Request(HTTPMessage):
     """
     :ivar time_end: The datetime that the request ended.
@@ -1094,9 +1627,13 @@ class Request(HTTPMessage):
             self.path_type = path_type
         if explicit_port:
             self.explicit_port = explicit_port
+
+        self.is_websocket = False
+        self.websocket_messages = []
             
     def __copy__(self):
         if not self.complete:
+            import pdb; pdb.set_trace()
             raise PappyException("Cannot copy incomplete http messages")
         retreq = self.__class__(self.full_message)
         retreq.set_metadata(self.get_metadata())
@@ -1107,6 +1644,16 @@ class Request(HTTPMessage):
             retreq.response = self.response.copy()
         if self.unmangled:
             retreq.unmangled = self.unmangled.copy()
+        retreq.set_websocket_messages([m.duplicate() for m in self.websocket_messages])
+        return retreq
+
+    def duplicate(self):
+        retreq = self.copy()
+        retreq.reqid = self.reqid
+        if self.unmangled:
+            retreq.unmangled = self.unmangled.duplicate()
+        if self.response:
+            retreq.response = self.response.duplicate()
         return retreq
 
     def duplicate(self):
@@ -1285,7 +1832,7 @@ class Request(HTTPMessage):
         encoded = base64.b64encode(decoded)
         header = 'Basic %s' % encoded
         return header
-        
+
     def _url_helper(self, colored=False, always_have_path=False):
         retstr = ''
         if self.is_ssl:
@@ -1323,7 +1870,10 @@ class Request(HTTPMessage):
             retstr += '?'
             pairs = []
             for p in self.url_params.all_pairs():
-                pairs.append('='.join(p))
+                if p[1] is None:
+                    pairs.append(p)
+                else:
+                    pairs.append('='.join(p))
             retstr += '&'.join(pairs)
         if self.fragment:
             retstr += '#%s' % self.fragment
@@ -1539,6 +2089,9 @@ class Request(HTTPMessage):
                 assignments.append(asn)
             header_val = '; '.join(assignments)
             self.headers.update('Cookie', header_val, do_callback=False)
+        elif 'Cookie' in self.headers:
+            del self.headers['Cookie']
+
         if self.post_params:
             pairs = []
             for k, v in self.post_params.all_pairs():
@@ -1552,6 +2105,26 @@ class Request(HTTPMessage):
         self._set_dict_callbacks()
         for k, v in self.headers.all_pairs():
             self.handle_header(k, v)
+
+    def _sort_websocket_messages(self):
+        """
+        Sort websocket message list by their submission time
+        """
+        def sort_key(mes):
+            if not mes.time_sent:
+                return datetime.datetime(1970,1,1)
+            return mes.time_sent
+        self.websocket_messages = sorted(self.websocket_messages, key=sort_key)
+        
+    def add_websocket_message(self, mes):
+        # Right now just insert and sort. We'll do a better structure later
+        mes.parent_request = self
+        self.websocket_messages.append(mes)
+        self._sort_websocket_messages()
+
+    def set_websocket_messages(self, msgs):
+        self.websocket_messages = msgs
+        self._sort_websocket_messages()
 
     ###############
     ## Data parsing
@@ -1660,9 +2233,8 @@ class Request(HTTPMessage):
                 self.cookies.append(cookie_key, cookie_val, do_callback=False)
         elif key.lower() == 'host':
             self._process_host(val)
-        elif key.lower() == 'connection':
-            #stripped = True
-            pass
+        elif re.match('^proxy.*', key.lower()):
+            stripped = True
 
         return (not stripped)
     
@@ -1694,6 +2266,8 @@ class Request(HTTPMessage):
         :rtype: twisted.internet.defer.Deferred
         """
         from .pappy import main_context
+        if not self.complete:
+            raise PappyException('Cannot save incomplete messages')
 
         global dbpool
         if cust_dbpool:
@@ -1739,7 +2313,7 @@ class Request(HTTPMessage):
     def async_deep_save(self):
         """
         async_deep_save()
-        Saves self, unmangled, response, and unmangled response. Returns a deferred
+        Saves self, unmangled, response, unmangled response, and websocket messages. Returns a deferred
         which fires after everything has been saved.
 
         :rtype: twisted.internet.defer.Deferred
@@ -1751,6 +2325,8 @@ class Request(HTTPMessage):
             yield self.response.async_save()
         if self.unmangled:
             yield self.unmangled.async_save()
+        for m in self.websocket_messages:
+            yield m.async_deep_save()
         yield self.async_save()
 
     def _update_tags(self, txn):
@@ -1969,6 +2545,11 @@ class Request(HTTPMessage):
         else:
             return template.format(pre='')
         
+    @staticmethod
+    @defer.inlineCallbacks
+    def _load_request_ws_messages(req):
+        ws_messages = yield Request._async_load_ws_by_parent(req.reqid)
+        req.set_websocket_messages(ws_messages)
         
     @staticmethod
     @defer.inlineCallbacks
@@ -2020,6 +2601,7 @@ class Request(HTTPMessage):
         req.tags = set()
         for row in rows:
             req.tags.add(row[0])
+        yield Request._load_request_ws_messages(req)
         defer.returnValue(req)
 
     @staticmethod
@@ -2189,71 +2771,95 @@ class Request(HTTPMessage):
             cache_to_use.add(req)
         defer.returnValue(retreq(req))
 
-    ######################
-    ## Submitting Requests
-        
     @staticmethod
     @defer.inlineCallbacks
-    def submit_request(request,
-                       save_request=False,
-                       intercepting_macros={},
-                       stream_transport=None,
-                       _factory_string_transport=False,
-                       _conn_info=None):
-        """
-        submit_request(request, save_request=False, intercepting_macros={}, stream_transport=None)
-
-        Submits the request then sets ``request.response``. Returns a deferred that
-        is called with the request that was submitted.
-
-        :param request: The request to submit
-        :type host: Request
-        :param save_request: Whether to save the request to history
-        :type save_request: Bool
-        :param intercepting_macros: Dictionary of intercepting macros to be applied to the request
-        :type intercepting_macros: Dict or collections.OrderedDict
-        :param stream_transport: Return transport to stream to. Set to None to not stream the response.
-        :type stream_transport: twisted.internet.interfaces.ITransport
-        """
-
-        from .proxy import ProxyClientFactory, get_next_connection_id, get_endpoint
-        from .pappy import session
-        from .tests.testutil import TLSStringTransport
-
-        # _factory__string_transport, _conn_classes are only for unit tests. Do not use.
-
-        factory = None
-        if stream_transport is None:
-            factory = ProxyClientFactory(request,
-                                        save_all=save_request,
-                                        stream_response=False,
-                                        return_transport=None)
+    def _async_load_ws(msgid, cust_dbpool=None):
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
         else:
-            factory = ProxyClientFactory(request,
-                                        save_all=save_request,
-                                        stream_response=True,
-                                        return_transport=stream_transport)
+            use_dbpool = dbpool
+        assert(use_dbpool)
+        rows = yield use_dbpool.runQuery(
+            """
+            SELECT id,parent_request,unmangled_id,is_binary,direction,time_sent,contents
+            FROM websocket_messages
+            WHERE id=?;
+            """,
+            (int(msgid),)
+            )
+        if len(rows) == 0:
+            raise PappyException("No websocket message with id=%s" % msgid)
+        assert(len(rows) == 1)
+        row = rows[0]
+        m = WebSocketMessage()
+        m.msgid = row[0]
+        #if load_parent:
+        #    m.parent_request = yield Request.load_request(str(row[1]))
+        if row[2]:
+            m.unmangled = yield Request._async_load_ws(str(row[2]))
+        if row[3] >= 0:
+            m.is_binary = True
+        else:
+            m.is_binary = False
+        if row[4] == 0:
+            m.direction = 'OUTGOING'
+        else:
+            m.direction = 'INCOMING'
+        if row[5] is not None:
+            m.time_sent = datetime.datetime.utcfromtimestamp(row[5])
+        m.contents = row[6]
+        defer.returnValue(m)
 
-        # Set up stuff for unit test if needed
-        if _factory_string_transport:
-            factory._use_string_transport = True
-        if _conn_info is not None:
-            # Pass factory back to unit test
-            _conn_info['factory'] = factory
-            factory._conn_info = _conn_info
+    @staticmethod
+    @defer.inlineCallbacks
+    def _async_load_ws_by_parent(reqid, cust_dbpool=None):
+        global dbpool
+        if cust_dbpool:
+            use_dbpool = cust_dbpool
+        else:
+            use_dbpool = dbpool
+        assert(use_dbpool)
+        rows = yield use_dbpool.runQuery(
+            """
+            SELECT id
+            FROM websocket_messages
+            WHERE parent_request=?;
+            """,
+            (int(reqid),)
+            )
+        messages = []
+        # Yes we could do it in one query but we'll deal with it if it causes
+        # performance issues
+        for row in rows:
+            m = yield Request._async_load_ws(row[0])
+            messages.append(m)
+        defer.returnValue(messages)
 
-        # Set up factory settings
-        factory.intercepting_macros = intercepting_macros
-        factory.connection_id = get_next_connection_id()
-        try:
-            yield factory.connect()
-            new_req = yield factory.data_defer
-            request.response = new_req.response
-        except Exception as e:
-            request.response = None
-            raise e
-        defer.returnValue(request)
+    ######################
+    ## Submitting Requests
 
+    @staticmethod
+    @defer.inlineCallbacks
+    def submit_raw_request(message, host, port, is_ssl, mangle=False, int_macros=[]):
+        """
+        Submits a request to the target host and returns a request object
+        """
+        from pappyproxy.plugin import active_intercepting_macros
+
+        use_int_macros = int_macros
+        if mangle:
+            use_int_macros = active_intercepting_macros()
+
+        proxy_protocol = HTTPProtocolProxy(addr=(host, port, is_ssl),
+                                           int_macros=use_int_macros,
+                                           save_requests=False)
+        d = proxy_protocol.get_next_response()
+        proxy_protocol.client_data_received(message)
+        retreq = yield d
+        proxy_protocol.close_connections()
+        defer.returnValue(retreq)
+        
     @defer.inlineCallbacks
     def async_submit(self, mangle=False):
         """
@@ -2269,18 +2875,17 @@ class Request(HTTPMessage):
         """
         from pappyproxy.plugin import active_intercepting_macros
         
-        if mangle:
-            int_macros = active_intercepting_macros()
-        else:
-            int_macros = None
-        yield Request.submit_request(self,
-                                     save_request=False,
-                                     intercepting_macros=int_macros,
-                                     stream_transport=None)
+        newreq = yield Request.submit_raw_request(self.full_message, self.host, self.port,
+                                                  self.is_ssl, mangle=mangle)
+        self.unmangled = newreq.unmangled
+        self.response = newreq.response
+        self.time_start = newreq.time_start
+        self.time_end = newreq.time_end
+        self.set_metadata(newreq.get_metadata())
 
     @crochet.wait_for(timeout=180.0)
     @defer.inlineCallbacks
-    def submit(self, mangle=False):
+    def submit(self, *args, **kwargs):
         """
         submit()
         Submits the request using its host, port, etc. and updates its response value
@@ -2291,7 +2896,7 @@ class Request(HTTPMessage):
         This is what you should use to submit your requests in macros.
         """
         try:
-            yield self.async_submit(mangle=mangle)
+            yield self.async_submit(*args, **kwargs)
         except Exception as e:
             print 'Submitting request to %s failed: %s' % (self.host, str(e))
 
@@ -2583,6 +3188,8 @@ class Response(HTTPMessage):
 
         :rtype: twisted.internet.defer.Deferred
         """
+        if not self.complete:
+            raise PappyException('Cannot save incomplete messages')
         global dbpool
         if cust_dbpool:
             use_dbpool = cust_dbpool
@@ -2652,6 +3259,20 @@ class Response(HTTPMessage):
         self.rspid = None
 
     @staticmethod
+    def is_ws_upgrade(rsp):
+        if rsp.response_code != 101:
+            return False
+        if 'Upgrade' not in rsp.headers:
+            return False
+        if 'Connection' not in rsp.headers:
+            return False
+        if rsp.headers['Upgrade'].lower() != 'websocket':
+            return False
+        if rsp.headers['Connection'].lower() != 'upgrade':
+            return False
+        return True
+
+    @staticmethod
     @defer.inlineCallbacks
     def load_response(respid, cust_dbpool=None, cust_cache=None):
         """
@@ -2685,4 +3306,364 @@ class Response(HTTPMessage):
                                                               cust_cache=cust_cache)
             resp.unmangled = unmangled_response
         defer.returnValue(resp)
-            
+
+class HTTPProtocolProxy(ProtocolProxy):
+
+    CLIENT_STATE_CLOSED = 1
+    CLIENT_STATE_HTTP_READY = 2
+    CLINET_STATE_WEBSDOCKET_READY = 3
+    CLIENT_STATE_WEBSOCKET = 4
+
+    SERVER_STATE_HTTP_READY = 1
+    SERVER_STATE_PROCESSING_HTTP_REQUEST = 2
+    SERVER_STATE_HTTP_AWAITING_RESPONSE = 3
+    SERVER_STATE_HTTP_AWAITING_PROXY_CONNECT = 4
+    SERVER_STATE_WEBSOCKET = 5
+
+    BLANK_RESPONSE = ('HTTP/1.1 200 OK\r\n'
+                      'Connection: close\r\n'
+                      'Cache-control: no-cache\r\n'
+                      'Pragma: no-cache\r\n'
+                      'Cache-control: no-store\r\n'
+                      'Content-Length: 0\r\n'
+                      'X-Frame-Options: DENY\r\n\r\n')
+
+    def __init__(self, *args, **kwargs):
+        self.request_queue = Queue.Queue()
+        self.request = Request()
+        self.response = Response()
+        self.stream_responses = True
+        self.next_rsp_def = None
+        self.ws_proxy = None
+
+        if 'int_macros' in kwargs:
+            self.custom_macros = True
+            self.mangle_macros = kwargs['int_macros']
+        else:
+            self.custom_macros = False
+            self.mangle_macros = []
+
+        if 'save_requests' in kwargs:
+            self.save_requests = kwargs['save_requests']
+        else:
+            self.save_requests = True
+
+        if 'addr' in kwargs:
+            self.connect_addr = kwargs['addr']
+            self.force_addr = True
+        else:
+            self.connect_addr = None
+            self.force_addr = False
+
+        self.using_upstream_http_proxy = False
+        self.was_streaming_responses = self.stream_responses
+        self.upstream_http_connected = False
+
+        self.client_state = HTTPProtocolProxy.CLIENT_STATE_CLOSED
+        self.server_state = HTTPProtocolProxy.SERVER_STATE_HTTP_READY
+        
+        ProtocolProxy.__init__(self)
+
+    def _set_client_state(self, state):
+        # Updates the state and sets other metadata states
+        # (like is_websocket)
+        self.client_state = state
+        self.log("Changing client state to %s" % self.client_state)
+
+    def _set_server_state(self, state):
+        # Updates the state and sets other metadata states
+        # (like is_websocket)
+        self.server_state = state
+        self.log("Changing server state to %s" % self.server_state)
+
+    def get_next_response(self):
+        """
+        Returns a deferred that fires with the next completed
+        request/response pair
+        """
+        self.next_rsp_def = defer.Deferred()
+        return self.next_rsp_def
+
+    def set_connection(self, host, port, use_ssl, use_socks=False):
+        """
+        If not connected to the given host, port, use_ssl, disconnects
+        the current connection and connects to the given endpoint. Otherwise
+        does nothing
+        """
+        self.log("setting connection...")
+        if self.conn_host != host or \
+           self.conn_port != port or \
+           self.conn_is_ssl != use_ssl:
+            self.log("Closing connection to old server")
+            self.close_server_connection()
+        self.connect(host, port, use_ssl, use_socks=use_socks)
+
+    def server_connection_lost(self, reason):
+        self.log("Connection to server lost: %s" % str(reason))
+        self.log(str(reason.getTraceback()))
+        ProtocolProxy.server_connection_lost(self, reason)
+
+    def client_data_received(self, data):
+        self.log("cp> %s" % short_data(data))
+        if self.client_state != HTTPProtocolProxy.CLIENT_STATE_WEBSOCKET:
+            self.request.add_data(data)
+            if self.request.complete:
+                req = self.request
+                self.request = Request()
+                self.request_complete(req)
+        else:
+            self.ws_proxy.client_data_received(data)
+
+    def server_data_received(self, data):
+        self.log("rp< %s" % short_data(data))
+        if self.client_state != HTTPProtocolProxy.CLIENT_STATE_WEBSOCKET:
+            self.response.add_data(data)
+            if self.stream_responses:
+                self.send_client_data(data)
+            if self.response.complete:
+                rsp = self.response
+                self.response = Response()
+                self.response_complete(rsp)
+        else:
+            self.ws_proxy.server_data_received(data)
+
+    @defer.inlineCallbacks
+    def process_request(self, pop_request=True):
+        from pappyproxy import context, macros, pappy
+
+        if self.server_state != HTTPProtocolProxy.SERVER_STATE_HTTP_READY:
+            self.log("Not ready to process a new HTTP request")
+            return
+        self._set_server_state(HTTPProtocolProxy.SERVER_STATE_PROCESSING_HTTP_REQUEST)
+
+        if pop_request and self.request_queue.empty():
+            #defer.returnValue(None)
+            self.log("Request queue is empty, not processing request")
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+            return
+
+        if pop_request:
+            self.waiting_req = self.request_queue.get()
+
+        if self.waiting_req.host == 'pappy':
+            self.log("Processing request to internal webserver")
+            yield handle_webserver_request(self.waiting_req)
+            self.send_response(self.waiting_req.response.full_message)
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+            self.process_request()
+            return
+
+        self.mangle_macros = []
+        self.stream_responses = True
+
+        if self.waiting_req.verb.upper() == 'CONNECT':
+            self.send_response('HTTP/1.1 200 Connection established\r\n\r\n')
+            self.start_client_maybe_tls(cert_host=self.waiting_req.host)
+            self.connect_addr = (self.waiting_req.host, self.waiting_req.port, self.waiting_req.is_ssl)
+            #defer.returnValue(None)
+            self.log("Client TLS setup, ready for next request")
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+            self.process_request()
+            return
+
+        ## Process/store the request
+        sendreq = self.waiting_req
+
+        upstream_http_addr = get_http_proxy_addr()
+        if self.connect_addr is not None:
+            sendreq.host = self.connect_addr[0]
+            sendreq.port = self.connect_addr[1]
+            sendreq.is_ssl = self.connect_addr[2]
+
+        if context.in_scope(sendreq) or self.custom_macros:
+            if not self.custom_macros:
+                self.mangle_macros = self.client_protocol.factory.get_macro_list()
+            sendreq.time_start = datetime.datetime.utcnow()
+
+            if self.mangle_macros:
+                self.stream_responses = False
+            else:
+                self.stream_responses = True
+
+            if self.stream_responses and not self.mangle_macros:
+                if self.save_requests:
+                    sendreq.async_deep_save()
+            else:
+                if self.save_requests:
+                    yield sendreq.async_deep_save()
+
+                (mangreq, mangled) = yield macros.mangle_request(sendreq, self.mangle_macros)
+                if mangreq is None:
+                    self.log("Request dropped. Closing connections.")
+                    sendreq.tags.add('dropped')
+                    sendreq.response = None
+                    self.dropped_request = True
+                    self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+                    self.send_response(self.BLANK_RESPONSE)
+                    defer.returnValue(None)
+                elif mangled:
+                    sendreq = mangreq
+
+                self.log("Request in scope, saving")
+                sendreq.time_start = datetime.datetime.utcnow()
+                assert sendreq.complete
+                if self.save_requests:
+                    yield sendreq.async_deep_save()
+                self.waiting_req = sendreq
+        else:
+            self.log("Request out of scope, passing along unmangled")
+
+        self.log("Making new connection to %s:%d is_ssl=%s" % (self.waiting_req.host, self.waiting_req.port, self.waiting_req.is_ssl))
+        if upstream_http_addr is not None:
+            self.log("Using upstream http proxy")
+            self.log(str(self.waiting_req))
+            self.set_connection(upstream_http_addr[0], upstream_http_addr[1], False, use_socks=True)
+            self.using_upstream_http_proxy = True
+        else:
+            self.log("Not using upstream http proxy")
+            self.set_connection(sendreq.host, sendreq.port, sendreq.is_ssl, use_socks=True)
+            self.using_upstream_http_proxy = False
+
+        if self.using_upstream_http_proxy and sendreq.is_ssl and not self.upstream_http_connected:
+            self.was_streaming_responses = self.stream_responses
+            self.stream_responses = False
+            r = sendreq.connect_request
+            apply_http_proxy_creds(r)
+            self.send_server_data(r.full_message)
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_AWAITING_PROXY_CONNECT)
+            return
+        elif self.using_upstream_http_proxy and not sendreq.is_ssl:
+            # We're already connected to the proxy
+            r = sendreq.copy()
+            r.path_type = PATH_ABSOLUTE
+            apply_http_proxy_creds(r)
+            self.send_server_data(r.full_message)
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_AWAITING_RESPONSE)
+            return
+        else:
+            self.send_server_data(sendreq.full_message)
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_AWAITING_RESPONSE)
+            return
+    
+    def request_complete(self, req):
+        self.log("Request complete, adding to queue")
+        self.request_queue.put(req)
+        self.process_request()
+
+    @defer.inlineCallbacks
+    def response_complete(self, rsp):
+        from pappyproxy import context, macros, http
+
+        if self.server_state == HTTPProtocolProxy.SERVER_STATE_HTTP_AWAITING_PROXY_CONNECT:
+            self.log("Got upstream connection established response")
+            self.stream_responses = self.was_streaming_responses
+
+            if rsp.response_code == 407:
+                print "Incorrect credentials for HTTP proxy. Please check your username and password."
+                self.close_server_connection()
+                return
+
+            self.upstream_http_connected = True
+            self.start_server_tls()
+            self.log("Remote proxy TLS setup, ready for next request")
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+            self.process_request(pop_request=False) # waiting_req is already the request we want to send
+            return
+
+        assert self.server_state == HTTPProtocolProxy.SERVER_STATE_HTTP_AWAITING_RESPONSE
+
+        self.waiting_req.response = self.response
+        sendreq = self.waiting_req
+        sendreq.response = rsp
+        self.waiting_req = None
+
+        if context.in_scope(sendreq) or self.custom_macros:
+            self.log("Response in scope, saving")
+            sendreq.time_end = datetime.datetime.utcnow()
+
+            assert sendreq.complete
+
+            if self.stream_responses and not self.mangle_macros:
+                if self.save_requests:
+                    sendreq.async_deep_save()
+            else:
+                if self.save_requests:
+                    yield sendreq.async_deep_save()
+
+            if self.mangle_macros:
+                if sendreq.response:
+                    mangled = yield macros.mangle_response(sendreq, self.mangle_macros)
+                    if mangled is None:
+                        self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+                        self.send_response(self.BLANK_RESPONSE)
+                        defer.returnValue(None)
+                    if mangled and self.save_requests:
+                        yield sendreq.async_deep_save()
+        else:
+            self.log("Out of scope, not touching response")
+
+        self.log("Checking if we need to write response to transport")
+
+        if self.next_rsp_def is not None:
+            self.next_rsp_def.callback(sendreq)
+
+        if not self.stream_responses:
+            self.log("Wasn't streaming, writing response")
+            self.send_response(sendreq.response.full_message)
+        else:
+            self.log("Already streamed response, not writing to transport, ending response")
+            self.end_response()
+
+        if Response.is_ws_upgrade(rsp):
+            self.log("Upgrading to websocket connection")
+
+            self.server_state = HTTPProtocolProxy.SERVER_STATE_WEBSOCKET
+            self.client_state = HTTPProtocolProxy.CLIENT_STATE_WEBSOCKET
+
+            self.ws_proxy = WebSocketProxy(self.client_transport, self.server_transport, rsp, sendreq, self)
+            self.ws_proxy.message_callback = self.ws_message_complete
+
+            self.request.is_websocket = True
+            self.log("Upgraded to websocket")
+        else:
+            self.log("Processing of response complete, ready for next request")
+            self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+            self.process_request()
+
+    def ws_message_complete(self, wsobj):
+        """
+        Handles objects from both client and server. The object itself
+        has a direction attribute that says which direction it went.
+        """
+        self.request.websocket_messages.append(wsobj)
+
+    # Probably just going to wait for the connection to close
+    # def ws_close(self):
+    #     self.log("Websocket connection closed. Processing next request.")
+    #     self._set_server_state(HTTPProtocolProxy.SERVER_STATE_HTTP_READY)
+    #     self.process_request()
+
+    def send_response(self, data):
+        """
+        Sends a response back to the client and processes the next request
+        """
+        self.send_client_data(data)
+        self.end_response()
+
+    def end_response(self):
+        """
+        Signals that all response data has been sent and the object is ready
+        to process the next request
+        """
+        self.process_request()
+
+    def submit_websocket_frame(self, data):
+        raise PappyException("Websocket stream is not active")
+
+    def abort_connection(self):
+        pass
+
+    def client_connection_made(self, protocol):
+        self._set_client_state(HTTPProtocolProxy.CLIENT_STATE_HTTP_READY)
+        ProtocolProxy.client_connection_made(self, protocol)
+
