@@ -371,6 +371,73 @@ class MacroTemplate(object):
 
 ## Other functions
 
+    @defer.inlineCallbacks
+    def async_mangle_ws(self, request, message):
+        if hasattr(self.source, 'async_mangle_ws'):
+            mangled_ws = yield self.source.async_mangle_ws(request, message)
+            defer.returnValue(mangled_ws)
+        defer.returnValue(message)
+        
+class MacroTemplate(object):
+    _template_data = {
+        'macro': ('macro.py.template',
+                  'Generic macro template',
+                  '[reqids]',
+                  'macro_{fname}.py',
+                  gen_template_args_macro),
+
+        'intmacro': ('intmacro.py.template',
+                     'Generic intercepting macro template',
+                     '',
+                     'int_{fname}.py',
+                     gen_template_generator_noargs('intmacro')),
+
+        'modheader': ('macro_header.py.template',
+                      'Modify a header in the request and the response if it exists.',
+                      '',
+                      'int_{fname}.py',
+                      gen_template_generator_noargs('modheader')),
+
+        'resubmit': ('macro_resubmit.py.template',
+                     'Resubmit all in-context requests',
+                     '',
+                     'macro_{fname}.py',
+                     gen_template_generator_noargs('resubmit')),
+    }
+
+    @classmethod
+    def fill_template(cls, template, subs):
+        loader = FileSystemLoader(session.config.pappy_dir+'/templates')
+        env = Environment(loader=loader)
+        template = env.get_template(cls._template_data[template][0])
+        return template.render(zip=zip, **subs)
+
+    @classmethod
+    @defer.inlineCallbacks
+    def fill_template_args(cls, template, args=[]):
+        ret = cls._template_data[template][4](args)
+        if isinstance(ret, defer.Deferred):
+            ret = yield ret
+        defer.returnValue(ret)
+
+    @classmethod
+    def template_filename(cls, template, fname):
+        return cls._template_data[template][3].format(fname=fname)
+
+    @classmethod
+    def template_list(cls):
+        return [k for k, v in cls._template_data.iteritems()]
+    
+    @classmethod
+    def template_description(cls, template):
+        return cls._template_data[template][1]
+
+    @classmethod
+    def template_argstring(cls, template):
+        return cls._template_data[template][2]
+
+## Other functions
+
 def load_macros(loc):
     """
     Loads the macros stored in the location and returns a list of Macro objects

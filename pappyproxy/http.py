@@ -1655,15 +1655,6 @@ class Request(HTTPMessage):
         if self.response:
             retreq.response = self.response.duplicate()
         return retreq
-
-    def duplicate(self):
-        retreq = self.copy()
-        retreq.reqid = self.reqid
-        if self.unmangled:
-            retreq.unmangled = self.unmangled.duplicate()
-        if self.response:
-            retreq.response = self.response.duplicate()
-        return retreq
             
     @property
     def rsptime(self):
