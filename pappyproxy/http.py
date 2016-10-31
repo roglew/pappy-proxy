@@ -3387,7 +3387,12 @@ class HTTPProtocolProxy(ProtocolProxy):
            self.conn_is_ssl != use_ssl:
             self.log("Closing connection to old server")
             self.close_server_connection()
-        self.connect(host, port, use_ssl, use_socks=use_socks)
+        # we don't use SSL because maybe_use_ssl takes care of setting
+        # it up if we end up using it
+        if self.conn_is_maybe_ssl:
+            self.connect(host, port, False, use_socks=use_socks)
+        else:
+            self.connect(host, port, use_ssl, use_socks=use_socks)
 
     def server_connection_lost(self, reason):
         self.log("Connection to server lost: %s" % str(reason))

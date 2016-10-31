@@ -307,17 +307,20 @@ class ProtocolProxy(object):
         self.client_connected = False
         self.client_buffer = ''
         self.client_start_tls = False
+        self.client_tls_host = ''
         self.client_protocol = None
+        self.client_do_maybe_tls = False
 
         self.server_transport = None
         self.server_connected = False
         self.server_buffer = ''
         self.server_start_tls = False
+        self.conn_is_maybe_ssl = False
         self.server_protocol = None
 
         self.conn_host = None
         self.conn_port = None
-        self.conn_is_ssl = None
+        self.conn_is_ssl = False
         self.connection_id = get_next_connection_id()
 
     def log(self, message, symbol='*', verbosity_level=3):
@@ -330,22 +333,36 @@ class ProtocolProxy(object):
         from pappyproxy.pappy import session
 
         self.connecting = True
-        self.log("Connecting to %s:%d ssl=%s" % (host, port, use_ssl))
+
+        connect_with_ssl = use_ssl
+        if self.conn_is_maybe_ssl:
+            connect_with_ssl = False
+
+        self.log("Connecting to %s:%d ssl=%s (maybe_ssl=%s)" % (host, port, connect_with_ssl, self.conn_is_maybe_ssl))
         factory = PassthroughProtocolFactory(self.server_data_received,
                                              self.server_connection_made,
                                              self.server_connection_lost)
         self.conn_host = host
         self.conn_port = port
-        self.conn_is_ssl = use_ssl
+        if self.conn_is_maybe_ssl:
+            self.conn_is_ssl = False
+        else:
+            self.conn_is_ssl = use_ssl
         if use_socks:
             socks_config = session.config.socks_proxy
         else:
             socks_config = None
 
-        make_proxied_connection(factory, host, port, use_ssl, socks_config=socks_config,
+        make_proxied_connection(factory, host, port, connect_with_ssl, socks_config=socks_config,
                                 log_id=self.connection_id, http_error_transport=self.client_transport)
 
     ## Client interactions
+
+    def client_data_received(self, data):
+        """
+        Implemented by child class
+        """
+        pass
 
     def send_client_data(self, data):
         self.log("pc< %s" % short_data(data))
@@ -355,12 +372,17 @@ class ProtocolProxy(object):
             self.client_buffer += data
 
     def client_connection_made(self, protocol):
+        self.log("Client connection made")
+        self.client_protocol = protocol
         self.client_transport = self.client_protocol.transport
         self.client_connected = True
         self.connecting = False
 
         if self.client_start_tls:
-            self.start_client_tls()
+            if self.client_do_maybe_tls:
+                self.start_client_maybe_tls(self.client_tls_host)
+            else:
+                self.start_client_tls(self.client_tls_host)
         if self.client_buffer != '':
             self.client_transport.write(self.client_buffer)
             self.client_buffer = ''
@@ -377,16 +399,25 @@ class ProtocolProxy(object):
     def start_server_tls(self):
         if self.server_connected:
             self.log("Starting TLS on server transport")
+            self.conn_is_ssl = True
             self.server_transport.startTLS(ssl.ClientContextFactory())
         else:
             self.log("Server not yet connected, will start TLS on connect")
-            self.start_server_tls = True
+            self.server_start_tls = True
 
     def start_client_maybe_tls(self, cert_host):
         ctx = generate_tls_context(cert_host)
-        start_maybe_tls(self.client_transport,
-                tls_host=cert_host,
-                start_tls_callback=self.start_server_tls)
+        if self.client_connected:
+            self.log("Starting maybe TLS on client transport")
+            self.conn_is_maybe_ssl = True
+            start_maybe_tls(self.client_transport,
+                            tls_host=cert_host,
+                            start_tls_callback=self.start_server_tls)
+        else:
+            self.log("Client not yet connected, will start maybe TLS on connect")
+            self.client_do_maybe_tls = True
+            self.client_start_tls = True
+            self.client_tls_host = cert_host
 
     def start_client_tls(self, cert_host):
         if self.client_connected:
@@ -395,9 +426,16 @@ class ProtocolProxy(object):
             self.client_transport.startTLS(ctx)
         else:
             self.log("Client not yet connected, will start TLS on connect")
-            self.start_client_tls = True
+            self.client_start_tls = True
+            self.client_tls_host = cert_host
 
     ## Server interactions
+
+    def server_data_received(self, data):
+        """
+        Implemented by child class
+        """
+        pass
 
     def send_server_data(self, data):
         if self.server_connected:
@@ -412,7 +450,7 @@ class ProtocolProxy(object):
         """
         self.server_protocol must be set before calling
         """
-        self.log("Connection made")
+        self.log("Server connection made")
         self.server_protocol = protocol
         self.server_transport = protocol.transport
         self.server_connected = True
@@ -441,6 +479,7 @@ class ProtocolProxy(object):
             self.server_transport = None
             self.server_connected = False
             self.server_buffer = ''
+            self.server_start_tls = False
             self.server_protocol = None
 
     def close_client_connection(self):
@@ -450,7 +489,10 @@ class ProtocolProxy(object):
             self.client_transport = None
             self.client_connected = False
             self.client_buffer = ''
+            self.client_start_tls = False
+            self.client_tls_host = ''
             self.client_protocol = None
+            self.client_do_maybe_tls = False
 
     def close_connections(self):
         self.close_server_connection()

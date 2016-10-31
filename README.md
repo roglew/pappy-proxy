@@ -1455,6 +1455,8 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.2.14
+    * Critical bugfixes
 * 0.2.13
     * Refactor proxy core
     * WEBSOCKETS
