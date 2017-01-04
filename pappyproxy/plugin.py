@@ -74,8 +74,8 @@ def plugin_by_name(name):
     plugin you would call ``plugin_by_name('bar').foo()``.
     """
     import pappyproxy.pappy
-    if name in pappyproxy.pappy.plugin_loader.plugins_by_name:
-        return pappyproxy.pappy.plugin_loader.plugins_by_name[name].source
+    if name in pappyproxy.pappy.session.plugin_loader.plugins_by_name:
+        return pappyproxy.pappy.session.plugin_loader.plugins_by_name[name].source
     else:
         raise PappyException('No plugin with name %s is loaded' % name)
     
