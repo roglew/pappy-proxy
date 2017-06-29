@@ -765,6 +765,8 @@ Changelog
 ---------
 The boring part of the readme
 
+* 0.3.1
+    * Borked the git push so it's version 0.3.1 now
 * 0.3.0
     * Rewrote large amount of code in Go (see the [puppy repo](https://github.com/roglew/puppy) for all the stuff implemented in Go)
     * Rewrote the rest of the python
