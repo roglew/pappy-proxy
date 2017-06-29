@@ -38,7 +38,7 @@ Pappy supports OS X and Linux, and may or may not work in Cygwin or something on
 * python3
 * pip
 * virtualenv
-* go
+* go version 1.3 or higher
 
 To install Pappy:
 
