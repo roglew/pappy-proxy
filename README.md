@@ -1,71 +1,19 @@
 The Pappy Proxy
 ===============
-[Documentation](https://roglew.github.io/pappy-proxy/) - [Tutorial](https://roglew.github.io/pappy-proxy/tutorial.html) - [Website](http://www.pappyproxy.com) - [Blog](http://blog.pappyproxy.com)
-
-Table of Contents
-=================
-
-  * [Overview](#overview)
-    * [Introduction](#introduction)
-    * [Contributing](#contributing)
-  * [How to Use It](#how-to-use-it)
-    * [Installation](#installation)
-    * [Quickstart](#quickstart)
-    * [Lite Mode](#lite-mode)
-    * [Adding The CA Cert to Your Browser](#adding-the-ca-cert-to-your-browser)
-    * [Configuration](#configuration)
-    * [General Console Techniques](#general-console-techniques)
-    * [Generating Pappy's CA Cert](#generating-pappys-ca-cert)
-    * [Browsing Recorded Requests/Responses](#browsing-recorded-requestsresponses)
-    * [Tags](#tags)
-    * [Request IDs](#request-ids)
-    * [Context](#context)
-    * [Filter Strings](#filter-strings)
-      * [List of fields](#list-of-fields)
-      * [List of comparers](#list-of-comparers)
-      * [Special form filters](#special-form-filters)
-    * [Scope](#scope)
-      * [Built-In Filters](#built-in-filters)
-    * [Decoding Strings](#decoding-strings)
-    * [Interceptor](#interceptor)
-    * [Repeater](#repeater)
-    * [Macros](#macros)
-    * [Intercepting Macros](#intercepting-macros)
-    * [Macro Templates](#macro-templates)
-    * [Resubmitting Groups of Requests](#resubmitting-groups-of-requests)
-    * [Logging](#logging)
-    * [Additional Commands and Features](#additional-commands-and-features)
-    * [Viewing Responses In Browser](#viewing-responses-in-browser)
-    * [Websockets](#websockets)
-    * [Plugins](#plugins)
-    * [Global Settings](#global-settings)
-    * [Using an HTTP Proxy](#using-an-http-proxy)
-    * [Using a SOCKS Proxy](#using-a-socks-proxy)
-    * [Transparent Host Redirection](#transparent-host-redirection)
-    * [Project File Encryption](#project-file-encryption)
-    * [FAQ](#faq)
-      * [Text just appeared over my prompt! What do I do?!](#text-just-appeared-over-my-prompt-what-do-i-do)
-      * [Why does my request have an id of --?!?!](#why-does-my-request-have-an-id-of---)
-    * [Boring, Technical Stuff](#boring-technical-stuff)
-      * [Request Cache / Memory usage](#request-cache--memory-usage)
-    * [Changelog](#changelog)
+[Tutorial](https://roglew.github.io/pappy-proxy/tutorial.html) - [Website](http://www.pappyproxy.com) - [Blog](http://blog.pappyproxy.com)
 
 Overview
 ========
 
 Introduction
 ------------
-The Pappy (**P**roxy **A**ttack **P**roxy **P**rox**Y**) Proxy is an intercepting proxy for performing web application security testing. Its features are often similar, or straight up rippoffs from [Burp Suite](https://portswigger.net/burp/). However, Burp Suite is neither open source nor a command line tool, thus making a proxy like Pappy inevitable. The project is still in its early stages, so there are bugs and only the bare minimum features, but it can already do some cool stuff.
+The Pappy (**P**roxy **A**ttack **P**roxy **P**rox**Y**) Proxy is an intercepting proxy for performing web application security testing. Its features are often similar, or straight up rippoffs from [Burp Suite](https://portswigger.net/burp/). However, Burp Suite is neither open source nor a command line tool, thus making a proxy like Pappy inevitable.
 
 Contributing
 ------------
 **I am taking any and all feature requests.** If you've used Burp and had any inconvenience with it, tell me about it and I'll do everything in my power to make sure Pappy doesn't have those issues. Or even better, if you want Burp to do something that it doesn't already, let me know so that I can ~~use it to stomp them into the dust~~ improve my project.
 
-If you're brave and want to try and contribute code, please let me know. Right now the codebase is kind of rough and I have refactored it a few times already, but I would be more than happy to find a stable part of the codebase that you can contribute to.
-
-Another option is to try writing a plugin. It might be a bit easier than contributing code and plugins are extremely easy to integrate as a core feature. So you can also contribute by writing a plugin and letting me know about it. You can find out more by looking at [the official plugin docs](https://roglew.github.io/pappy-proxy/pappyplugins.html).
-
-You can find ideas for features to add on [the contributing page in the docs](https://roglew.github.io/pappy-proxy/contributing.html).
+If you're brave and want to try and contribute code, please let me know and I'll help guide you in the right direction (also consider contributing to the [Go backend used by pappy](https://github.com/roglew/puppy)).
 
 I still like Burp, but Pappy looks interesting, can I use both?
 ---------------------------------------------------------------
@@ -73,58 +21,74 @@ Yes! If you don't want to go completely over to Pappy yet, you can configure Bur
 
 How to have Burp forward traffic through Pappy:
 
+1. Configure Pappy to listen on port 8000 in your project's config.json
 1. Open Burp
-2. Go to `Options -> Connections -> Upstream Proxy Servers`
-3. Click `Add`
-4. Leave `Destination Host` blank, but put `127.0.0.1` in `Proxy Host` and `8000` into `Port` (assuming you're using the default listener)
-5. Configure your browser to use Burp as a proxy
+1. Go to `Options -> Connections -> Upstream Proxy Servers`
+1. Click `Add`
+1. Leave `Destination Host` blank, but put `127.0.0.1` in `Proxy Host` and `8000` into `Port`
+1. Configure your browser to use Burp as a proxy
 
 How to Use It
 =============
 
 Installation
 ------------
-Pappy supports OS X and Linux (sorry Windows). Installation requires `pip` or some other command that can handle a `setup.py` with requirements. Once the requirements are installed, you can check that it installed correctly by running `pappy -l` to start the proxy.
+Pappy supports OS X and Linux, and may or may not work in Cygwin or something on Windows. Installation depends on the following commands being available:
+
+* python3
+* pip
+* virtualenv
+* go
+
+To install Pappy:
 
 ```
-$ git clone --recursive https://github.com/roglew/pappy-proxy.git
-$ cd pappy-proxy
-$ pip install .
+$ cd /path/to/pappy/directory
+$ ./install.sh
 ```
 
-It is also possible (and encouraged!) to install pappy into a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/). After installing into a virtual environment, you will have to enter the virtual environment each time you want to run Pappy.
+The script will generate a "start" script which can be used to start Pappy. Symlink it somewhere to add it to your PATH.
+
+To install Pappy for development add a -d flag:
+
+```
+$ cd /path/to/pappy/directory
+$ ./install.sh -d
+```
+
+To update, just do the same thing.
+
+To see all install options run `install -h`
 
 Quickstart
 ----------
-Pappy projects take up an entire directory. Any generated scripts, exported responses, plugin data, etc. will be placed in the current directory so it's good to give your project a directory of its own. To start a project, do something like:
+Pappy projects take up an entire directory. Any generated scripts, exported responses, etc. will be placed in the current directory so it's good to give your project a directory of its own. To start a project, do something like:
 
 ```
 $ mkdir test_project
 $ cd test_project 
 $ pappy
-Copying default config to directory
-Proxy is listening on port 8000
+Proxy is listening on port 8080
 pappy> exit
 $ ls
-data.db      project_config.json
+data.db      config.json
 $ 
 ```
 
-And that's it! The proxy will by default be running on port 8000 and bound to localhost (to keep the hackers out). You can modify the port/interface in `config.json`. You can list all your intercepted requests with `ls`, view a full request with `vfq <reqid>` or view a full response with `vfs <reqid>`. Right now, the only command to delete requests is `filter_prune` which deletes all the requests that aren't in the current context (look at the sections on the context/filter strings for more information on that).
+And that's it! The proxy will by default be running on port 8080 and bound to localhost (to keep the hackers out). You can modify the port/interface in `config.json`.
 
-Here's everything you need to know to get the basics done:
+The basics:
 
-* This quickstart assumes you've used Burp Suite
 * Make a directory for your project and `cd` into it in the terminal. Type `pappy` into the terminal and hit enter
 * Commands are entered into the prompt that appears
-* The proxy starts listening on port 8000 once the program starts
+* The proxy starts listening on port 8080 once the program starts
 * Use `ls` to look at recent requests, `ls a` to look at the entire history
 * You will use the number in the `id` column to perform actions on that request
 * Use `vfq <id>` and `vfs <id>` to view full requests/responses
 * Use `ic` to modify requests with a text editor as they go through the proxy or `ic req rsp` to modify both requests and responses
-* Use `rp <id>` to send a request to the repeater. In the repeater, use `<leader>f` to send the current buffer (you may need to configre a leader key in vim). Use `:qa!` to quit the repeater.
+* Use `rp <id>` to send a request to the repeater. In the repeater, use `<leader>f` to send the current buffer (you may need to configre a leader key for vim). Use `:qa!` to quit the repeater.
 
-If you want to do more, I highly suggest reading the whole readme!
+If you want to do more, read the rest of the README.
 
 
 Lite Mode
@@ -134,22 +98,20 @@ If you don't want to dirty up a directory, you can run Pappy in "lite" mode. Pap
 Example:
 ```
 $ pappy -l
-Temporary datafile is /tmp/tmpw4mGv2
-Proxy is listening on port 8000
+Proxy is listening on port 8080
 pappy> quit
-Deleting temporary datafile
 $ 
 ```
 
 Adding The CA Cert to Your Browser
 ----------------------------------
-In order for Pappy to view data sent using HTTPS, you need to add a generated CA cert (`certificate.crt`) to your browser. Certificates are generated using the `gencerts` command and are by default stored in `~/.pappy/certs`. This allows Pappy to act as a CA and sign any HTTPS certificate it wants without the browser complaining. This allows Pappy to decrypt and modify HTTPS requests. The certificate installation instructions are different for each browser.
+In order for Pappy to view data sent using HTTPS, you need to add a generated CA cert (`server.pem`) to your browser. You will be prompted to generate them on the first startup and they stored in `~/.pappy/certs`. This allows Pappy to act as a CA and sign any HTTPS certificate it wants without the browser complaining. This allows Pappy to decrypt and modify HTTPS requests. The certificate installation instructions are different for each browser.
 
 ### Firefox
-You can add the CA cert to Firefox by going to `Preferences -> Advanced -> View Certificates -> Authorities -> Import` and selecting the `certificate.crt` file in the `certs` directory.
+You can add the CA cert to Firefox by going to `Preferences -> Advanced -> View Certificates -> Authorities -> Import` and selecting the `server.pem` file in the `certs` directory.
 
 ### Chrome
-You can add the CA cert to Chrome by going to `Settings -> Show advanced settings -> HTTPS/SSL -> Manage Certificates -> Authorities -> Import` and selecting the `certificate.crt` file in the `certs` directory.
+You can add the CA cert to Chrome by going to `Settings -> Show advanced settings -> HTTPS/SSL -> Manage Certificates -> Authorities -> Import` and selecting the `server.pem` file in the `certs` directory.
 
 ### Safari
 For Safari (on macs, obviously), you need to add the CA cert to your system keychain. You can do this by double clicking on the CA cert and following the prompts.
@@ -160,21 +122,6 @@ I didn't search too hard for instructions on this (since Pappy doesn't support w
 Configuration
 -------------
 Configuration for each project is done in the `config.json` file. The file is a JSON-formatted dictionary that contains settings for the proxy. The following fields can be used to configure the proxy:
-
-| Key | Value |
-|:--|:--|
-| `data_file` | The file where requests and images will be stored |
-| `debug_dir` (optional) | Where connection debug info should be stored. If not present, debug info is not saved to a file. |
-| `cert_dir` | Where the CA cert and the private key for the CA cert are stored |
-| `proxy_listeners` | A list of dicts which describe which ports the proxy will listen on. Each item is a dict with "port" and "interface" values which determine which port and interface to listen on. For example, if port=8000 and the interface is 127.0.0.1, the proxy will only accept connections from localhost on port 8000. To accept connections from anywhere, set the interface to 0.0.0.0. |
-| `socks_proxy` | A dictionary with details on how to connect to an upstream SOCKS proxy to send all in-scope requests through. See the secion on upstream SOCKS proxies for more information. |
-| `http_proxy` | A dictionary with details on how to connect to an upstream http proxy to send all in-scope requests through. See the section on upstream http proxies for more information. |
-
-The following tokens will also be replaced with values:
-
-| Token | Replaced with |
-|:--|:--|
-| `{DATADIR}` | The directory where Pappy's data files are stored |
 
 See the default `config.json` for examples.
 
@@ -199,35 +146,9 @@ cmdhistory  config.json  data.db
 pappy>
 ```
 
-### Running Python Code
-
-You can use the `py` command to either run python code or to drop down to a Python shell.
-
-```
-pappy> py print ':D '*10
-:D :D :D :D :D :D :D :D :D :D
-pappy> py
-Python 2.7.6 (default, Jun 22 2015, 17:58:13)
-[GCC 4.8.2] on linux2
-Type "help", "copyright", "credits" or "license" for more information.
-(ProxyCmd)
-
-        py <command>: Executes a Python command.
-        py: Enters interactive Python mode.
-        End with ``Ctrl-D`` (Unix) / ``Ctrl-Z`` (Windows), ``quit()``, '`exit()``.
-        Non-python commands can be issued with ``cmd("your command")``.
-        Run python code from external files with ``run("filename.py")``
-
->>> from pappyproxy import pappy
->>> pappy.session.config.config_dict
-{u'data_file': u'./data.db', u'history_size': 1000, u'cert_dir': u'{DATADIR}/certs', u'proxy_listeners': [{u'interface': u'127.0.0.1', u'port': 8000}]}
->>> exit()
-pappy>
-```
-
 ### Redirect Output To File
 
-You can use `>` to direct output to a file. However, a number of commands use colored output. If you just redirect these to a file, there will be additional bytes which represent the ANSI color codes. To get around this, use the `nocolor` command to remove the color from the command output.
+You can use `>` to direct output to a file.
 
 ```
 pappy> ls > ls.txt
@@ -257,39 +178,13 @@ pappy> !xxd -c 32 -g 4 ls.txt
 00002c0: 5b306d2f 1b5b3334 6d1b5b30 6d202020 20202020 20202020 20202020 2020201b  [0m/.[34m.[0m                  .
 00002e0: 5b33356d 33303420 4e6f7420 4d6f6469 66696564 1b5b306d 20203020 20202020  [35m304 Not Modified.[0m  0
 0000300: 20202030 20202020 20202020 302e3037 20202020 2d2d2020 20200a                0        0.07    --    .
-pappy> nocolor ls > ls2.txt
-pappy> !xxd -c 32 -g 4 ls2.txt
-0000000: 49442020 56657262 2020486f 73742020 20202020 20202050 61746820 20202020  ID  Verb  Host         Path
-0000020: 20202020 20202020 2020532d 436f6465 20202020 20202020 20202020 52657120            S-Code            Req
-0000040: 4c656e20 20527370 204c656e 20205469 6d652020 20204d6e 676c2020 0a352020  Len  Rsp Len  Time    Mngl  .5
-0000060: 20474554 20202076 6974616c 792e7365 78792020 2f6e6574 73636170 652e6769   GET   vitaly.sexy  /netscape.gi
-0000080: 66202020 20202033 3034204e 6f74204d 6f646966 69656420 20302020 20202020  f      304 Not Modified  0
-00000a0: 20203020 20202020 20202030 2e303820 2020202d 2d202020 200a3420 20204745    0        0.08    --    .4   GE
-00000c0: 54202020 76697461 6c792e73 65787920 202f6573 72312e6a 70672020 20202020  T   vitaly.sexy  /esr1.jpg
-00000e0: 20202020 33303420 4e6f7420 4d6f6469 66696564 20203020 20202020 20202030      304 Not Modified  0        0
-0000100: 20202020 20202020 302e3037 20202020 2d2d2020 20200a33 20202047 45542020          0.07    --    .3   GET
-0000120: 20766974 616c792e 73657879 20202f63 6f6e7374 72756374 696f6e2e 67696620   vitaly.sexy  /construction.gif
-0000140: 20333034 204e6f74 204d6f64 69666965 64202030 20202020 20202020 30202020   304 Not Modified  0        0
-0000160: 20202020 20302e30 37202020 202d2d20 2020200a 32202020 47455420 20207669       0.07    --    .2   GET   vi
-0000180: 74616c79 2e736578 7920202f 76697461 6c79322e 6a706720 20202020 20203230  taly.sexy  /vitaly2.jpg       20
-00001a0: 30204f4b 20202020 20202020 20202020 30202020 20202020 20323033 34303033  0 OK            0        2034003
-00001c0: 20203135 352e3131 20202d2d 20202020 0a312020 20474554 20202076 6974616c    155.11  --    .1   GET   vital
-00001e0: 792e7365 78792020 2f202020 20202020 20202020 20202020 20202033 3034204e  y.sexy  /                  304 N
-0000200: 6f74204d 6f646966 69656420 20302020 20202020 20203020 20202020 20202030  ot Modified  0        0        0
-0000220: 2e303720 2020202d 2d202020 200a0a                                        .07    --    ..
 pappy>
 ```
-
-If you want to write the contents of a request or response to a file, don't use `nocolor` with `vfq` or `vfs`. Use just the `vbq` or `vbs` commands.
-
-| Command | Description |
-|:--------|:------------|
-| `nocolor` | Run a command and print its output without ASCII escape codes. Intended for use when redirecting output to a file. Should only be used with text and not with binary data. |
 
 
 Generating Pappy's CA Cert
 --------------------------
-In order to intercept and modify requests to sites that use HTTPS, you have to generate and install CA certs to your browser. You can do this by running the `gencerts` command in Pappy. By default, certs are stored `~/.pappy/certs`. This is also the default location that Pappy will look for certificates (unless you specify otherwise in `config.json`.) In addition, you can give the `gencerts` command an argument to have it put the generated certs in a different directory.
+In order to intercept and modify requests to sites that use HTTPS, you have to generate and install CA certs to your browser. If no certs exist, you will be prompted to generate them the first time you run Pappy. You can also regenerate them manually by running the `gencerts` command in Pappy. Certs are stored `~/.pappy/certs`.
 
 | Command | Description |
 |:--------|:------------|
@@ -313,7 +208,7 @@ The following commands can be used to view requests and responses
 | `vbs <id(s)>` | view_response_bytes, vbs | [V]iew [B]ytes of Re[S]ponse, prints the full response including headers and data without coloring or additional newlines. Use this if you want to write a response to a file. |
 | `pps <format> <id(s)>` | pretty_print_response, pps | Pretty print a response with a specific format. See the table below for a list of formats. |
 | `pprm <id(s)>` | print_params, pprm | Print a summary of the parameters submitted with the request. It will include URL params, POST params, and/or cookies |
-| `pri [ct] [key(s)]` | param_info, pri | Print a summary of the parameters and values submitted by in-context requests. You can pass in keys to limit which values will be shown. If you also provide `ct` as the first argument, it will include any keys that are passed as arguments. |
+| `pri <reqid(s)> [ct] [key(s)]` | param_info, pri | Print a summary of the parameters and values submitted by the given request(s). You can pass in keys to limit which values will be shown. If you also provide `ct` as the first argument, it will include any keys that are passed as arguments. |
 | `urls <id(s)>` | urls | Search the full request and response of the given IDs for urls and prints them. Especially useful with a wildcard (`*`) to find URLs from all history. |
 | `watch` | watch | Print requests and responses in real time as they pass through the proxy. |
 
@@ -423,19 +318,17 @@ ID  Verb  Host                 Path                                      S-Code 
 3   GET   cdn.sstatic.net      /Js/stub.en.js?v=5cc84a62e045             200 OK         0        38661    0.08  --
 2   GET   ajax.googleapis.com  /ajax/libs/jquery/1.12.4/jquery.min.js    200 OK         0        97163    0.09  --
 1   GET   stackoverflow.com    /                                         200 OK         0        244280   0.43  --
-pappy> fbi not_jscss
-path nctr "(\.js$|\.css$)"
-pappy> fbi not_image
-path nctr "(\.png$|\.jpg$|\.gif$)"
+pappy> f inv path ctr "(\.js$|\.css$)"
+pappy> f inv path ctr "(\.png$|\.jpg$|\.gif$)"
 pappy> sc clean
 Filters saved to clean:
-  path nctr "(\.js$|\.css$)"
-  path nctr "(\.png$|\.jpg$|\.gif$)"
+  inv path ctr "(\.js$|\.css$)"
+  inv path ctr "(\.png$|\.jpg$|\.gif$)"
 pappy> cls
 Saved contexts:
 clean
-  path nctr "(\.js$|\.css$)"
-  path nctr "(\.png$|\.jpg$|\.gif$)"
+  inv path ctr "(\.js$|\.css$)"
+  inv path ctr "(\.png$|\.jpg$|\.gif$)"
 
 pappy> sr
 pappy> fls
@@ -453,8 +346,8 @@ ID  Verb  Host             Path                                      S-Code  Req
 3   GET   cdn.sstatic.net  /Js/stub.en.js?v=5cc84a62e045             200 OK  0        38661    0.08  --
 pappy> lc clean
 Set the context to:
-  path nctr "(\.js$|\.css$)"
-  path nctr "(\.png$|\.jpg$|\.gif$)"
+  inv path ctr "(\.js$|\.css$)"
+  inv path ctr "(\.png$|\.jpg$|\.gif$)"
 pappy> ls
 ID  Verb  Host               Path                                      S-Code  Req Len  Rsp Len  Time  Mngl
 16  GET   cdn.sstatic.net    /img/developer-story/announcement_ban...  200 OK  0        10515    0.06  --
@@ -468,8 +361,8 @@ _
   host ct sstatic
 
 clean
-  path nctr "(\.js$|\.css$)"
-  path nctr "(\.png$|\.jpg$|\.gif$)"
+  inv path ctr "(\.js$|\.css$)"
+  inv path ctr "(\.png$|\.jpg$|\.gif$)"
 
 pappy> lc _
 Set the context to:
@@ -480,9 +373,8 @@ pappy> dc clean
 pappy> cls
 Saved contexts:
 _
-  path nctr "(\.js$|\.css$)"
-  path nctr "(\.png$|\.jpg$|\.gif$)"
-
+  inv path ctr "(\.js$|\.css$)"
+  inv path ctr "(\.png$|\.jpg$|\.gif$)"
 ```
 
 Filter Strings
@@ -503,16 +395,6 @@ comparer = "is"
 value = "target.org"
 ```
 
-Also **if you prefix a comparer with 'n' it turns it into a negation.** Using the previous example, the following will match any request except for ones where the host contains `target.org`:
-
-```
-host nis target.org
-
-field = "host"
-comparer = "nis"
-value = "target.org"
-```
-
 For fields that are a list of key/value pairs (headers, get params, post params, and cookies) you can use the following format:
 
 ```
@@ -529,7 +411,7 @@ Filter B:
     cookie contains Session contains 456
 
 Filter C:
-    cookie ncontains Ultra
+    inv cookie contains Ultra
 
 Cookie: SuperSession=abc123
 Matches A and C but not B
@@ -541,22 +423,28 @@ Matches both A and B but not C
 ### List of fields
 | Field Name | Aliases | Description | Format |
 |:--------|:------------|:-----|:------|
-| all | all | The entire request represented as one string | String |
-| host | host, domain, hs, dm | The target host (ie www.target.com) | String |
-| path | path, pt | The path of the url (ie /path/to/secrets.php) | String |
-| body | body, data, bd, dt | The body (data section) of either the request or the response | String |
-| reqbody | qbody, qdata, qbd, qdt | The body (data section) of th request | String |
-| rspbody | sbody, sdata, sbd, sdt | The body (data section) of th response | String |
-| verb | verb, vb | The HTTP verb of the request (ie GET, POST) | String |
-| param | param, pm | Either the get or post parameters | Key/Value |
-| header | header, hd | An HTTP header (ie User-Agent, Basic-Authorization) in the request or response | Key/Value |
-| reqheader | reqheader, qhd | An HTTP header in the request | Key/Value |
-| rspheader | rspheader, shd | An HTTP header in the response | Key/Value |
-| rawheaders | rawheaders, rh | The entire header section (as one string) of either the head or the response | String |
-| sentcookie | sentcookie, sck | A cookie sent in a request | Key/Value |
-| setcookie | setcookie, stck | A cookie set by a response | Key/Value |
-| statuscode | statuscode, sc, responsecode | The response code of the response | Numeric |
-| tag | tag | Any of the tags applied to the request | String |
+| all | all | Anywhere in the request, response, or a websocket message | String |
+| reqbody | reqbody, reqbd, qbd, qdata, qdt | The body of the request | String |
+| rspbody | rspbody, rspbd, sbd, sdata, sdt | The body of the response | String |
+| body | body, bd, data, dt | The body in either the request or the response | String |
+| wsmessage | wsmessage, wsm | In a websocket message | String |
+| method | method, verb, vb | The request method (GET, POST, etc) | String |
+| host | host, domain, hs, dm | The host that the request was sent to | String |
+| path | path, pt | The path of the request | String |
+| url | url | The full URL of the request | String |
+| statuscode | statuscode, sc | The status code of the response (200, 404, etc) | String |
+| tag | tag | Any of the tags of the request | String |
+| after | after, af | After the request with the given ID | String |
+| before | before, b4 | Before the request with the given ID | String |
+| reqheader | reqheader, reqhd, qhd | A header in the request | Key/Value |
+| rspheader | rspheader, rsphd, shd | A header in the response | Key/Value |
+| header | header, hd | A header in the request or the response | Key/Value |
+| param | param, pm | Either a URL or a POST parameter | Key/Value |
+| urlparam | urlparam, uparam | A URL parameter of the request | Key/Value |
+| postparam | postparam, pparam | A post parameter of the request | Key/Value |
+| rspcookie | rspcookie, rspck, sck | A cookie set by the response | Key/Value |
+| reqcookie | reqcookie, reqck, qck | A cookie submitted by the request | Key/Value |
+| cookie | cookie, ck | A cookie sent by the request or a cookie set by the response | Key/Value |
 
 ### List of comparers
 | Field Name | Aliases | Description |
@@ -564,32 +452,22 @@ Matches both A and B but not C
 | is | is | Exact string match | 
 | contains | contains, ct | A contain B is true if B is a substring of A |
 | containsr | containsr, ctr | A containr B is true if A matches regexp B |
-| exists | exists, ex | A exists B if A is not an empty string (likely buggy) |
-| Leq | Leq | A Leq B if A's length equals B (B must be a number) |
-| Lgt | Lgt | A Lgt B if A's length is greater than B (B must be a number ) |
-| Llt | Llt | A Llt B if A's length is less than B (B must be a number) |
-| eq | eq | A eq B if A = B (A and B must be a number) |
-| gt | gt | A gt B if A > B (A and B must be a number) |
-| lt | lt | A lt B if A < B (A and B must be a number) |
+| leneq | leneq | A Leq B if A's length equals B (B must be a number) |
+| lengt | lengt | A Lgt B if A's length is greater than B (B must be a number ) |
+| lenlt | lenlt | A Llt B if A's length is less than B (B must be a number) |
 
 ### Special form filters
 A few filters don't conform to the field, comparer, value format. You can still negate these.
 
 | Format | Aliases | Description |
 |:--|:--|:--|
-| before <reqid> | before, bf, b4 | Filters out any request that is not before the given request. Filters out any request without a time. |
-| after <reqid> | after, af | Filters out any request that is not before the given request. Filters out any request without a time. |
-| inv <filter string> | inf | Inverts a filter string. Anything that matches the filter string will not pass the filter. |
-| ws | websocket, ws | Filters out any request that is not part of a websocket connection. |
+| invert <filter string> | invert, inv | Inverts a filter string. Anything that matches the filter string will not pass the filter. |
 
 Examples:
 
 ```
-Only show requests before request 1234
-  f b4 1234
-
-Only show requests after request 1234
-  f af 1234
+Show state-changing requests
+  f inv method is GET
 
 Show requests without a csrf parameter
   f inv param ct csrf
@@ -607,18 +485,6 @@ Any requests which don't match all the filters in the scope will be passed strai
 | `sr` |`scope_reset`, `sr`| Set the current context to the scope |
 | `scope_delete` |`scope_delete`| Clear the scope (everything's in scope!) |
 | `scope_list` |`scope_list`, `sls`| List all the filters that are applied to the scope |
-
-### Built-In Filters
-Pappy also includes some built in filters that you can apply. These are things that you may want to filter by but may be too tedius to type out. The `fbi` command also supports tab completion.
-
-| Filter | Description |
-|:--|:--|
-| `not_image` | Matches anything that isn't an image. |
-| `not_jscss` | Matches anything that isn't JavaScript or CSS. |
-
-| Command | Aliases | Description |
-|:--------|:--------|:------------|
-| `fbi <filter>` | `builtin_filter`, `fbi` | Apply a built-in filter to the current context |
 
 Decoding Strings
 ----------------
@@ -677,7 +543,7 @@ To forward a request, edit it, save the file, then quit.
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| `ic <req,rsp>+` | `intercept`, `ic` | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
+| `ic <req,rsp,ws>+` | `intercept`, `ic` | Begins interception mode. Press enter to leave interception mode and return to the command prompt. Pass in `request` to intercept requests, `response` to intercept responses, or both to intercept both. |
 
 ```
 Intercept both requests and responses:
@@ -692,11 +558,13 @@ Intercept just responses:
 > ic responses
 > ic rsp
 
-Be totally useless:
-> ic
+Intercept websocket messages:
+> ic ws
 ```
 
-To drop a request, delete everything, save and quit.
+When intercepting websocket messages, the first line will indicate the direction the message is going (either to or from the server) and will be ignored if edited. The message will begin on the line afterwards.
+
+To drop a message, delete everything, save and quit.
 
 Repeater
 --------
@@ -736,72 +604,15 @@ In this case we have a `blank`, `hackthensa`, `testgen`, and `test` macro. A mac
 
 ### Generating Macros From Requests
 
-You can also generate macros that have Pappy `Request` objects created with the same information as requests you've already made. For example:
+You can also generate macros that have Pappy `Request` objects created with the same information as requests you've already made.
 
-```
-$ pappy
-Proxy is listening on port 8000
-pappy> ls
-ID  Verb  Host         Path               S-Code  Req Len  Rsp Len  Time  Mngl
-5   GET   vitaly.sexy  /esr1.jpg          200 OK  0        17653    --    --
-4   GET   vitaly.sexy  /netscape.gif      200 OK  0        1135     --    --
-3   GET   vitaly.sexy  /construction.gif  200 OK  0        28366    --    --
-2   GET   vitaly.sexy  /vitaly2.jpg       200 OK  0        2034003  --    --
-1   GET   vitaly.sexy  /                  200 OK  0        1201     --    --
-pappy> gma sexy 1
-Wrote script to macro_sexy.py
-pappy> quit
-$ cat macro_sexy.py
-from pappyproxy.http import Request, get_request, post_request
-
-MACRO_NAME = 'Macro 94664581'
-SHORT_NAME = ''
-
-###########
-## Requests
-
-req0 = Request((
-'GET / HTTP/1.1\r\n'
-'Host: vitaly.sexy\r\n'
-'User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0\r\n'
-'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n'
-'Accept-Language: en-US,en;q=0.5\r\n'
-'Accept-Encoding: gzip, deflate\r\n'
-'Connection: keep-alive\r\n'
-'Pragma: no-cache\r\n'
-'Cache-Control: no-cache\r\n'
-'\r\n'
-))
-
-
-def run_macro(args):
-    # Example:
-    # req = req0.copy() # Copy req0
-    # req.submit() # Submit the request to get a response
-    # print req.response.raw_headers # print the response headers
-    # req.save() # save the request to the data file
-    # or copy req0 into a loop and use string substitution to automate requests
-    pass
-```
-
-If you enter in a value for `SHORT_NAME`, you can use it as a shortcut to run that macro. So if in a macro you set `SHORT_NAME='tm'` you can run it by running `pappy> rma tm`.
-
-Remember, you can use the wildcard to generate a macro with all in-context requests:
-
-```
-# Generate a macro with all in-context requests
-pappy> gma allreqs *
-```
+**Example using new macro API coming soon, I promise. Check out ProxyClient in proxy.py for API implementation**
 
 ### Passing Arguments to Macros
 
-When you run the macro, any additional command line arguments will be passed to the run_macro function in the `args` argument. For example, if you run your macro using
+When you run the macro, any additional command line arguments will be passed to the run_macro function in the `args` argument.
 
-```
-pappy> rma foo thisis an "amazing argument"
-```
-
-The `args` argument of run_macro will be `["thisis", "an", "amazing argument"]`. If no arguments are give, `args` will be an empty list.
+**Example using new macro API coming soon, I promise. Check out ProxyClient in proxy.py for API implementation**
 
 ### Macro Commands
 
@@ -814,179 +625,14 @@ The `args` argument of run_macro will be `["thisis", "an", "amazing argument"]`.
 
 ### Request Objects
 
-The main method of interacting with the proxy is through `Request` objects. You can submit a request with `req.sumbit()` and save it to the data file with `req.save()`. The objects also have attributes which can be used to modify the request in a high-level way. You can see the [full documentation](https://roglew.github.io/pappy-proxy/pappyproxy.html#module-pappyproxy.http) for more details on using these objects.
-
-Dict-like objects are represented with a custom class called a `RepeatableDict`. Again, look at the docs for details. For the most part, you can interact with it like a normal dictionary, but don't be surprised if it's missing some methods you would expect.
-
-Here is a quick list of attributes that you can use with `Request` objects:
-
-| Attribute | Settable? | Data Type | Description |
-|:--|:--|:--|:--|
-| cookies | Yes | RepeatableDict | Cookies sent in the request |
-| fragment | Yes | String | The url fragment (The text after the #) |
-| full_path | No | String | The path including url params and the fragment |
-| full_request | No | String | The full request including headers and data |
-| headers | Yes | RepeatableDict | The headers of the request |
-| host | Yes | String | The host that the request is sent to |
-| is_ssl | Yes | Bool | Whether the request is/was sent over SSL |
-| path | Yes | String | The document path (ie www.a.com/this/is/the/path) |
-| port | Yes | Integer | The port the request is/was sent to |
-| post_params | Yes | RepeatableDict | Post parameters |
-| raw_data | Yes | String | The data part of the request |
-| raw_headers | No | String | The text of the headers section of the request |
-| reqid | Yes | Integer | The ID of the request. If set when save() is called, it replaces the request with the same id in the database |
-| response | Yes | Response | The associated response for the request |
-| rsptime | No | Datetime Delta | The time it took to complete the request. Set when submit() is called |
-| status_line | Yes | String | The status line of the request (ie 'GET / HTTP/1.1') |
-| time_end | Yes | Datetime | The time when the request was completed |
-| time_start | Yes | Datetime | The time when the request was started |
-| unmangled | Yes | Request | If the request was mangled, the unmangled version of the request |
-| url | Yes | String | The URL of the request (ie 'https://www.google.com') |
-| url_params | Yes | RepeatableDict | The URL parameters of the request |
-| verb | Yes | String | The verb used for the request (ie GET, POST, PATCH, HEAD, etc). Doesn't have to be a valid verb. |
-| version | Yes | String | The version part of the status line (ie 'HTTP/1.1') |
-
-Request methods:
-
-| Function | Description |
-|:--|:--|
-| submit() | Submit the request through the proxy. Does not save the request to the data file |
-| save() | Save the request, its unmangled version, its associated response, and the unmangled version of the response to the database |
-
-And here is a quick list of attributes that you can use with `Response` objects:
-
-| Attribute | Settable? | Data Type | Description |
-|:--|:--|:--|:--|
-| cookies | Yes | RepeatableDict | Cookies set by the response |
-| headers | Yes | RepeatableDict | The headers of the response |
-| response_code | Yes | Integer | The response code of the response |
-| response_text | Yes | String | The text associated with the response code (ie OK, NOT FOUND)
-| rspid | Yes | Integer | The response id of the response. If this is the same as another response in the database, calling save() on the associated request will replace that response in the database |
-| unmangled | Yes | Response | If the response was mangled, this will refer to the unmangled version of the response. Otherwise it is None |
-| version | Yes | String | The version part of the status line of the response (ie 'HTTP/1.1') |
-| raw_headers | No | String | A text version of the headers of the response |
-| status_line | Yes | String | The status line of the response |
-| raw_data | Yes | String | The data portion of the response |
-| full_response | No | String | The full text version of the response including headers and data |
-
-Like I said, these interfaces are prone to change and will probably crash when you use them. If you get a traceback, send me an email so I can fix it.
-
-### Useful Functions
-
-There are also a few functions which could be useful for creating requests in macros. It's worth pointing out that `request_by_id` is useful for passing request objects as arguments. For example, here is a macro that lets you resubmit a request with the Google Bot user agent:
-
-```
-## macro_googlebot.py
-
-from pappyproxy.http import Request, get_request, post_request, request_by_id
-from pappyproxy.context import set_tag
-from pappyproxy.iter import *
-
-MACRO_NAME = 'Submit as Google'
-SHORT_NAME = ''
-
-def run_macro(args):
-    req = request_by_id(args[0])
-    req.headers['User-Agent'] = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
-    req.submit()
-    req.save()
-```
-
-| Function | Description |
-|:--|:--|
-| get_request(url, url_params={}) | Returns a Request object that contains a GET request to the given url with the given url params |
-| post_request(url, post_params={}, url_params={}) | Returns a Request object that contains a POST request to the given url with the given url and post params |
-| request_by_id(reqid) | Get a request object from its id. |
-| main_context_ids() | Returns a list of the IDs that are in the current context. Use this for macros that need to act on every in-context request. For example, it can be used in a macro to resubmit a set of requests. |
+**Example using new macro API coming soon, I promise. Check out ProxyClient in proxy.py for API implementation**
 
 Intercepting Macros
 -------------------
-Intercepting macros let you mangle requests as they pass through the proxy. Similarly to normal macros, an intercepting macro is any python script with an "int" prefix. For example, `int_name.py` would be a valid intercepting macro name. They are also loaded with the `lma` command. An intercepting macro can define two functions: `mangle_request` or `mangle_response`. Both requests only take a `Request` object as a parameter. `mangle_request` returns either a new, modified Request object to change it, or it can return the original object to not mangle it. The `mange_response` must return a `Response` (not request!) object. The request passed in to `mangle_response` will have an associated response with it. If you want to modify the response, copy `request.response`, make modifications, then return it. If you would like to pass it through untouched, just return `request.response`.
+Intercepting macros let you mangle requests as they pass through the proxy. Similarly to normal macros, an intercepting macro is any python script with an "int" prefix. For example, `int_name.py` would be a valid intercepting macro name. They are also loaded with the `lma` command. An intercepting macro can define functions to mangle requests, responses, or websocket messages.
 
-Note, that due to twisted funkyness, *you cannot save requests from intercepting macros*. Technically you **can**, but to do that you'll have to define `async_mangle_request` (or response) instead of `mangle_request` (or response) then use `Request.async_deep_save` which generates a deferred, then generate a deferred from `async_mangle_requests` (inline callbacks work too). If you've never used twisted before, please don't try. Twisted is hard. Plus the mangled request will be saved before it is submitted anyways.
+**Example using new macro API coming soon, I promise. Check out ProxyClient in proxy.py for API implementation**
 
-Confusing? Here are some example intercepting macros:
-
-```
-## int_cloud2butt.py
-
-import string
-
-MACRO_NAME = 'Cloud to Butt'
-
-def mangle_response(request):
-    r = request.response.copy()
-    r.raw_data = string.replace(r.raw_data, 'cloud', 'butt')
-    r.raw_data = string.replace(r.raw_data, 'Cloud', 'Butt')
-    return r
-```
-
-```
-## int_donothing.py
-
-import string
-
-MACRO_NAME = 'Do Nothing'
-
-def mangle_request(request):
-    return request
-
-def mangle_response(request):
-    return request.response
-```
-
-```
-## int_adminplz.py
-
-from base64 import base64encode as b64e
-
-MACRO_NAME = 'Admin Session'
-
-def mangle_request(request):
-    r = request.copy()
-    r.headers['Authorization'] = 'Basic %s' % b64e('Admin:Password123')
-    return r
-```
-
-In addition, you can use an `init(args)` function to get arguments from the command line. If no arguments are passed, args will be an empty list. Here is an example macro that does a search and replace:
-
-```
-## int_replace.py
-
-MACRO_NAME = 'Find and Replace'
-SHORT_NAME = ''
-runargs = []
-
-def init(args):
-    global runargs
-    runargs = args
-
-def mangle_request(request):
-    global runargs
-    if len(runargs) < 2:
-        return request
-    request.body = request.body.replace(runargs[0], runargs[1])
-    return request
-
-def mangle_response(request):
-    global runargs
-    if len(runargs) < 2:
-        return request.response
-    request.response.body = request.response.body.replace(runargs[0], runargs[1])
-    return request.response
-```
-
-You can use this macro to do any search and replace that you want. For example, if you wanted to replace "Google" with "Skynet", you can run the macro like this:
-
-```
-pappy> lma
-Loaded "<InterceptingMacro Find and Replace (replace)>"
-pappy> rim replace Google Skynet
-"Find and Replace" started
-pappy> 
-```
-
-Now every site that you visit will be a little bit more accurate.
 
 ### Enabling/Disabling Intercepting Macros
 You can use the following commands to start/stop intercepting macros
@@ -998,40 +644,6 @@ You can use the following commands to start/stop intercepting macros
 | `sim <macro name> [args]` | `stop_int_macro`, `sim` | Stop an intercepting macro. If arguments are given, they will be passed to the macro's `init(args)` function if it exists. |
 | `lim` | `list_int_macros`, `lsim` | List all enabled/disabled intercepting macros |
 | `gima <name>` | `generate_int_macro`, `gima` | Generate an intercepting macro with the given name. |
-
-Macro Templates
----------------
-Pappy also includes some other templates for generating macros. They can be generated with the `gtma` command. You can then modify the generated macros to do what you want. For example, you could modify the resubmit macro to get a new session token before submitting each request. Using a template can save you from writing boilerplate for commonly created macros.
-
-Examples:
-```
-# The same as gma foo 1,2,3
-pappy> gtma foo macro 1,2,3
-Wrote script to macro_foo.py
-
-# Generate a macro that resubmits all in-context requests
-pappy> gtma suball resubmit
-Wrote script to macro_suball.py
-
-# Generate an intercepting macro that modifies headers as they pass through the proxy
-pappy> gtma headers modheader
-Wrote script to int_headers.py
-```
-
-Command information:
-
-| Command | Aliases | Description |
-|:--------|:--------|:------------|
-| `gtma <name> <template name> [template arguments]` | `generate_template_macro`, `gtma` | Generate a macro using a template. |
-
-Available macro templates:
-
-| Name | Arguments | Description |
-|:-----|:----------|:------------|
-| `macro` | `[reqids]` | The template used to generate macros from request IDs. |
-| `intmacro` | None | The template used to generate an intercepting macro. |
-| `modheader` | None | Create an intercepting macro that modifies a header in the request or response. |
-| `resubmit` | None | Create a macro that resubmits all in-context requests. Includes commented out code to maintain session state using a cookie jar. |
 
 Resubmitting Groups of Requests
 -------------------------------
@@ -1046,6 +658,7 @@ You can use the `submit` request to resubmit requests. It is suggested that you 
 * `before` and `after` to select requests in a time range. You can use the `after` filter on the most recent request, browse the site, then use the `before` filter to select a continuous browsing session.
 * `verb` if you only want to select GET requests
 * `path ct logout` to avoid logging out
+* Use tags to select requests to submit then filter by the tag
 
 ### Arguments
 
@@ -1072,249 +685,47 @@ pappy> submit * -m -h "User-Agent=Mozilla/5.0 (compatible; Googlebot/2.1; +http:
 pappy> submit 123,124,125 -h "User-Agent=Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -c SESSIONID=1234 SESSIONSTATE=%7B%27admin%27%3A%27true%27%7D
 ```
 
-Logging
--------
-You can watch in real-time what requests are going through the proxy. Verbosisty defaults to 1 which just states when connections are made/lost and some information on what is happening. If verbosity is set to 3, it includes all the data which is sent through the proxy and processed. It will print the raw response from the server, what it decodes it to, etc. Even if you don't run this command, all the information is stored in the dubug directory (the directory is cleared every start though!)
-
-| Command | Description |
-|:--------|:------------|
-| `log [verbosity]` | View the log at the given verbosity. Default verbosity is 1 which just shows connections being made/lost and some other info, verbosity 3 shows full requests/responses as they pass through and are processed by the proxy |
-
-Additional Commands and Features
---------------------------------
-This is a list of other random stuff you can do that isn't categorized under anything else. These are mostly commands that I found that I needed while doing a test and just added. They likely don't do a ton of error checking.
+Saving Messages To Disk
+-----------------------
 
 | Command | Aliases | Description |
 |:--------|:--------|:------------|
-| `dump_response <reqid> [filename]` | `dump_response` | Dumps the data from the response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path. |
-| `export <req|rsp> <reqid>` | `export` | Writes either the full request or response to a file in the current directory. |
-| `merge <dbfile>` | `merge` | Add all the requests from another datafile to the current datafile |
-
-### Response streaming
-
-If you don't have any intercepting macros running, Pappy will forward data to the browser as it gets it. However, if you're trying to mangle messages/responses, Pappy will need to download the entire message first.
-
-Viewing Responses In Browser
-----------------------------
-You can view responses in your browser by visiting `http://pappy/rsp/<rspid>` (NOT pappy.com) in your browser while connected to the proxy. For example, if you want to view the response to request 123, you can visit `http://pappy/rsp/123` to view the response. Pappy will return a response with the same body as the original response and will not make a request to the server. The response will not have the same headers as the original response (aside from the Content-Type header). In addition, Pappy doesn't modify any URLs in the page which means your browser will still fetch external resources like images, JavaScript etc from external servers.
-
-Websockets
-----------
-While information on websockets is scattered throughout the readme, this section will collect it all into one place. Websockets can be intercepted/modified, viewed, etc just like regular requests and responses.
-
-### Viewing a WebSocket Session
-
-Websocket sessions are referred to by the request that was used to initiate their handshake. In the following example, we look at all our websocket connections to an echo websocket server. In both connections, we send "Hello" from the browser. In the second connection, we sent "Hello" twice and used the interceptor to change the second "Hello" message to say "HelloFool" instead.
-
-```
-pappy> f ws
-pappy> ls
-ID  Verb  Host            Path               S-Code            Req Len  Rsp Len  Time  Mngl
-6   GET   localhost:9000  /?compressed=true  101 Switching...  0        0        0.34  --
-1   GET   localhost:9000  /?compressed=true  101 Switching...  0        0        0.32  --
-pappy> vfq 1
-Websocket session handshake
-GET /?compressed=true HTTP/1.1
-Host: localhost:9000
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:49.0) Gecko/20100101 Firefox/49.0
-Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-Accept-Language: en-US,en;q=0.5
-Accept-Encoding: gzip, deflate
-Sec-WebSocket-Version: 13
-Origin: null
-Sec-WebSocket-Extensions: permessage-deflate
-Sec-WebSocket-Key: 8rdZsJpDn7FAbdDE6IkHnw==
-Connection: keep-alive, Upgrade
-Pragma: no-cache
-Cache-Control: no-cache
-Upgrade: websocket
-
-Websocket session
-> Outgoing, binary = True
-Hello
-< Incoming, binary = True
-Hello
-
-pappy> vfq 6
-Websocket session handshake
-GET /?compressed=true HTTP/1.1
-Host: localhost:9000
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:49.0) Gecko/20100101 Firefox/49.0
-Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-Accept-Language: en-US,en;q=0.5
-Accept-Encoding: gzip, deflate
-Sec-WebSocket-Version: 13
-Origin: http://localhost:8090
-Sec-WebSocket-Extensions: permessage-deflate
-Sec-WebSocket-Key: 0oPJkDuwP5rrBYyCM7Hh0A==
-Connection: keep-alive, Upgrade
-Pragma: no-cache
-Cache-Control: no-cache
-Upgrade: websocket
-
-Websocket session
-> Outgoing, binary = True
-Hello
-< Incoming, binary = True
-Hello
-> Outgoing, mangled, binary = True
-HelloFool
----------- ^^ UNMANGLED ^^ ----------
-> Outgoing, binary = True
-Hello
--------------------------------------
-< Incoming, binary = True
-HelloFool
-
-pappy>
-```
-
-### Intercepting WebSocket Messages
-
-You can intercept websocket messages by running `ic` with a `ws` argument:
-
-```
-pappy> ic ws
-```
-
-### Intercepting Macros
-
-You can automatically mangle websocket messages similarly to requests and responses. Just define a `mangle_ws` function or an `async_mangle_ws` (see the [Intercepting Macros](#intercepting-macros) section for more details).
+| `save_request <reqid(s)> [filename]` | `save_request`, `savereq` | Save full request to disk. If no filename is given, it's saved with the name `req_<reqid>`. |
+| `save_response <reqid(s)> [filename]` | `save_response`, `saversp` | Save full response to disk. If no filename is given, it's saved with the name `req_<reqid>`. |
+| `dump_response <reqid> [filename]` | `dump_response` | Save the body portion of a response response to the given filename (useful for images, .swf, etc). If no filename is given, it uses the name given in the path. |
 
 
-Plugins
--------
-Note that this section is a very quick overview of plugins. For a full description of how to write them, please see [the official docs](https://roglew.github.io/pappy-proxy/pappyplugins.html).
-
-It is also possible to write plugins which are reusable across projects. Plugins are simply Python scripts located in `~/.pappy/plugins`. Plugins are able to create new console commands and maintain state throughout a Pappy session. They can access the same API as macros, but the plugin system is designed to allow you to create general purpose commands as compared to macros which are meant to be project-specific scripts. Still, it may not be a bad idea to try building a macro to do something in a quick and dirty way before writing a plugin since plugins are more complicated to write.
-
-A simple hello world plugin could be something like:
-
-```
-## hello.py
-import shlex
-
-def hello_world(line):
-    if line:
-        args = shlex.split(line)
-        print 'Hello, %s!' % (', '.join(args))
-    else:
-        print "Hello, world!"
-
-###############
-## Plugin hooks
-
-def load_cmds(cmd):
-    cmd.set_cmds({
-        'hello': (hello_world, None),
-    })
-    cmd.add_aliases([
-        ('hello', 'hlo'),
-        ('hello', 'ho'),
-    ])
-```
-
-You can also create commands which support autocomplete:
-
-```
-import shlex
-
-_AUTOCOMPLETE_NAMES = ['alice', 'allie', 'sarah', 'mallory', 'slagathor']
-
-def hello_world(line):
-    if line:
-        args = shlex.split(line)
-        print 'Hello, %s!' % (', '.join(args))
-    else:
-        print "Hello, world!"
-        
-def complete_hello_world(text, line, begidx, endidx):
-    return [n for n in _AUTOCOMPLETE_NAMES if n.startswith(text)]
-        
-###############
-## Plugin hooks
-
-def load_cmds(cmd):
-    cmd.set_cmds({
-        'hello': (hello_world, complete_hello_world),
-    })
-    cmd.add_aliases([
-        ('hello', 'hlo'),
-    ])
-```
-
-Then when you run Pappy you can use the ``hello`` command:
-
-```
-$ pappy -l
-Temporary datafile is /tmp/tmpBOXyJ3
-Proxy is listening on port 8000
-pappy> ho
-Hello, world!
-pappy> ho foo bar baz
-Hello, foo, bar, baz!
-pappy> ho foo bar "baz lihtyur"
-Hello, foo, bar, baz lihtyur!
-pappy>
-```
-
-### Should I Write a Plugin or a Macro?
-
-A lot of the time, you can get away with writing a macro. However, you may consider writing a plugin if:
-
-* You find yourself copying one macro to multiple projects
-* You want to write a general tool that can be applied to any website
-* You need to maintain state during the Pappy session
-
-My guess is that if you need one quick thing for a project, you're better off writing a macro first and seeing if you end up using it in future projects. Then if you find yourself needing it a lot, write a plugin for it. You may also consider keeping a `mine.py` plugin where you can write out commands that you use regularly but may not be worth creating a dedicated plugin for.
-
-Global Settings
----------------
-There are some settings that apply to Pappy as a whole and are stored in `~/.pappy/global_config.json`. These settings are generally for tuning performance or modifying behavior on a system-wide level. No information about projects is put in here since it is world readable. You can technically add settings in here for plugins that you write, but if it's at all possible, please keep settings in the normal project config.
-
-Settings included in `~/.pappy/global_config.json`:
-
-| Setting | Description |
-|:--------|:------------|
-| cache_size | The number of requests from history that will be included in memory at any given time. Set to -1 to keep everything in memory. See the request cache section for more info. |
-
-Using an HTTP Proxy
+Using an Proxy
 -------------------
-Pappy allows you to use an upstream HTTP proxy. You can do this by adding an `http_proxy` value to config.json. You can use the following for anonymous access to the proxy:
+Pappy allows you to use an upstream SOCKS or HTTP proxy. You can do this by adding an `proxy` value to config.json. You then configure the address of the proxy and whether it is a SOCKS proxy. To use credentials, include "username" and "password" values in the configuration. A Few examples:
 
 ```
-    "http_proxy": {"host":"httpproxy.proxy.host", "port":5555}
+Do not use a proxy:
+    "proxy": {"use_proxy": false, "host": "", "port": 0, "is_socks": false}
+Use an HTTP proxy at someproxy.foo port 8080
+    "proxy": {"use_proxy": true, "host": "someproxy.foo", "port": 8080, "is_socks": false}
+Use a SOCKS proxy at someproxy.foo port 8081
+    "proxy": {"use_proxy": true, "host": "someproxy.foo", "port": 8081, "is_socks": true}
+Use an HTTP proxy at someproxy.foo port 8080 with a username of Mario and a password of Lu1g1
+    "proxy": {"use_proxy": true, "host": "someproxy.foo", "port": 8080, "is_socks": false, "username": "Mario", "password": "Lu1g1"}
 ```
 
-To use credentials you add a `username` and `password` value to the dictionary:
-
-```
-    "http_proxy": {"host":"httpproxy.proxy.host", "port":5555, "username": "mario", "password":"ilovemushrooms"}
-```
-
-At the moment, only basic auth is supported. Anything in-scope that passes through any of the active listeners will use the proxy. Out of scope requests will not be sent through the proxy.
-
-Using a SOCKS Proxy
--------------------
-Pappy allows you to use an upstream SOCKS proxy. You can do this by adding a `socks_proxy` value to config.json. You can use the following for anonymous access to the proxy:
-
-```
-    "socks_proxy": {"host":"socks.proxy.host", "port":5555}
-```
-
-To use credentials you add a `username` and `password` value to the dictionary:
-
-```
-    "socks_proxy": {"host":"socks.proxy.host", "port":5555, "username": "mario", "password":"ilovemushrooms"}
-```
-
-Any in-scope requests that pass through any of the active listeners will use the proxy. Out of scope requests will not be sent through the proxy.
+At the moment, all in and out of scope requests will pass through the proxy.
 
 Transparent Host Redirection
 ----------------------------
-Sometimes you get a frustrating thick client that doesn’t let you mess with proxy settings to get it to go through a proxy. However, if you can redirect where it sends its traffic to localhost, you can get Pappy to take that traffic and redirect it to go where it should.
+Sometimes you get a frustrating thick client that doesn’t let you mess with proxy settings to get it to go through a proxy. In order to debug applications like this, Pappy can behave like a regular HTTP server and forward any requests it receives to a specific host. That way the application doesn't have to be aware that it is using a proxy. You can redirect the traffic for an application to the proxy through other means such as editing the hosts file.
 
-It takes root permissions to listen on low numbered ports. As a result, we’ll need to do some root stuff to listen on ports 80 and 443 and get the data to Pappy. There are two ways to get the traffic to Pappy. The first is to set up port forwarding as root to send traffic from localhost:80 to localhost:8080 and localhost:443 to localhost:8443 (since we can listen on 8080 and 8443 without root). Or you can YOLO, run Pappy as root and just have it listen on 80 and 443.
+You can have a listener transparently redirect requests to a specific host by adding a "transparent" value to a listener which determines a host, port, and whether TLS should be used to make the connection.
+
+```
+"listeners": [
+        {"port": 8080, "interface": "127.0.0.1", "transparent": {"host": "www.example.faketld", "port": 80, use_tls: false},
+        {"port": 8443, "interface": "127.0.0.1", "transparent": {"host": "www.example.faketld", "port": 443, use_tls: true},
+    ]
+```
+
+You should also be aware that it takes root permissions to listen on low numbered ports. As a result, we’ll need to do some root stuff to listen on ports 80 and 443 and get the data to Pappy. There are two ways to get the traffic to Pappy. The first is to set up port forwarding as root to send traffic from localhost:80 to localhost:8080 and localhost:443 to localhost:8443 (since we can listen on 8080 and 8443 without root). Or you can YOLO, run Pappy as root and just have it listen on 80 and 443.
 
 According to Google you can use the following command to forward port 80 on localhost to 8080 on Linux:
 
@@ -1341,95 +752,6 @@ Then to turn it off on mac it’s
 sudo pfctl -F all -f /etc/pf.conf
 ```
 
-Then modify the listener settings in the project’s config.json to be:
-
-```
-"proxy_listeners": [
-        {"port": 8080, "interface": "127.0.0.1", "forward_host": "www.example.faketld"},
-        {"port": 8443, "interface": "127.0.0.1", "forward_host_ssl": "www.example.faketld"},
-    ]
-```
-
-This configuration will cause Pappy to open a port on 8080 that will accept connections normally and a port on 8443 which will accept SSL connections. The forward_host setting tells Pappy to redirect any requests sent to the port to the given host. It will also update the request’s host header. forward_host_ssl does the same thing, but it listens for SSL connections and forces the connection to use SSL.
-
-Or if you’re going to YOLO it do the same thing then listen on port 80/443 directly. I do not suggest you do this.
-
-```
-"proxy_listeners": [
-        {"port": 80, "interface": "127.0.0.1", "forward_host": "www.example.faketld"},
-        {"port": 443, "interface": "127.0.0.1", "forward_host_ssl": "www.example.faketld"},
-    ]
-```
-
-Pappy will automatically use this host to make the connection and forward the request to the new server.
-
-Project File Encryption
------------------------
-
-Pappy includes some basic features for automatically compressing and encrypting your project directory with a password. However, before I go into details on how to do this, I need to make one thing clear.
-
-**Don't rely on Pappy to encrypt confidential information. Use a dedicated encryption product to encrypt your project directory instead.**
-
-Other commercial and large open source crypto projects have had a much larger number of people look at their crypto implementations and are less likely to have errors in their implementation. However, for cases where you don't need enterprise level security or if you just want your project stored in a single password-protected file instead of a directory, Pappy's got you covered.
-
-Here is how Pappy's project encryption works:
-
-* Open a project by running Pappy with the `-c` flag
-* Pappy creates a `crypt/` directory in the current directory and changes the working directory into it
-* Do work as normal. You can use other tools in the created `crypt/` directory
-* When you quit Pappy, the file is compressed and encrypted with the provided password
-* The project directory is deleted
-
-Unfortunately, if Pappy hard crashes the files will not be cleaned up. However, if you start Pappy and it notices a `crypt/` directory, it will attempt to use it as the project directory and create a new encrypted project file upon exiting.
-
-Here is an of the usage:
-
-```
-$ pwd
-/tmp/exampleproj
-$ ls
-$ pappy -c example.proj
-Copying default config to ./config.json
-Proxy is listening on port 8000
-pappy> !pwd
-/tmp/exampleproj/crypt
-
-# Switch to another terminal window
-$ echo "Hello World" >  /tmp/exampleproj/crypt/hello.txt
-
-# Back to Pappy
-pappy> !cat hello.txt
-Hello World
-pappy> exit
-Enter a password:
-$ ls
-example.proj
-```
-
-Then to work on the project again:
-
-```
-$ pappy -c example.proj
-Enter a password:
-Proxy is listening on port 8000
-pappy> !ls
-config.json     data.db         hello.txt
-pappy>
-```
-
-Example of recovering after crash:
-
-```
-$ ls
-crypt           project.archive
-$ pappy -c test.proj
-Proxy is listening on port 8000
-pappy> exit
-Enter a password:
-$ ls
-test.proj
-```
-
 FAQ
 ---
 
@@ -1438,23 +760,19 @@ Unfortunately I've been a bit lazy when it comes to printing errors to the termi
 
 * Hit Ctl-L to clear the terminal. Your input will be saved.
 
-### Why does my request have an id of `--`?!?!
-You can't do anything with a request/response until it is decoded and saved to disk. In between the time when a request is decoded and when it's saved to disk, it will have an ID of `--`. So just wait a little bit and it will get an ID you can use.
-
-Boring, Technical Stuff
------------------------
-I do some stuff to try and keep speed and memory usage to reasonable levels. Unfortunately, things might seem slow in some areas. This is where I try and explain why those exist. Honestly, you probably don't care about this, but I'd rather have it written down and have nobody read it than just leave people in the dark.
-
-### Request Cache / Memory usage
-For performance reasons, Pappy by default will not store every request in memory. The cache will store a certain number of the most recently accessed requests in memory. This means that if you go through all of history, it could be slow (for example running `ls a` or `sm`). If you have enough RAM to keep everything in memory, you can set the request cache size to -1 to just keep everything in memory. However, even if the cache size is unlimited, it still won't load a request into memory untill you access it. So if you want to load everything in memory, run `ls a`.
-
-By default, Pappy will cache 2000 requests. This is kind of heavy, but it's assumed you're doing testing on a reasonably specced laptop. Personally, I live on the edge and use -1 until I run into memory issues.
-
 
 Changelog
 ---------
 The boring part of the readme
 
+* 0.3.0
+    * Rewrote large amount of code in Go (see the [puppy repo](https://github.com/roglew/puppy) for all the stuff implemented in Go)
+    * Rewrote the rest of the python
+    * Moved to python3
+    * Deleted python docs because ugh. Will add docs for the new plugin API later.
+    * This was too much work and not worth it in any way
+* 0.2.14
+    * Critical bugfixes
 * 0.2.13
     * Refactor proxy core
     * WEBSOCKETS

@@ -1,60 +1,23 @@
-import StringIO
-import datetime
-import hashlib
 import re
-import string
 import sys
+import string
 import time
-import pyperclip
+import datetime
+import base64
+from pygments.formatters import TerminalFormatter
+from pygments.lexers import get_lexer_for_mimetype, HttpLexer
+from pygments import highlight
+from io import StringIO
+from .colors import Colors, Styles, verb_color, scode_color, path_formatter, color_string
 
-from .colors import Styles, Colors, verb_color, scode_color, path_formatter, host_color
-from twisted.internet import defer
-from twisted.test.proto_helpers import StringTransport
 
-try:
-    # If you don't do this then pyperclip imports gtk, it blocks the twisted reactor.
-    # Dumb. I know.
-    import gtk
-    gtk.set_interactive(False)
-except ImportError:
-    pass
-
-class PappyException(Exception):
-    """
-    The exception class for Pappy. If a plugin command raises one of these, the
-    message will be printed to the console rather than displaying a traceback.
-    """
-    pass
-
-class PappyStringTransport(StringTransport):
-    
-    def __init__(self):
-        StringTransport.__init__(self)
-        self.complete_deferred = defer.Deferred()
-        
-    def finish(self):
-        # Called when a finishable producer finishes
-        self.producerState = 'stopped'
-
-    def pop_value(self):
-        v = self.value()
-        self.clear()
-        return v
-        
-    def registerProducer(self, producer, streaming):
-        StringTransport.registerProducer(self, producer, streaming)
-        
-    def waitForProducers(self):
-        while self.producer and self.producerState == 'producing':
-            self.producer.resumeProducing()
-
-    def loseConnection(self):
-        assert False
-        StringTransport.loseConnection(self)
-        self.complete_deferred.callback(None)
-
-    def startTLS(self, context, factory):
-        pass
+def str_hash_code(s):
+    h = 0
+    n = len(s)-1
+    for c in s.encode():
+        h += c*31**n
+        n -= 1
+    return h
 
 def printable_data(data, colors=True):
     """
@@ -67,11 +30,11 @@ def printable_data(data, colors=True):
     chars = []
     colored = False
     for c in data:
-        if c in string.printable:
+        if chr(c) in string.printable:
             if colored and colors:
                 chars.append(Colors.ENDC)
             colored = False
-            chars.append(c)
+            chars.append(chr(c))
         else:
             if (not colored) and colors:
                 chars.append(Styles.UNPRINTABLE_DATA)
@@ -85,79 +48,20 @@ def remove_color(s):
     ansi_escape = re.compile(r'\x1b[^m]*m')
     return ansi_escape.sub('', s)
 
-# Taken from http://stackoverflow.com/questions/4770297/python-convert-utc-datetime-string-to-local-datetime
-def utc2local(utc):
-    epoch = time.mktime(utc.timetuple())
-    offset = datetime.datetime.fromtimestamp(epoch) - datetime.datetime.utcfromtimestamp(epoch)
-    return utc + offset
-
-# Taken from https://gist.github.com/sbz/1080258
 def hexdump(src, length=16):
     FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
     lines = []
-    for c in xrange(0, len(src), length):
+    for c in range(0, len(src), length):
         chars = src[c:c+length]
-        hex = ' '.join(["%02x" % ord(x) for x in chars])
-        printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or Styles.UNPRINTABLE_DATA+'.'+Colors.ENDC) for x in chars])
+        hex = ' '.join(["%02x" % x for x in chars])
+        printable = ''.join(["%s" % ((x <= 127 and FILTER[x]) or Styles.UNPRINTABLE_DATA+'.'+Colors.ENDC) for x in chars])
         lines.append("%04x  %-*s  %s\n" % (c, length*3, hex, printable))
     return ''.join(lines)
 
 def maybe_hexdump(s):
-    if any(c not in string.printable for c in s):
+    if any(chr(c) not in string.printable for c in s):
         return hexdump(s)
     return s
-
-# Taken from http://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
-# then modified
-class Capturing():
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO.StringIO()
-        return self
-
-    def __exit__(self, *args):
-        self.val = self._stringio.getvalue()
-        sys.stdout = self._stdout
-
-@defer.inlineCallbacks
-def load_reqlist(line, allow_special=True, ids_only=False):
-    """
-    load_reqlist(line, allow_special=True)
-    A helper function for parsing a list of requests that are passed as an
-    argument. If ``allow_special`` is True, then it will parse IDs such as
-    ``u123`` or ``s123``. Even if allow_special is false, it will still parse
-    ``m##`` IDs. Will print any errors with loading any of the requests and
-    will return a list of all the requests which were successfully loaded.
-    Returns a deferred.
-
-    :Returns: Twisted deferred
-    """
-    from .http import Request
-    from .plugin import async_main_context_ids
-    # Parses a comma separated list of ids and returns a list of those requests
-    # prints any errors
-    if not line:
-        raise PappyException('Request id(s) required')
-    reqs = []
-
-    if line == '*':
-        ids = yield async_main_context_ids()
-        for i in ids:
-            req = yield Request.load_request(i)
-            reqs.append(req)
-        defer.returnValue(reqs)
-
-    ids = re.split(',\s*', line)
-    if not ids_only:
-        for reqid in ids:
-            try:
-                req = yield Request.load_request(reqid, allow_special)
-                reqs.append(req)
-            except PappyException as e:
-                print e
-        defer.returnValue(reqs)
-    else:
-        defer.returnValue(ids)
 
 def print_table(coldata, rows):
     """
@@ -248,14 +152,14 @@ def print_table(coldata, rows):
         sys.stdout.write('\n')
         sys.stdout.flush()
 
-def print_requests(requests):
+def print_requests(requests, client=None):
     """
     Takes in a list of requests and prints a table with data on each of the
     requests. It's the same table that's used by ``ls``.
     """
     rows = []
     for req in requests:
-        rows.append(get_req_data_row(req))
+        rows.append(get_req_data_row(req, client=client))
     print_request_rows(rows)
     
 def print_request_rows(request_rows):
@@ -283,24 +187,28 @@ def print_request_rows(request_rows):
 
         verb =  {'data':verb, 'color':verb_color(verb)}
         scode = {'data':scode, 'color':scode_color(scode)}
-        host = {'data':host, 'color':host_color(host)}
+        host = {'data':host, 'color':color_string(host, color_only=True)}
         path = {'data':path, 'formatter':path_formatter}
 
         print_rows.append((reqid, verb, host, path, scode, qlen, slen, time, mngl))
     print_table(cols, print_rows)
     
-def get_req_data_row(request):
+def get_req_data_row(request, client=None):
     """
     Get the row data for a request to be printed.
     """
-    rid = request.reqid
-    method = request.verb
-    if 'host' in request.headers:
-        host = request.headers['host']
+    if client is not None:
+        rid = client.prefixed_reqid(request)
     else:
-        host = '??'
-    path = request.full_path
-    reqlen = len(request.body)
+        rid = request.db_id
+    method = request.method
+    host = request.dest_host
+    if not request.use_tls and request.dest_port != 80:
+        host = "%s:%d" % (request.dest_host, request.dest_port)
+    if request.use_tls and request.dest_port != 443:
+        host = "%s:%d" % (request.dest_host, request.dest_port)
+    path = request.url.geturl()
+    reqlen = request.content_length
     rsplen = 'N/A'
     mangle_str = '--'
 
@@ -308,9 +216,9 @@ def get_req_data_row(request):
         mangle_str = 'q'
 
     if request.response:
-        response_code = str(request.response.response_code) + \
-            ' ' + request.response.response_text
-        rsplen = len(request.response.body)
+        response_code = str(request.response.status_code) + \
+            ' ' + request.response.reason
+        rsplen = request.response.content_length
         if request.response.unmangled:
             if mangle_str == '--':
                 mangle_str = 's'
@@ -338,11 +246,11 @@ def confirm(message, default='n'):
     else:
         default = True
 
-    print message
+    print(message)
     if default:
-        answer = raw_input('(Y/n) ')
+        answer = input('(Y/n) ')
     else:
-        answer = raw_input('(y/N) ')
+        answer = input('(y/N) ')
 
 
     if not answer:
@@ -353,12 +261,50 @@ def confirm(message, default='n'):
     else:
         return False
 
+# Taken from http://stackoverflow.com/questions/4770297/python-convert-utc-datetime-string-to-local-datetime
+def utc2local(utc):
+    epoch = time.mktime(utc.timetuple())
+    offset = datetime.datetime.fromtimestamp(epoch) - datetime.datetime.utcfromtimestamp(epoch)
+    return utc + offset
+
+def datetime_string(dt):
+    dtobj = utc2local(dt)
+    time_made_str = dtobj.strftime('%a, %b %d, %Y, %I:%M:%S.%f %p')
+    return time_made_str
 
 def copy_to_clipboard(text):
-    pyperclip.copy(text)
+    from .clip import copy
+    copy(text)
     
 def clipboard_contents():
-    return pyperclip.paste()
+    from .clip import paste
+    return paste()
+
+def encode_basic_auth(username, password):
+    decoded = '%s:%s' % (username, password)
+    encoded = base64.b64encode(decoded.encode())
+    header = 'Basic %s' % encoded.decode()
+    return header
+
+def parse_basic_auth(header):
+    """
+    Parse a raw basic auth header and return (username, password)
+    """
+    _, creds = header.split(' ', 1)
+    decoded = base64.b64decode(creds)
+    username, password = decoded.split(':', 1)
+    return (username, password)
+
+def print_query(query):
+    for p in query:
+        fstrs = []
+        for f in p:
+            fstrs.append(' '.join(f))
+
+        print((Colors.BLUE+' OR '+Colors.ENDC).join(fstrs))
+
+def log_error(msg):
+    print(msg)
 
 def autocomplete_startswith(text, lst, allow_spaces=False):
     ret = None
@@ -369,41 +315,26 @@ def autocomplete_startswith(text, lst, allow_spaces=False):
     if not allow_spaces:
         ret = [s for s in ret if ' ' not in s]
     return ret
-    
-def short_data(data):
-    l = 1024
-    if len(data) > l:
-        return printable_data(data[:l], colors=False)
-    else:
-        return printable_data(data, colors=False)
 
-def print_traceback():
-    import traceback; print '\n'.join([l.strip() for l in traceback.format_stack()])
+def load_reqlist(client, reqids, headers_only=False):
+    ids = re.compile(r",\s*").split(reqids)
+    if '*' in ids:
+        for req in client.in_context_requests_iter(headers_only=headers_only):
+            yield req
+    for i in ids:
+        try:
+            yield client.req_by_id(i, headers_only=headers_only)
+        except Exception as e:
+            print(e)
 
-def traceback_on_call(obj, func):
-    old = getattr(obj, func)
-    def patched(*args, **kwargs):
-        print_traceback()
-        old(*args, **kwargs)
-    setattr(obj, func, patched)
+# Taken from http://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
+# then modified
+class Capturing():
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
 
-def sha1(data):
-    m = hashlib.sha1()
-    m.update(data)
-    return m.digest()
-
-def datetime_string(dt):
-    dtobj = utc2local(dt)
-    time_made_str = dtobj.strftime('%a, %b %d, %Y, %I:%M:%S.%f %p')
-    return time_made_str
-
-def html_escape(s, quote=None):
-    '''Replace special characters "&", "<" and ">" to HTML-safe sequences.
-    If the optional flag quote is true, the quotation mark character (")
-is also translated.'''
-    s = s.replace("&", "&amp;") # Must be done first!
-    s = s.replace("<", "&lt;")
-    s = s.replace(">", "&gt;")
-    if quote:
-        s = s.replace('"', "&quot;")
-    return s
+    def __exit__(self, *args):
+        self.val = self._stringio.getvalue()
+        sys.stdout = self._stdout

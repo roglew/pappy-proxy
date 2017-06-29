@@ -1,0 +1,22 @@
+{% include 'macroheader.py.tmpl' %}
+{% if req_lines %}
+###########
+## Requests
+# It's suggested that you call .copy() on these and then edit attributes
+# as needed to create modified requests
+##
+{% for lines, params in zip(req_lines, req_params) %}
+req{{ loop.index }} = parse_request(({% for line in lines %}
+    {{ line }}{% endfor %}
+), {{ params }})
+{% endfor %}{% endif %}
+
+def run_macro(client, args):
+    # Example:
+    """
+    req = req1.copy() # Copy req1
+    client.submit(req) # Submit the request to get a response
+    print(req.response.full_message()) # print the response
+    client.save_new(req) # save the request to the data file
+    """
+    pass

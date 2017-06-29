@@ -1,6 +1,4 @@
 *.pyc
-pappyproxy/certs/*
-debug_out/*
 data.db
 .coverage
 .cache
@@ -12,3 +10,4 @@ build/*
 *.egg-info/*
 .#*
 *notes*
+*.org

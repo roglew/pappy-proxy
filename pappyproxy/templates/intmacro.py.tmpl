@@ -1,0 +1,30 @@
+{% include 'macroheader.py.tmpl' %}
+{% if req_lines %}
+###########
+## Requests
+# It's suggested that you call .copy() on these and then edit attributes
+# as needed to create modified requests
+##
+{% for lines, params in zip(req_lines, req_params) %}
+req{{ loop.index }} = parse_request(({% for line in lines %}
+    {{ line }}{% endfor %}
+), {{ params }})
+{% endfor %}{% endif %}
+
+runargs = []
+
+def init(client, args):
+    global runargs
+    runargs = args
+
+def mangle_request(client, request):
+    global runargs
+    return request
+
+def mangle_response(client, request, response):
+    global runargs
+    return response
+
+def mangle_websocket(client, request, response, wsmessage):
+    global runargs
+    return wsmessage
