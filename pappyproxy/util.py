@@ -198,7 +198,7 @@ def get_req_data_row(request, client=None):
     Get the row data for a request to be printed.
     """
     if client is not None:
-        rid = client.prefixed_reqid(request)
+        rid = client.get_reqid(request)
     else:
         rid = request.db_id
     method = request.method

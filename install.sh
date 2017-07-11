@@ -72,11 +72,13 @@ if ! type "pip" > /dev/null; then
     fi
 fi
 
+cd /tmp
 if python -c "import pappyproxy" &> /dev/null; then
     echo "An earlier version of pappy appears to be installed. Please remove it and try installation again."
     echo "This can likely be done by running \"pip uninstall pappyproxy\""
     exit 1;
 fi
+cd "$INSTALLDIR"
 
 # Set up fake gopath
 if [ -z "$GOPATH" ]; then

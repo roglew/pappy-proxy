@@ -4,7 +4,7 @@ import pkgutil
 #import pappyproxy
 from setuptools import setup, find_packages
 
-VERSION = "0.3.1"
+VERSION = "0.3.0"
 
 setup(name='pappyproxy',
       version=VERSION,

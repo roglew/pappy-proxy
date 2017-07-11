@@ -38,7 +38,7 @@ Pappy supports OS X and Linux, and may or may not work in Cygwin or something on
 * python3
 * pip
 * virtualenv
-* go version 1.3 or higher
+* go
 
 To install Pappy:
 
@@ -765,8 +765,6 @@ Changelog
 ---------
 The boring part of the readme
 
-* 0.3.1
-    * Borked the git push so it's version 0.3.1 now
 * 0.3.0
     * Rewrote large amount of code in Go (see the [puppy repo](https://github.com/roglew/puppy) for all the stuff implemented in Go)
     * Rewrote the rest of the python
