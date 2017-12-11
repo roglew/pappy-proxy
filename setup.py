@@ -14,6 +14,7 @@ setup(name='pappyproxy',
       #url='https://www.github.com/roglew/puppy-proxy',
       packages=['pappyproxy', 'pappyproxy.interface'],
       include_package_data = True,
+      package_data={'pappyproxy': ['templates', 'lists']},
       license='MIT',
       entry_points = {
           'console_scripts':['pappy = pappyproxy.pap:start'],
