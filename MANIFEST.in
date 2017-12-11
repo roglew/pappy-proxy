@@ -1,0 +1,3 @@
+recursive-include pappyproxy/lists *
+recursive-include pappyproxy/templates *
+recursive-include pappyproxy/interface/repeater *

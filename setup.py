@@ -4,7 +4,7 @@ import pkgutil
 #import pappyproxy
 from setuptools import setup, find_packages
 
-VERSION = "0.3.1"
+VERSION = "0.3.0"
 
 setup(name='pappyproxy',
       version=VERSION,
@@ -12,7 +12,7 @@ setup(name='pappyproxy',
       author='Rob Glew',
       author_email='rglew56@gmail.com',
       #url='https://www.github.com/roglew/puppy-proxy',
-      packages=['pappyproxy'],
+      packages=['pappyproxy', 'pappyproxy.interface'],
       include_package_data = True,
       license='MIT',
       entry_points = {
