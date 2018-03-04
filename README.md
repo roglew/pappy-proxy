@@ -9,6 +9,8 @@ Introduction
 ------------
 The Pappy (**P**roxy **A**ttack **P**roxy **P**rox**Y**) Proxy is an intercepting proxy for performing web application security testing. Its features are often similar, or straight up rippoffs from [Burp Suite](https://portswigger.net/burp/). However, Burp Suite is neither open source nor a command line tool, thus making a proxy like Pappy inevitable.
 
+**Need a GUI? [The Guppy Proxy](https://github.com/roglew/guppy-proxy) is for you!** Guppy offers just about the same amount of power as Pappy in a much easier to use interface. You may want to consider switching!
+
 Contributing
 ------------
 **I am taking any and all feature requests.** If you've used Burp and had any inconvenience with it, tell me about it and I'll do everything in my power to make sure Pappy doesn't have those issues. Or even better, if you want Burp to do something that it doesn't already, let me know so that I can ~~use it to stomp them into the dust~~ improve my project.
